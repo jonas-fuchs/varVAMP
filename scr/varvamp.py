@@ -116,10 +116,10 @@ def find_unique_gaps(all_gaps):
     result = list(set(gaps for gap_list in all_gaps for gaps in gap_list))
     return result
 
-def find_overlapping_gaps(unique_gaps, gap):
+def find_internal_gaps(unique_gaps, gap):
     """
-    find all unique gaps including self that are part
-    of the current gap and return all overlapping gaps
+    find all unique gaps that
+    lie within the current gap
     """
     overlapping_gaps = []
 
@@ -138,16 +138,15 @@ def find_overlapping_gaps(unique_gaps, gap):
 
 def create_gap_dictionary(unique_gaps, all_gaps):
     """
-    creates a dictionary with counts for all gaps
-    if a gap has overlapping gaps they are counted
-    as well
+    creates a dictionary with gap counts.
+    counts also all overlapping gaps per gap.
     """
 
     gap_dict = {}
 
     for gap_list in all_gaps:
         for gap in gap_list:
-            overlapping_gaps = find_overlapping_gaps(unique_gaps, gap)
+            overlapping_gaps = find_internal_gaps(unique_gaps, gap)
             for overlapping_gap in overlapping_gaps:
                 if overlapping_gap in gap_dict:
                     gap_dict[overlapping_gap] += 1
@@ -158,9 +157,9 @@ def create_gap_dictionary(unique_gaps, all_gaps):
 
 def find_regions_to_mask(gap_dict):
     """
-    Finds in the gap dictionary all gaps
-    that are overlapping after they were
-    filtered for their frequency cutoff
+    filters gaps for their freq cutoff.
+    condenses final gaps if there is
+    an overlap.
     """
     regions_to_mask = []
     potential_regions = []
@@ -202,8 +201,7 @@ def find_regions_to_mask(gap_dict):
 
 def clean_alignment(alignment, regions_to_mask):
     """
-    clean an alignment of large common deletions
-    based on a region table.
+    clean an alignment of large common deletions.
     """
     cleaned_alignment = []
     mask = params["MASK_LENGTH"]*"N"
@@ -233,7 +231,7 @@ def clean_alignment(alignment, regions_to_mask):
 def calculate_total_masked_gaps(regions_to_mask):
     """
     calculates the cummulative length of gaps
-    that were masked
+    that were masked.
     """
     if regions_to_mask:
         sum_gaps = 0
@@ -339,7 +337,7 @@ def mean_conserved(conserved_regions, consensus):
         sum += region[1]-region[0]
     return round(sum/len(consensus)*100,1)
 
-# defs for primer calculation and scoring:
+# defs for primer calculation and scoring
 def calc_gc(primer):
     """
     calculate the gc of a sequence
@@ -475,7 +473,7 @@ def rev_complement(seq):
 def hardfilter_primers(primer):
     """
     hard filter primers for temperature, gc content,
-    poly x and dinucleotide repeats
+    poly x and dinucleotide repeats.
     """
     return(
         (params["PRIMER_TMP"][0] <= calc_temp(primer) <= params["PRIMER_TMP"][1]) and
@@ -487,7 +485,7 @@ def hardfilter_primers(primer):
 def filter_primer_direction_specific(direction, primer):
     """
     filter for 3'ambigious and hairpin - this differs
-    depending on the direction of the primer
+    depending on the direction of the primer.
     """
     if direction == "LEFT":
         amb_kmer = consensus_amb[primer[1]:primer[2]]
@@ -502,8 +500,8 @@ def filter_primer_direction_specific(direction, primer):
 def find_lowest_scoring(direction, hardfiltered_kmers):
     """
     sort the primers by start and base penalty.
-    for primers that have the same start retain only
-    the lowest scoring and now give a fixed number
+    for primers that have the same start, retain only
+    the lowest scoring and now give a fixed number.
     """
     candidates = []
 
@@ -529,7 +527,7 @@ def find_lowest_scoring(direction, hardfiltered_kmers):
 def primer_per_base_mismatch(primer, alignment):
     """
     calculate for a given primer with [seq, start, stop]
-    percent mismatch per primer pos with the alignment
+    percent mismatch per primer pos with the alignment.
     """
     primer_per_base_mismatch = len(primer[0])*[0]
     aln_length = 0
@@ -575,7 +573,7 @@ def penalty_3_prime(direction, primer):
     """
     calculate the penalty for mismatches at the 3' end.
     the more mismatches are closer to the 3' end of the primer,
-    the higher the penalty
+    the higher the penalty.
     """
     penalty = 0
 
@@ -636,8 +634,6 @@ ambig = {"r": ["a", "g"],
         "h":["a", "c", "t"],
         "v":["a", "c", "g"],
         "n":["a", "c", "g", "t"]}
-
-
 
 #################### test data
 consensus_amb_path = "/home/jonas/Schreibtisch/Workstuff/Workflows/Snakemake/primer_design/results/hepe_cluster_1/clusters/consensus/0_aligned_consenus.fasta"
@@ -760,6 +756,7 @@ if __name__ == "__main__":
 
 
 ##### Primer design #####
+# TODO: Adjust per base freq alignment parsing when consensus seq has been implemented
 # TODO: arg parsing
 # TODO: Create consensus sequences
 # TODO: Create graph
