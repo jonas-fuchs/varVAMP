@@ -1,6 +1,6 @@
-""""
+"""
 config file for all settings in varVAMP
-""""
+"""
 
 # PARAMETERS
 # params for cleaning deletions in alignment
