@@ -19,6 +19,7 @@ import shutil
 import time
 import re
 import argparse
+import collections
 
 # LIBS
 import primer3 as p3
@@ -36,6 +37,7 @@ def varvamp_progress(progress=0, job="", progress_text="", out=sys.stdout):
     block = int(round(barLength*progress))
 
     if progress == 0:
+
         print(
             f"\nStarting \033[31m\033[1mvarVAMP ◥(ºwº)◤\033[0m primer design\n",
             file = out,
@@ -51,7 +53,7 @@ def varvamp_progress(progress=0, job="", progress_text="", out=sys.stdout):
     else:
         if progress == 1:
             stop_time = str(round(time.process_time() - start_time, 2))
-            progress_text = "all done \n\n\rVARVAMP created an amplicon scheme in " + stop_time + " sec!\n"
+            progress_text = "all done \n\n\rvarVAMP created an amplicon scheme in " + stop_time + " sec!\n"
             job = "Finalizing output"
         print(
             f"\rJob:\t\t "+job+"\nProgress: \t [{0}] {1}%".format("█"*block + "-"*(barLength-block), progress*100) + "\t" + progress_text,
@@ -76,6 +78,13 @@ def read_alignment(alignment_path):
         alignment_list.append([sequence.id, str(sequence.seq)])
 
     return alignment_list
+
+def determine_gap_cutoff(n_seqs):
+    """
+    determine the cutoff for gaps that
+    are covered by at least n seqs
+    """
+    return int(n_seqs*(1-params["FREQUENCY_THRESHOLD"]))
 
 def preprocess_alignment(alignment):
     """
@@ -126,7 +135,7 @@ def find_internal_gaps(unique_gaps, gap):
     if gap[1] - gap[0] == 0:
         # if the gap length = 1 there are
         # no overlapping gaps
-        overlapping_gaps = gap
+        overlapping_gaps = [gap]
     else:
         # for each unique gap check if the intersection with the
         # gap is the same as the unique gap -> internal gap of
@@ -160,7 +169,7 @@ def create_gap_dictionary(unique_gaps, all_gaps):
 
     return gap_dict
 
-def find_regions_to_mask(gap_dict):
+def find_regions_to_mask(gap_dict, lower_cutoff):
     """
     filters gaps for their freq cutoff.
     condenses final gaps if there is
@@ -168,14 +177,11 @@ def find_regions_to_mask(gap_dict):
     """
     regions_to_mask = []
     potential_regions = []
-    # invert frequency upper threshold
-    # to determine relevant gaps to mask
-    cutoff = len(all_gaps)*(1-params["FREQUENCY_UPPER"])
 
     # check for each region if it is covered
     # by enough sequences
     for gap in gap_dict:
-        if gap_dict[gap] > cutoff:
+        if gap_dict[gap] > lower_cutoff:
             potential_regions.append(gap)
 
     # sort by start and stop
@@ -244,25 +250,118 @@ def calculate_total_masked_gaps(regions_to_mask):
     if regions_to_mask:
         sum_gaps = 0
         for region in regions_to_mask:
-            sum_gaps += region[1]- region[0]
+            sum_gaps += region[1]- region[0] + 1
         return sum_gaps
     else:
         return 0
 
-# defs for conserved region search:
-def read_fasta(path_to_fasta):
+# defs for consensus creation
+def determine_consensus_cutoff(n_seqs):
     """
-    parse fasta sequences
+    determine the cutoff to consider a nuc conserved
     """
-    for fasta in SeqIO.parse(path_to_fasta, "fasta"):
-        seq = fasta.seq
-        id = str(fasta.id)
-    return (id, seq)
+    return int(n_seqs*params["FREQUENCY_THRESHOLD"])
 
+def determine_nucleotide_counts(alignment, idx):
+    """
+    count the number of each nucleotides at
+    an idx of the alignment. return sorted dic.
+    handels ambiguous nucleotides in sequences.
+    also handels gaps.
+    """
+    nucleotide_list = []
+
+    # get all nucleotides
+    for sequence in alignment:
+        nucleotide_list.append(sequence[1][idx])
+    # count occurences of nucleotides
+    counter = dict(collections.Counter(nucleotide_list))
+    # get permutations of an ambiguous nucleotide
+    to_delete = []
+    temp_dict = {}
+    for nucleotide in counter:
+        if nucleotide in ambig:
+            to_delete.append(nucleotide)
+            permutations = ambig[nucleotide]
+            adjusted_freq = 1/len(permutations)
+            for permutation in permutations:
+                if permutation in temp_dict:
+                    temp_dict[permutation] += adjusted_freq
+                else:
+                    temp_dict[permutation] = adjusted_freq
+        if nucleotide == "-":
+            to_delete.append(nucleotide)
+
+    # drop ambiguous entrys and add adjusted freqs to
+    if to_delete:
+        for i in to_delete:
+            counter.pop(i)
+        for nucleotide in temp_dict:
+            if nucleotide in counter:
+                counter[nucleotide] += temp_dict[nucleotide]
+            else:
+                counter[nucleotide] = temp_dict[nucleotide]
+
+    return dict(sorted(counter.items(), key=lambda x:x[1], reverse = True))
+
+def get_consensus_nucleotides(nucleotide_counts):
+    """
+    get a list of nucleotides for the consensus seq
+    """
+
+    # define the consensus cut-off
+    consensus_cutoff = determine_consensus_cutoff(n_seqs)
+
+    n = 0
+    consensus_nucleotides = []
+    for nuc in nucleotide_counts:
+        n += nucleotide_counts[nuc]
+        consensus_nucleotides.append(nuc)
+        if n >= consensus_cutoff:
+            break
+
+    return consensus_nucleotides
+
+def get_ambiguous_char(nucleotides):
+    """
+    get ambiguous char from a list of nucleotides
+    """
+    for ambiguous_nuc, permutations in ambig.items():
+        if set(permutations) == set(nucleotides):
+            return ambiguous_nuc
+
+def create_consensus_sequences(alignment):
+    """
+    build a majority sequence and a sequence that
+    has ambiguous chars as determined by the freq
+    threshold.
+    """
+
+    # ini the consensus seq
+    ambiguous_consensus = str()
+    majority_consensus = str()
+
+    # define length of the consensus from the first seq in alignment
+    length_consensus = len(alignment[0][1])
+    # built consensus sequences
+    for idx in range(length_consensus):
+        nucleotide_counts = determine_nucleotide_counts(alignment, idx)
+        consensus_nucleotide = get_consensus_nucleotides(nucleotide_counts)
+        if len(consensus_nucleotide) > 1:
+            amb_consensus_nucleotide = get_ambiguous_char(consensus_nucleotide)
+            ambiguous_consensus = ambiguous_consensus + amb_consensus_nucleotide
+        else:
+            ambiguous_consensus = ambiguous_consensus + consensus_nucleotide[0]
+
+        majority_consensus = majority_consensus + consensus_nucleotide[0]
+
+    return (majority_consensus, ambiguous_consensus)
+
+# defs for conserved region search:
 def find_conserved_regions(consensus_amb):
     """
     finds conserved regions as specified by a
-    certain amount of ambigious bases in a given
+    certain amount of ambiguous bases in a given
     sequence length
     """
     # init the variables
@@ -409,12 +508,14 @@ def calc_max_dinuc_repeats(primer):
                 previous_dinuc = s[i:i+2]
     return max_dinuc
 
-def three_prime_ambigious(primer_amb, len_3_prime):
+def three_prime_ambiguous(amb_primer):
     """
-    determine if a sequence contains an ambigious char at the 3'prime
+    determine if a sequence contains an ambiguous char at the 3'prime
     """
+    len_3_prime = params["MIN_3'_WITHOUT_AMB"]
+
     if len_3_prime != 0:
-        for nuc in primer_amb[len(primer_amb)-len_3_prime:]:
+        for nuc in amb_primer[len(amb_primer)-len_3_prime:]:
             if nuc not in nucs:
                 is_amb = True
                 break
@@ -422,13 +523,13 @@ def three_prime_ambigious(primer_amb, len_3_prime):
                 is_amb = False
     else:
         is_amb = False
+
     return is_amb
 
 def calc_base_penalty(primer):
     """
     Calculate intrinsic primer penalty.
     """
-
     penalty = 0
 
     tm = calc_temp(primer)
@@ -492,17 +593,17 @@ def hardfilter_primers(primer):
 
 def filter_primer_direction_specific(direction, primer):
     """
-    filter for 3'ambigious and hairpin - this differs
+    filter for 3'ambiguous and hairpin - this differs
     depending on the direction of the primer.
     """
     if direction == "LEFT":
-        amb_kmer = consensus_amb[primer[1]:primer[2]]
+        amb_kmer = ambiguous_consensus[primer[1]:primer[2]]
         hairpin_tm = calc_hairpin(primer[0]).tm
     elif direction == "RIGHT":
-        amb_kmer = rev_complement(consensus_amb[primer[1]:primer[2]])
+        amb_kmer = rev_complement(ambiguous_consensus[primer[1]:primer[2]])
         hairpin_tm = calc_hairpin(rev_complement(primer[0])).tm
     if hairpin_tm <= params["PRIMER_HAIRPIN"]:
-        if not three_prime_ambigious(amb_kmer, params["MIN_3'_WITHOUT_AMB"]):
+        if not three_prime_ambiguous(amb_kmer):
             return primer
 
 def find_lowest_scoring(direction, hardfiltered_kmers):
@@ -536,44 +637,43 @@ def primer_per_base_mismatch(primer, alignment):
     """
     calculate for a given primer with [seq, start, stop]
     percent mismatch per primer pos with the alignment.
+    considers if primer or sequences have an amb nuc.
     """
     primer_per_base_mismatch = len(primer[0])*[0]
-    aln_length = 0
 
-    for sequence in AlignIO.read(open(alignment), "fasta"):
+    for sequence in alignment:
         # slice each sequence of the alignment for the primer
-        # positions
-        seq_slice = sequence.seq[primer[1]:primer[2]]
-        # iterate over each nuc in slice
-        for idx, nuc in enumerate(seq_slice):
+        # start and stop positions
+        seq_slice = sequence[1][primer[1]:primer[2]]
+        for idx, slice_nuc in enumerate(seq_slice):
             # find the respective nuc to that of the slice
             current_primer_pos = primer[0][idx]
-            if nuc != current_primer_pos:
-                # check if the slice has an amb pos
-                if nuc in ambig:
+            if slice_nuc != current_primer_pos:
+                # check if the slice nucleotide is an amb pos
+                if slice_nuc in ambig:
                     # check if the primer has an amb pos
                     if current_primer_pos in ambig:
-                        nuc_set = set(ambig[nuc])
+                        slice_nuc_set = set(ambig[slice_nuc])
                         pri_set = set(ambig[current_primer_pos])
-                        # check if these pos have no nuc overlap
+                        # check if these sets have no overlap
                         # -> mismatch
-                        if len(nuc_set.intersection(pri_set)) == 0:
+                        if len(slice_nuc_set.intersection(pri_set)) == 0:
                             primer_per_base_mismatch[idx] += 1
-                    # if no amb pos is in primer -> mismatch
-                    elif current_primer_pos not in ambig[nuc]:
+                    # if no amb pos is in primer then check if primer nuc
+                    # is part of the amb slice nuc
+                    elif current_primer_pos not in ambig[slice_nuc]:
                         primer_per_base_mismatch[idx] += 1
                 # check if primer has an amb pos but the current
-                # slice has not -> mismatch
+                # slice_nuc is not part of this amb nucleotide
                 elif current_primer_pos in ambig:
-                    if nuc not in ambig[current_primer_pos]:
+                    if slice_nuc not in ambig[current_primer_pos]:
                         primer_per_base_mismatch[idx] += 1
                 # mismatch
                 else:
                     primer_per_base_mismatch[idx] += 1
-        aln_length += 1
 
     # gives a percent mismatch over all positions of the primer from 5' to 3'
-    primer_per_base_mismatch = [round(x/aln_length,2) for x in primer_per_base_mismatch]
+    primer_per_base_mismatch = [round(x/n_seqs,2) for x in primer_per_base_mismatch]
 
     return primer_per_base_mismatch
 
@@ -599,7 +699,7 @@ params = {
     "DELETION_LENGTH_MIN": 1,
     "MASK_LENGTH": 1,
     # params for consensus creation
-    "FREQUENCY_UPPER": 0.79,
+    "FREQUENCY_THRESHOLD": 0.91,
     # params for conserved region search
     "CONSERVED_MIN_LENGTH": 19,
     "ALLOWED_N_AMB": 4,
@@ -643,38 +743,32 @@ ambig = {"r": ["a", "g"],
         "v":["a", "c", "g"],
         "n":["a", "c", "g", "t"]}
 
-#################### test data
-consensus_amb_path = "/home/jonas/Schreibtisch/Workstuff/Workflows/Snakemake/primer_design/results/hepe_cluster_1/clusters/consensus/0_aligned_consenus.fasta"
-
-consensus_path = "/home/jonas/Schreibtisch/Workstuff/Workflows/Snakemake/primer_design/results/hepe_cluster_1/clusters/consensus_majority/0_aligned_consenus.fasta"
-
-alignment_path = "/home/jonas/Schreibtisch/Workstuff/Workflows/Snakemake/primer_design/results/hepe_cluster_1/clusters/aligned/0_aligned.fasta"
-
-alignment_path_test = "/home/jonas/Schreibtisch/Workstuff/Workflows/Snakemake/primer_design/results/hepe_cluster_1/clusters/aligned/0_aligned0"
-
-results = "/home/jonas/Schreibtisch/Workstuff/Workflows/Snakemake/primer_design/results/test"
-
-#######################
-
-
 if __name__ == "__main__":
+
+    # arg parsing
+    parser = argparse.ArgumentParser()
+    parser.add_argument("alignment", help="alignment to design primers on")
+    parser.add_argument("results", help="path for results dir")
+
+    args = parser.parse_args()
+
+    # define output folder
+    results = args.results
+
     # ini progress
     start_time = time.process_time()
     varvamp_progress()
 
-    # read in alingment
-    alignment = read_alignment(alignment_path)
-    # force alignment to lower and to DNA
+    # preprocess and clean alignment of gaps
+    alignment = read_alignment(args.alignment)
     alignment_preprocessed = preprocess_alignment(alignment)
-
-    # clean the alignment of large gaps to remain close
-    # to the actual genome length
+    n_seqs = len(alignment)
+    gap_cutoff = determine_gap_cutoff(n_seqs)
     all_gaps = find_gaps_in_alignment(alignment_preprocessed)
     unique_gaps = find_unique_gaps(all_gaps)
-
     if unique_gaps:
         gap_dic = create_gap_dictionary(unique_gaps, all_gaps)
-        regions_to_mask = find_regions_to_mask(gap_dic)
+        regions_to_mask = find_regions_to_mask(gap_dic, gap_cutoff)
         alignment_cleaned = clean_alignment(alignment_preprocessed, regions_to_mask)
     else:
         regions_to_mask = []
@@ -685,27 +779,35 @@ if __name__ == "__main__":
         0.1,
         "Preprocessing alignment and cleaning gaps.",
         str(len(regions_to_mask)) + " regions with " +
-        str(calculate_total_masked_gaps(regions_to_mask) )+ " nucleotides"
-        )
+        str(calculate_total_masked_gaps(regions_to_mask) ) + " nucleotides"
+    )
 
-    # read in fastas
-    consensus = str(read_fasta(consensus_path)[1])
-    consensus_amb = str(read_fasta(consensus_amb_path)[1])
-
-    # generate conserved region list
-    conserved_regions = find_conserved_regions(consensus_amb)
+    # create consensus sequences
+    consensus_seqs = create_consensus_sequences(alignment_cleaned)
+    majority_consensus = consensus_seqs[0]
+    ambiguous_consensus = consensus_seqs[1]
 
     # progress update
     varvamp_progress(
         0.2,
+        "Creating consensus sequences.",
+        "length of the consensus is " + str(len(majority_consensus)) + " nt"
+    )
+
+    # generate conserved region list
+    conserved_regions = find_conserved_regions(ambiguous_consensus)
+
+    # progress update
+    varvamp_progress(
+        0.3,
         "Finding conserved regions.",
-        str(mean_conserved(conserved_regions, consensus))+"% conserved"
-        )
+        str(mean_conserved(conserved_regions, majority_consensus))+"% conserved"
+    )
 
     # produce kmers for all conserved regions
     kmers = []
     for region in conserved_regions:
-        sliced_seq = consensus[region[0]:region[1]]
+        sliced_seq = majority_consensus[region[0]:region[1]]
         for kmer_size in range(params["PRIMER_SIZE"][0], params["PRIMER_SIZE"][1]+1):
             kmers_temp = digest_seq(sliced_seq, kmer_size)
             # adjust the start and stop position of the kmers
@@ -716,10 +818,10 @@ if __name__ == "__main__":
 
     # progress update
     varvamp_progress(
-        0.3,
+        0.4,
         "Digesting into kmers.",
         str(len(kmers))+" kmers"
-        )
+    )
 
     # hard filter kmers for gc, size, temp and base penatly
     # filter also direction specific
@@ -747,33 +849,19 @@ if __name__ == "__main__":
     # based on this score calculate the 3' penalty and add to base penalty.
     for direction, primer_candidates in [("LEFT", left_primer_candidates), ("RIGHT", right_primer_candidates)]:
         for primer in primer_candidates:
-            primer.append(primer_per_base_mismatch(primer, alignment_path))
+            primer.append(primer_per_base_mismatch(primer, alignment_cleaned))
             primer[3] = primer[3] + penalty_3_prime(direction, primer)
 
     # progress update
     varvamp_progress(
-        0.4,
+        0.5,
         "Filtering for primers.",
         str(len(left_primer_candidates))+" fw and "+str(len(right_primer_candidates))+" rw primers"
-        )
+    )
 
     # final progress
     varvamp_progress(1)
 
-
-find_internal_gaps(unique_gaps, (8324,8324))
-
-sorted(unique_gaps)
-
-gap_dic[(8324,8324)]
-
-alignment[0][1][8324:]
-
-len(alignment[0][1])
-
-regions_to_mask
-alignment
-alignment_cleaned
 
 
 
