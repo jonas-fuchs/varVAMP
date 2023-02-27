@@ -27,6 +27,9 @@ from Bio import SeqIO
 from Bio import AlignIO
 from Bio.Seq import Seq
 
+# CUSTOM
+import config
+
 # DEFINITIONS
 # def for logging and progress bar:
 def varvamp_progress(progress=0, job="", progress_text="", out=sys.stdout):
@@ -84,7 +87,7 @@ def determine_gap_cutoff(n_seqs):
     determine the cutoff for gaps that
     are covered by at least n seqs
     """
-    return int(n_seqs*(1-params["FREQUENCY_THRESHOLD"]))
+    return int(n_seqs*(1-config.FREQUENCY_THRESHOLD))
 
 def preprocess_alignment(alignment):
     """
@@ -112,7 +115,7 @@ def find_gaps_in_alignment(alignment):
         # find all gaps for all sequences with regular expression -{min}
         all_gaps.append([
             (gap.start(0), gap.end(0)-1) for gap in re.finditer(
-                "-{"+str(params["DELETION_LENGTH_MIN"])+",}", seq[1])
+                "-{"+str(config.DELETION_LENGTH_MIN)+",}", seq[1])
                 ]
             )
 
@@ -169,34 +172,34 @@ def create_gap_dictionary(unique_gaps, all_gaps):
 
     return gap_dict
 
-def find_regions_to_mask(gap_dict, lower_cutoff):
+def find_gaps_to_mask(gap_dict, lower_cutoff):
     """
     filters gaps for their freq cutoff.
     condenses final gaps if there is
     an overlap.
     """
-    regions_to_mask = []
-    potential_regions = []
+    gaps_to_mask = []
+    potential_gaps = []
 
     # check for each region if it is covered
     # by enough sequences
     for gap in gap_dict:
         if gap_dict[gap] > lower_cutoff:
-            potential_regions.append(gap)
+            potential_gaps.append(gap)
 
     # sort by start and stop
-    potential_regions = sorted(potential_regions)
+    potential_gaps = sorted(potential_gaps)
 
-    # get the min and max of overlapping regions
+    # get the min and max of overlapping gaps
     opened_region = []
-    regions_to_mask = []
-    for i, region in enumerate(potential_regions):
+    gaps_to_mask = []
+    for i, region in enumerate(potential_gaps):
         region = list(region)
         if opened_region:
             # write the opened region if the start of the current region
             # > opened_region[stop] and the last still opened region
-            if region[0] > opened_region[1] or i == len(potential_regions)-1:
-                regions_to_mask.append(opened_region)
+            if region[0] > opened_region[1] or i == len(potential_gaps)-1:
+                gaps_to_mask.append(opened_region)
                 opened_region = region
             else:
                 # 1 case: same start and further stop -> new stop
@@ -208,29 +211,29 @@ def find_regions_to_mask(gap_dict, lower_cutoff):
         else:
             opened_region = region
 
-    return regions_to_mask
+    return gaps_to_mask
 
-def clean_alignment(alignment, regions_to_mask):
+def clean_alignment(alignment, gaps_to_mask):
     """
     clean an alignment of large common deletions.
     """
     cleaned_alignment = []
-    mask = params["MASK_LENGTH"]*"N"
+    mask = config.MASK_LENGTH*"N"
 
     for sequence in alignment:
         start = 0
         masked_seq = str()
-        for region in regions_to_mask:
+        for region in gaps_to_mask:
             stop = region[0]
             masked_seq_temp = sequence[1][start:stop]
             # check if the deletion is at the start
             if len(masked_seq_temp) != 0:
                 masked_seq = (masked_seq + mask + masked_seq_temp)
             start = region[1]+1
-        if max(regions_to_mask)[1] < len(sequence[1])-1:
-        # append the last regions if it is not
+        if max(gaps_to_mask)[1] < len(sequence[1])-1:
+        # append the last gaps if it is not
         # the end of the sequence
-            start = max(regions_to_mask)[1]
+            start = max(gaps_to_mask)[1]
             stop = len(sequence[1])-1
             masked_seq_temp = sequence[1][start:stop]
             masked_seq = (masked_seq + mask + masked_seq_temp)
@@ -242,14 +245,14 @@ def clean_alignment(alignment, regions_to_mask):
 
     return cleaned_alignment
 
-def calculate_total_masked_gaps(regions_to_mask):
+def calculate_total_masked_gaps(gaps_to_mask):
     """
     calculates the cummulative length of gaps
     that were masked.
     """
-    if regions_to_mask:
+    if gaps_to_mask:
         sum_gaps = 0
-        for region in regions_to_mask:
+        for region in gaps_to_mask:
             sum_gaps += region[1]- region[0] + 1
         return sum_gaps
     else:
@@ -260,7 +263,7 @@ def determine_consensus_cutoff(n_seqs):
     """
     determine the cutoff to consider a nuc conserved
     """
-    return int(n_seqs*params["FREQUENCY_THRESHOLD"])
+    return int(n_seqs*config.FREQUENCY_THRESHOLD)
 
 def determine_nucleotide_counts(alignment, idx):
     """
@@ -280,9 +283,9 @@ def determine_nucleotide_counts(alignment, idx):
     to_delete = []
     temp_dict = {}
     for nucleotide in counter:
-        if nucleotide in ambig:
+        if nucleotide in config.ambig:
             to_delete.append(nucleotide)
-            permutations = ambig[nucleotide]
+            permutations = config.ambig[nucleotide]
             adjusted_freq = 1/len(permutations)
             for permutation in permutations:
                 if permutation in temp_dict:
@@ -308,11 +311,9 @@ def get_consensus_nucleotides(nucleotide_counts):
     """
     get a list of nucleotides for the consensus seq
     """
-
-    # define the consensus cut-off
+    n = 0
     consensus_cutoff = determine_consensus_cutoff(n_seqs)
 
-    n = 0
     consensus_nucleotides = []
     for nuc in nucleotide_counts:
         n += nucleotide_counts[nuc]
@@ -326,7 +327,7 @@ def get_ambiguous_char(nucleotides):
     """
     get ambiguous char from a list of nucleotides
     """
-    for ambiguous_nuc, permutations in ambig.items():
+    for ambiguous_nuc, permutations in config.ambig.items():
         if set(permutations) == set(nucleotides):
             return ambiguous_nuc
 
@@ -374,7 +375,7 @@ def find_conserved_regions(consensus_amb):
 
     seq = str(consensus_amb) + 2*'N'
     for idx, nuc in enumerate(seq):
-        if in_ambiguous_region and nuc in nucs:
+        if in_ambiguous_region and nuc in config.nucs:
             in_ambiguous_region = False
             # just entered a new stretch of non-ambiguous bases
             # may be time to open a new window
@@ -387,7 +388,7 @@ def find_conserved_regions(consensus_amb):
                 # than specified apart and last one counts all ambiguous
                 # chars. also track all amb chars after a window has opened
             continue
-        if nuc not in nucs:
+        if nuc not in config.nucs:
             if current_window:
                 in_ambiguous_region = True
                 amb_to_amb_len = idx - last_amb
@@ -395,12 +396,12 @@ def find_conserved_regions(consensus_amb):
                 # track previous amb pos only if current pos is not a N as this
                 # region is witeable
                     amb_pos.append(idx)
-                if current_window[1] >= params["ALLOWED_N_AMB"] or nuc == "N":
+                if current_window[1] >= config.ALLOWED_N_AMB or nuc == "N":
                 # check if there were too many previous amb char in subwindow
                 # and make it writable. Always make it writeable if N is
                 # reached
                     writable = True
-                    if amb_to_amb_len >= params["CONSERVED_MIN_LENGTH"] and nuc != "N":
+                    if amb_to_amb_len >= config.CONSERVED_MIN_LENGTH and nuc != "N":
                     # check if the last amb is sufficiently far, if yes keep
                     # window open and set amb counter to 0, reset also the
                     # list of amb positions and track only the current pos
@@ -413,7 +414,7 @@ def find_conserved_regions(consensus_amb):
                 if writable:
                     writable = False
                     window_length = idx-1-current_window[0]
-                    if window_length >= params["CONSERVED_MIN_LENGTH"]:
+                    if window_length >= config.CONSERVED_MIN_LENGTH:
                     # check if the writable window has a sufficient length.
                         conserved_regions.append([current_window[0], idx-1,])
                         windows_written += 1
@@ -456,10 +457,10 @@ def calc_temp(primer):
     calculate the melting temperature
     """
     return p3.calcTm(primer,
-        mv_conc = params["MV_CONC"],
-        dv_conc = params["DV_CONC"],
-        dntp_conc = params["DNTP_CONC"],
-        dna_conc = params["DNA_CONC"]
+        mv_conc = config.MV_CONC,
+        dv_conc = config.DV_CONC,
+        dntp_conc = config.DNTP_CONC,
+        dna_conc = config.DNA_CONC
         )
 
 def calc_hairpin(primer):
@@ -467,10 +468,10 @@ def calc_hairpin(primer):
     calculates hairpins
     """
     return p3.calcHairpin(primer,
-        mv_conc = params["MV_CONC"],
-        dv_conc = params["DV_CONC"],
-        dntp_conc = params["DNTP_CONC"],
-        dna_conc = params["DNA_CONC"]
+        mv_conc = config.MV_CONC,
+        dv_conc = config.DV_CONC,
+        dntp_conc = config.DNTP_CONC,
+        dna_conc = config.DNA_CONC
         )
 
 def calc_max_polyx(primer):
@@ -512,11 +513,11 @@ def three_prime_ambiguous(amb_primer):
     """
     determine if a sequence contains an ambiguous char at the 3'prime
     """
-    len_3_prime = params["MIN_3'_WITHOUT_AMB"]
+    len_3_prime = config.MIN_3_WITHOUT_AMB
 
     if len_3_prime != 0:
         for nuc in amb_primer[len(amb_primer)-len_3_prime:]:
-            if nuc not in nucs:
+            if nuc not in config.nucs:
                 is_amb = True
                 break
             else:
@@ -537,31 +538,31 @@ def calc_base_penalty(primer):
     size = len(primer)
 
     # TEMP penalty
-    if tm > params["PRIMER_TMP"][2]:
-        penalty += params["PRIMER_TM_PENALTY"]*(
-            tm - params["PRIMER_TMP"][2]
+    if tm > config.PRIMER_TMP[2]:
+        penalty += config.PRIMER_TM_PENALTY*(
+            tm - config.PRIMER_TMP[2]
             )
-    if tm < params["PRIMER_TMP"][2]:
-        penalty += params["PRIMER_TM_PENALTY"]*(
-            params["PRIMER_TMP"][2] - tm
+    if tm < config.PRIMER_TMP[2]:
+        penalty += config.PRIMER_TM_PENALTY*(
+            config.PRIMER_TMP[2] - tm
             )
     # GC penalty
-    if gc > params["PRIMER_GC_RANGE"][2]:
-        penalty += params["PRIMER_GC_PENALTY"]*(
-            gc - params["PRIMER_GC_RANGE"][2]
+    if gc > config.PRIMER_GC_RANGE[2]:
+        penalty += config.PRIMER_GC_PENALTY*(
+            gc - config.PRIMER_GC_RANGE[2]
             )
-    if gc < params["PRIMER_GC_RANGE"][2]:
-        penalty += params["PRIMER_GC_PENALTY"]*(
-            params["PRIMER_GC_RANGE"][2] - gc
+    if gc < config.PRIMER_GC_RANGE[2]:
+        penalty += config.PRIMER_GC_PENALTY*(
+            config.PRIMER_GC_RANGE[2] - gc
         )
     # SIZE penalty
-    if size > params["PRIMER_SIZE"][2]:
-        penalty += params["PRIMER_SIZE_PENALTY"]*(
-            size - params["PRIMER_SIZE"][2]
+    if size > config.PRIMER_SIZE[2]:
+        penalty += config.PRIMER_SIZE_PENALTY*(
+            size - config.PRIMER_SIZE[2]
         )
-    if size < params["PRIMER_SIZE"][2]:
-        penalty += params["PRIMER_SIZE_PENALTY"] * (
-            params["PRIMER_SIZE"][2] - size
+    if size < config.PRIMER_SIZE[2]:
+        penalty += config.PRIMER_SIZE_PENALTY * (
+            config.PRIMER_SIZE[2] - size
         )
 
     return penalty
@@ -585,10 +586,10 @@ def hardfilter_primers(primer):
     poly x and dinucleotide repeats.
     """
     return(
-        (params["PRIMER_TMP"][0] <= calc_temp(primer) <= params["PRIMER_TMP"][1]) and
-        (params["PRIMER_GC_RANGE"][0] <= calc_gc(primer) <= params["PRIMER_GC_RANGE"][1]) and
-        (calc_max_polyx(primer) <= params["MAX_POLYX"]) and
-        (calc_max_dinuc_repeats(primer) <= params["MAX_DINUC_REPEATS"])
+        (config.PRIMER_TMP[0] <= calc_temp(primer) <= config.PRIMER_TMP[1]) and
+        (config.PRIMER_GC_RANGE[0] <= calc_gc(primer) <= config.PRIMER_GC_RANGE[1]) and
+        (calc_max_polyx(primer) <= config.MAX_POLYX) and
+        (calc_max_dinuc_repeats(primer) <= config.MAX_DINUC_REPEATS)
     )
 
 def filter_primer_direction_specific(direction, primer):
@@ -602,7 +603,7 @@ def filter_primer_direction_specific(direction, primer):
     elif direction == "RIGHT":
         amb_kmer = rev_complement(ambiguous_consensus[primer[1]:primer[2]])
         hairpin_tm = calc_hairpin(rev_complement(primer[0])).tm
-    if hairpin_tm <= params["PRIMER_HAIRPIN"]:
+    if hairpin_tm <= config.PRIMER_HAIRPIN:
         if not three_prime_ambiguous(amb_kmer):
             return primer
 
@@ -650,24 +651,24 @@ def primer_per_base_mismatch(primer, alignment):
             current_primer_pos = primer[0][idx]
             if slice_nuc != current_primer_pos:
                 # check if the slice nucleotide is an amb pos
-                if slice_nuc in ambig:
+                if slice_nuc in config.ambig:
                     # check if the primer has an amb pos
-                    if current_primer_pos in ambig:
-                        slice_nuc_set = set(ambig[slice_nuc])
-                        pri_set = set(ambig[current_primer_pos])
+                    if current_primer_pos in config.ambig:
+                        slice_nuc_set = set(config.ambig[slice_nuc])
+                        pri_set = set(config.ambig[current_primer_pos])
                         # check if these sets have no overlap
                         # -> mismatch
                         if len(slice_nuc_set.intersection(pri_set)) == 0:
                             primer_per_base_mismatch[idx] += 1
                     # if no amb pos is in primer then check if primer nuc
                     # is part of the amb slice nuc
-                    elif current_primer_pos not in ambig[slice_nuc]:
-                        primer_per_base_mismatch[idx] += 1
+                    elif current_primer_pos not in config.ambig[slice_nuc]:
+                            primer_per_base_mismatch[idx] += 1
                 # check if primer has an amb pos but the current
                 # slice_nuc is not part of this amb nucleotide
-                elif current_primer_pos in ambig:
-                    if slice_nuc not in ambig[current_primer_pos]:
-                        primer_per_base_mismatch[idx] += 1
+                elif current_primer_pos in config.ambig:
+                        if slice_nuc not in config.ambig[current_primer_pos]:
+                            primer_per_base_mismatch[idx] += 1
                 # mismatch
                 else:
                     primer_per_base_mismatch[idx] += 1
@@ -685,63 +686,14 @@ def penalty_3_prime(direction, primer):
     """
     penalty = 0
 
-    for i in range(0,len(params["PRIMER_3'_PENALTY"])):
+    for i in range(0,len(config.PRIMER_3_PENALTY)):
         if direction == "RIGHT":
-            penalty += primer[5][i]*params["PRIMER_3'_PENALTY"][i]
+            penalty += primer[5][i]*config.PRIMER_3_PENALTY[i]
         elif direction == "LEFT":
-            penalty += primer[5][len(primer[0])-1-i]*params["PRIMER_3'_PENALTY"][i]
+            penalty += primer[5][len(primer[0])-1-i]*config.PRIMER_3_PENALTY[i]
 
     return(penalty)
 
-# PARAMETERS
-params = {
-    # params for cleaning deletions in alignment
-    "DELETION_LENGTH_MIN": 1,
-    "MASK_LENGTH": 1,
-    # params for consensus creation
-    "FREQUENCY_THRESHOLD": 0.91,
-    # params for conserved region search
-    "CONSERVED_MIN_LENGTH": 19,
-    "ALLOWED_N_AMB": 4,
-    # basic primer parameter (min, max, opt)
-    "PRIMER_TMP": (59.5, 62.5, 61),
-    "PRIMER_GC_RANGE": (30,55,50),
-    "PRIMER_SIZE": (19,34,22),
-    "PRIMER_HAIRPIN": 47,
-    "MAX_POLYX": 5,
-    "MAX_DINUC_REPEATS": 2,
-    "MIN_3'_WITHOUT_AMB": 2,
-    # PCR parameters
-    "MV_CONC": 100,
-    "DV_CONC": 2,
-    "DNTP_CONC": 0.8,
-    "DNA_CONC": 15,
-    # parameters for stability
-    "MAX_LOOP": 30,
-    "TEMP_C": 37,
-    # multipliers for base penalty scoring
-    "PRIMER_TM_PENALTY": 2,
-    "PRIMER_GC_PENALTY": 0.2,
-    "PRIMER_SIZE_PENALTY": 0.5,
-    # multiplier for 3' mismatch penalty
-    # the first entry is the penalty for
-    # mismatch directly at the 3'
-    "PRIMER_3'_PENALTY": (8,7,6),
-    # penalty max
-    "PRIMER_MAX_BASE_PENALTY": 8
-}
-nucs = set("atcg")
-ambig = {"r": ["a", "g"],
-        "y":["c", "t"],
-        "s":["g", "c"],
-        "w":["a", "t"],
-        "k":["g", "t"],
-        "m":["a", "c"],
-        "b":["c", "g", "t"],
-        "d":["a", "g", "t"],
-        "h":["a", "c", "t"],
-        "v":["a", "c", "g"],
-        "n":["a", "c", "g", "t"]}
 
 if __name__ == "__main__":
 
@@ -768,18 +720,18 @@ if __name__ == "__main__":
     unique_gaps = find_unique_gaps(all_gaps)
     if unique_gaps:
         gap_dic = create_gap_dictionary(unique_gaps, all_gaps)
-        regions_to_mask = find_regions_to_mask(gap_dic, gap_cutoff)
-        alignment_cleaned = clean_alignment(alignment_preprocessed, regions_to_mask)
+        gaps_to_mask = find_gaps_to_mask(gap_dic, gap_cutoff)
+        alignment_cleaned = clean_alignment(alignment_preprocessed, gaps_to_mask)
     else:
-        regions_to_mask = []
+        gaps_to_mask = []
         alignment_cleaned = alignment_preprocessed
 
     # progress update
     varvamp_progress(
         0.1,
         "Preprocessing alignment and cleaning gaps.",
-        str(len(regions_to_mask)) + " regions with " +
-        str(calculate_total_masked_gaps(regions_to_mask) ) + " nucleotides"
+        str(len(gaps_to_mask)) + " gaps with " +
+        str(calculate_total_masked_gaps(gaps_to_mask) ) + " nucleotides"
     )
 
     # create consensus sequences
@@ -808,7 +760,7 @@ if __name__ == "__main__":
     kmers = []
     for region in conserved_regions:
         sliced_seq = majority_consensus[region[0]:region[1]]
-        for kmer_size in range(params["PRIMER_SIZE"][0], params["PRIMER_SIZE"][1]+1):
+        for kmer_size in range(config.PRIMER_SIZE[0], config.PRIMER_SIZE[1]+1):
             kmers_temp = digest_seq(sliced_seq, kmer_size)
             # adjust the start and stop position of the kmers
             for kmer_temp in kmers_temp:
@@ -831,7 +783,7 @@ if __name__ == "__main__":
     for kmer in kmers:
         if hardfilter_primers(kmer[0]):
             base_penalty = calc_base_penalty(kmer[0])
-            if base_penalty <= params["PRIMER_MAX_BASE_PENALTY"]:
+            if base_penalty <= config.PRIMER_MAX_BASE_PENALTY:
                 if filter_primer_direction_specific("LEFT", kmer):
                     hardfiltered_left_kmers.append(
                         [kmer[0], kmer[1], kmer[2], base_penalty]
@@ -856,7 +808,9 @@ if __name__ == "__main__":
     varvamp_progress(
         0.5,
         "Filtering for primers.",
-        str(len(left_primer_candidates))+" fw and "+str(len(right_primer_candidates))+" rw primers"
+        str(len(left_primer_candidates)) +
+        " fw and " + str(len(right_primer_candidates)) +
+        " rw potential primers"
     )
 
     # final progress
@@ -872,9 +826,6 @@ if __name__ == "__main__":
 ########## TODO LIST ###########
 
 ##### Primer design #####
-# TODO: Adjust per base freq alignment parsing when consensus seq has been implemented
-# TODO: arg parsing
-# TODO: Create consensus sequences
 # TODO: Create graph
 # TODO: Score Degeneracy
 # TODO: Overthink the final max score
