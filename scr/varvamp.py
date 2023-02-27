@@ -111,7 +111,7 @@ def find_gaps_in_alignment(alignment):
 
 def find_unique_gaps(all_gaps):
     """
-    get unique gaps
+    get all unique gaps
     """
     result = list(set(gaps for gap_list in all_gaps for gaps in gap_list))
     return result
@@ -123,16 +123,21 @@ def find_internal_gaps(unique_gaps, gap):
     """
     overlapping_gaps = []
 
-    # for each unique gap check if the intersection with the
-    # gap is the same as the unique gap -> internal gap of
-    # the current gap
-    for unique_gap in unique_gaps:
-        unique_set = set(range(unique_gap[0], unique_gap[1]))
-        current_range = range(gap[0], gap[1])
-        intersection = unique_set.intersection(current_range)
-        if intersection:
-            if min(intersection) == unique_gap[0] and max(intersection)+1 == unique_gap[1]:
-                overlapping_gaps.append(unique_gap)
+    if gap[1] - gap[0] == 0:
+        # if the gap length = 1 there are
+        # no overlapping gaps
+        overlapping_gaps = gap
+    else:
+        # for each unique gap check if the intersection with the
+        # gap is the same as the unique gap -> internal gap of
+        # the current gap
+        for unique_gap in unique_gaps:
+            unique_set = set(range(unique_gap[0], unique_gap[1]))
+            current_range = range(gap[0], gap[1])
+            intersection = unique_set.intersection(current_range)
+            if intersection:
+                if min(intersection) == unique_gap[0] and max(intersection)+1 == unique_gap[1]:
+                    overlapping_gaps.append(unique_gap)
 
     return overlapping_gaps
 
@@ -164,7 +169,7 @@ def find_regions_to_mask(gap_dict):
     regions_to_mask = []
     potential_regions = []
     # invert frequency upper threshold
-    # to determine relevant gaps
+    # to determine relevant gaps to mask
     cutoff = len(all_gaps)*(1-params["FREQUENCY_UPPER"])
 
     # check for each region if it is covered
@@ -183,7 +188,7 @@ def find_regions_to_mask(gap_dict):
         region = list(region)
         if opened_region:
             # write the opened region if the start of the current region
-            # > opened_region[stop] and write last opened region at the end
+            # > opened_region[stop] and the last still opened region
             if region[0] > opened_region[1] or i == len(potential_regions)-1:
                 regions_to_mask.append(opened_region)
                 opened_region = region
@@ -211,18 +216,21 @@ def clean_alignment(alignment, regions_to_mask):
         masked_seq = str()
         for region in regions_to_mask:
             stop = region[0]
-            masked_seq_temp = str(sequence[1][start:stop])
+            masked_seq_temp = sequence[1][start:stop]
             # check if the deletion is at the start
             if len(masked_seq_temp) != 0:
                 masked_seq = (masked_seq + mask + masked_seq_temp)
             start = region[1]+1
-        if max(regions_to_mask)[1] < len(sequence[1]):
+        if max(regions_to_mask)[1] < len(sequence[1])-1:
         # append the last regions if it is not
         # the end of the sequence
             start = max(regions_to_mask)[1]
-            stop = len(sequence[1])
-            masked_seq_temp = str(sequence[1][start:stop])
+            stop = len(sequence[1])-1
+            masked_seq_temp = sequence[1][start:stop]
             masked_seq = (masked_seq + mask + masked_seq_temp)
+        else:
+        # append the mask to the end of the seq
+            masked_seq = masked_seq + mask
 
         cleaned_alignment.append([sequence[0], masked_seq])
 
@@ -480,7 +488,7 @@ def hardfilter_primers(primer):
         (params["PRIMER_GC_RANGE"][0] <= calc_gc(primer) <= params["PRIMER_GC_RANGE"][1]) and
         (calc_max_polyx(primer) <= params["MAX_POLYX"]) and
         (calc_max_dinuc_repeats(primer) <= params["MAX_DINUC_REPEATS"])
-        )
+    )
 
 def filter_primer_direction_specific(direction, primer):
     """
@@ -532,12 +540,12 @@ def primer_per_base_mismatch(primer, alignment):
     primer_per_base_mismatch = len(primer[0])*[0]
     aln_length = 0
 
-    for aln in AlignIO.read(open(alignment), "fasta"):
+    for sequence in AlignIO.read(open(alignment), "fasta"):
         # slice each sequence of the alignment for the primer
         # positions
-        aln_slice = aln.seq[primer[1]:primer[2]]
+        seq_slice = sequence.seq[primer[1]:primer[2]]
         # iterate over each nuc in slice
-        for idx, nuc in enumerate(aln_slice):
+        for idx, nuc in enumerate(seq_slice):
             # find the respective nuc to that of the slice
             current_primer_pos = primer[0][idx]
             if nuc != current_primer_pos:
@@ -588,8 +596,8 @@ def penalty_3_prime(direction, primer):
 # PARAMETERS
 params = {
     # params for cleaning deletions in alignment
-    "DELETION_LENGTH_MIN": 3,
-    "MASK_LENGTH": 3,
+    "DELETION_LENGTH_MIN": 1,
+    "MASK_LENGTH": 1,
     # params for consensus creation
     "FREQUENCY_UPPER": 0.79,
     # params for conserved region search
@@ -622,7 +630,7 @@ params = {
     # penalty max
     "PRIMER_MAX_BASE_PENALTY": 8
 }
-nucs = set("ATCGatcg")
+nucs = set("atcg")
 ambig = {"r": ["a", "g"],
         "y":["c", "t"],
         "s":["g", "c"],
@@ -667,10 +675,10 @@ if __name__ == "__main__":
     if unique_gaps:
         gap_dic = create_gap_dictionary(unique_gaps, all_gaps)
         regions_to_mask = find_regions_to_mask(gap_dic)
-        cleaned_alignment = clean_alignment(alignment_preprocessed, regions_to_mask)
+        alignment_cleaned = clean_alignment(alignment_preprocessed, regions_to_mask)
     else:
         regions_to_mask = []
-        cleaned_alignment = alignment_preprocessed
+        alignment_cleaned = alignment_preprocessed
 
     # progress update
     varvamp_progress(
@@ -753,13 +761,35 @@ if __name__ == "__main__":
     varvamp_progress(1)
 
 
+find_internal_gaps(unique_gaps, (8324,8324))
 
+sorted(unique_gaps)
+
+gap_dic[(8324,8324)]
+
+alignment[0][1][8324:]
+
+len(alignment[0][1])
+
+regions_to_mask
+alignment
+alignment_cleaned
+
+
+
+
+
+
+
+########## TODO LIST ###########
 
 ##### Primer design #####
 # TODO: Adjust per base freq alignment parsing when consensus seq has been implemented
 # TODO: arg parsing
 # TODO: Create consensus sequences
 # TODO: Create graph
+# TODO: Score Degeneracy
+# TODO: Overthink the final max score
 # TODO: Heuristic
 # TODO: Find best path
 
