@@ -40,7 +40,6 @@ def varvamp_progress(progress=0, job="", progress_text="", out=sys.stdout):
     block = int(round(barLength*progress))
 
     if progress == 0:
-
         print(
             f"\nStarting \033[31m\033[1mvarVAMP ◥(ºwº)◤\033[0m primer design\n",
             file = out,
@@ -70,8 +69,15 @@ def varvamp_progress(progress=0, job="", progress_text="", out=sys.stdout):
             )
 
 def raise_arg_errors(args):
+    """
+    checks arguments for non-valid input
+    """
+    # threshold error
     if threshold > 1 or threshold < 0:
-        print("\033[31m\033[1mError:\033[0m Threshold can only be set between 0-1", file=sys.stderr)
+        print(
+            "\033[31m\033[1mError:\033[0m Threshold can only be between 0-1",
+            file=sys.stderr
+        )
         sys.exit()
 
 # defs for alignment preprocessing and gap cleaning
@@ -118,10 +124,9 @@ def find_gaps_in_alignment(alignment):
 
     for seq in alignment:
         # find all gaps for all sequences with regular expression -{min}
-        all_gaps.append([
-            (gap.start(0), gap.end(0)-1) for gap in re.finditer(
-                "-{"+str(config.DELETION_LENGTH_MIN)+",}", seq[1])
-                ]
+        all_gaps.append(
+            [(gap.start(0), gap.end(0)-1) for gap in re.finditer(
+                "-{"+str(config.DELETION_LENGTH_MIN)+",}", seq[1])]
             )
 
     return all_gaps
@@ -218,7 +223,7 @@ def find_gaps_to_mask(gap_dict, lower_cutoff):
 
     return gaps_to_mask
 
-def clean_alignment(alignment, gaps_to_mask):
+def clean_gaps(alignment, gaps_to_mask):
     """
     clean an alignment of large common deletions.
     """
@@ -262,6 +267,26 @@ def calculate_total_masked_gaps(gaps_to_mask):
         return sum_gaps
     else:
         return 0
+
+def preprocess_and_clean_alignment(alignment_path):
+    """
+    proprocesses alignment and cleans gaps
+    """
+    alignment = read_alignment(alignment_path)
+    alignment_preprocessed = preprocess_alignment(alignment)
+    n_seqs = len(alignment)
+    gap_cutoff = determine_gap_cutoff(n_seqs)
+    all_gaps = find_gaps_in_alignment(alignment_preprocessed)
+    unique_gaps = find_unique_gaps(all_gaps)
+    if unique_gaps:
+        gap_dic = create_gap_dictionary(unique_gaps, all_gaps)
+        gaps_to_mask = find_gaps_to_mask(gap_dic, gap_cutoff)
+        alignment_cleaned = clean_gaps(alignment_preprocessed, gaps_to_mask)
+    else:
+        gaps_to_mask = []
+        alignment_cleaned = alignment_preprocessed
+
+    return alignment_cleaned, gaps_to_mask, n_seqs
 
 # defs for consensus creation
 def determine_consensus_cutoff(n_seqs):
@@ -361,7 +386,7 @@ def create_consensus_sequences(alignment):
 
         majority_consensus = majority_consensus + consensus_nucleotide[0]
 
-    return (majority_consensus, ambiguous_consensus)
+    return majority_consensus, ambiguous_consensus
 
 # defs for conserved region search:
 def find_conserved_regions(consensus_amb):
@@ -450,6 +475,31 @@ def mean_conserved(conserved_regions, consensus):
         sum += region[1]-region[0]
     return round(sum/len(consensus)*100,1)
 
+# defs for kmer production
+def digest_seq(seq, kmer_size):
+    """
+    digest the sequence into kmers
+    """
+    return[[seq[i:i+kmer_size],i, i+len(seq[i:i+kmer_size])] for i in range(len(seq)-kmer_size+1)]
+
+def produce_kmers(conserved_regions):
+    """
+    produce kmers for all conserved regions
+    """
+    kmers = []
+
+    for region in conserved_regions:
+        sliced_seq = majority_consensus[region[0]:region[1]]
+        for kmer_size in range(config.PRIMER_SIZE[0], config.PRIMER_SIZE[1]+1):
+            kmers_temp = digest_seq(sliced_seq, kmer_size)
+            # adjust the start and stop position of the kmers
+            for kmer_temp in kmers_temp:
+                kmer_temp[1] = kmer_temp[1]+region[0]
+                kmer_temp[2] = kmer_temp[2]+region[0]
+            kmers += kmers_temp
+
+    return kmers
+
 # defs for primer calculation and scoring
 def calc_gc(primer):
     """
@@ -461,22 +511,24 @@ def calc_temp(primer):
     """
     calculate the melting temperature
     """
-    return p3.calcTm(primer,
-        mv_conc = config.MV_CONC,
-        dv_conc = config.DV_CONC,
-        dntp_conc = config.DNTP_CONC,
-        dna_conc = config.DNA_CONC
+    return p3.calcTm(
+            primer,
+            mv_conc = config.MV_CONC,
+            dv_conc = config.DV_CONC,
+            dntp_conc = config.DNTP_CONC,
+            dna_conc = config.DNA_CONC
         )
 
 def calc_hairpin(primer):
     """
     calculates hairpins
     """
-    return p3.calcHairpin(primer,
-        mv_conc = config.MV_CONC,
-        dv_conc = config.DV_CONC,
-        dntp_conc = config.DNTP_CONC,
-        dna_conc = config.DNA_CONC
+    return p3.calcHairpin(
+            primer,
+            mv_conc = config.MV_CONC,
+            dv_conc = config.DV_CONC,
+            dntp_conc = config.DNTP_CONC,
+            dna_conc = config.DNA_CONC
         )
 
 def calc_max_polyx(primer):
@@ -571,13 +623,6 @@ def calc_base_penalty(primer):
         )
 
     return penalty
-
-# defs to generate RIGHT and LEFT primers:
-def digest_seq(seq, kmer_size):
-    """
-    digest the sequence into kmers
-    """
-    return[[seq[i:i+kmer_size],i, i+len(seq[i:i+kmer_size])] for i in range(len(seq)-kmer_size+1)]
 
 def rev_complement(seq):
     """
@@ -699,22 +744,66 @@ def penalty_3_prime(direction, primer):
 
     return(penalty)
 
+def find_potenital_primers(kmers):
+    """
+    hardfilter kmers and further filter
+    for potential primers
+    """
 
+    hardfiltered_left_kmers = []
+    hardfiltered_right_kmers = []
+
+    for kmer in kmers:
+        if hardfilter_primers(kmer[0]):
+            base_penalty = calc_base_penalty(kmer[0])
+            if base_penalty <= config.PRIMER_MAX_BASE_PENALTY:
+                if filter_primer_direction_specific("LEFT", kmer):
+                    hardfiltered_left_kmers.append(
+                        [kmer[0], kmer[1], kmer[2], base_penalty]
+                    )
+                if filter_primer_direction_specific("RIGHT", kmer):
+                    hardfiltered_right_kmers.append(
+                        [kmer[0], kmer[1], kmer[2], base_penalty]
+                    )
+
+    # filter kmers and complement kmers for possible primers
+    left_primer_candidates = find_lowest_scoring("LEFT", hardfiltered_left_kmers)
+    right_primer_candidates = find_lowest_scoring("RIGHT", hardfiltered_right_kmers)
+
+    # now calculate the mismatches for each position in the primer.
+    # based on this score calculate the 3' penalty and add to base penalty.
+    for direction, primer_candidates in [("LEFT", left_primer_candidates), ("RIGHT", right_primer_candidates)]:
+        for primer in primer_candidates:
+            primer.append(primer_per_base_mismatch(primer, alignment_cleaned))
+            primer[3] = primer[3] + penalty_3_prime(direction, primer)
+
+    return left_primer_candidates, right_primer_candidates
 
 if __name__ == "__main__":
 
     # arg parsing
     parser = argparse.ArgumentParser()
-    parser.add_argument("alignment", help="alignment to design primers on")
-    parser.add_argument("results", help="path for results dir")
-    parser.add_argument("-t", "--threshold", type = float, default=config.FREQUENCY_THRESHOLD, help="threshold for nucleotides in alignment to be considered conserved")
 
+    parser.add_argument(
+        "alignment",
+        help = "alignment to design primers on"
+    )
+    parser.add_argument(
+        "results",
+        help = "path for results dir"
+    )
+    parser.add_argument(
+        "-t",
+        "--threshold",
+        type = float,
+        default = config.FREQUENCY_THRESHOLD,
+        help = "threshold for nucleotides in alignment to be considered conserved"
+    )
+
+    # define argument variables and verify
     args = parser.parse_args()
-
-    # define argument variables
     results = args.results
     threshold = args.threshold
-    # check arguments
     raise_arg_errors(args)
 
     # ini progress
@@ -722,19 +811,7 @@ if __name__ == "__main__":
     varvamp_progress()
 
     # preprocess and clean alignment of gaps
-    alignment = read_alignment(args.alignment)
-    alignment_preprocessed = preprocess_alignment(alignment)
-    n_seqs = len(alignment)
-    gap_cutoff = determine_gap_cutoff(n_seqs)
-    all_gaps = find_gaps_in_alignment(alignment_preprocessed)
-    unique_gaps = find_unique_gaps(all_gaps)
-    if unique_gaps:
-        gap_dic = create_gap_dictionary(unique_gaps, all_gaps)
-        gaps_to_mask = find_gaps_to_mask(gap_dic, gap_cutoff)
-        alignment_cleaned = clean_alignment(alignment_preprocessed, gaps_to_mask)
-    else:
-        gaps_to_mask = []
-        alignment_cleaned = alignment_preprocessed
+    alignment_cleaned, gaps_to_mask, n_seqs = preprocess_and_clean_alignment(args.alignment)
 
     # progress update
     varvamp_progress(
@@ -745,9 +822,7 @@ if __name__ == "__main__":
     )
 
     # create consensus sequences
-    consensus_seqs = create_consensus_sequences(alignment_cleaned)
-    majority_consensus = consensus_seqs[0]
-    ambiguous_consensus = consensus_seqs[1]
+    majority_consensus, ambiguous_consensus = create_consensus_sequences(alignment_cleaned)
 
     # progress update
     varvamp_progress(
@@ -767,16 +842,7 @@ if __name__ == "__main__":
     )
 
     # produce kmers for all conserved regions
-    kmers = []
-    for region in conserved_regions:
-        sliced_seq = majority_consensus[region[0]:region[1]]
-        for kmer_size in range(config.PRIMER_SIZE[0], config.PRIMER_SIZE[1]+1):
-            kmers_temp = digest_seq(sliced_seq, kmer_size)
-            # adjust the start and stop position of the kmers
-            for kmer_temp in kmers_temp:
-                kmer_temp[1] = kmer_temp[1]+region[0]
-                kmer_temp[2] = kmer_temp[2]+region[0]
-            kmers += kmers_temp
+    kmers = produce_kmers(conserved_regions)
 
     # progress update
     varvamp_progress(
@@ -786,33 +852,8 @@ if __name__ == "__main__":
     )
 
     # hard filter kmers for gc, size, temp and base penatly
-    # filter also direction specific
-    hardfiltered_left_kmers = []
-    hardfiltered_right_kmers = []
-
-    for kmer in kmers:
-        if hardfilter_primers(kmer[0]):
-            base_penalty = calc_base_penalty(kmer[0])
-            if base_penalty <= config.PRIMER_MAX_BASE_PENALTY:
-                if filter_primer_direction_specific("LEFT", kmer):
-                    hardfiltered_left_kmers.append(
-                        [kmer[0], kmer[1], kmer[2], base_penalty]
-                        )
-                if filter_primer_direction_specific("RIGHT", kmer):
-                    hardfiltered_right_kmers.append(
-                        [kmer[0], kmer[1], kmer[2], base_penalty]
-                        )
-
-    # filter kmers and complement kmers for possible primers
-    left_primer_candidates = find_lowest_scoring("LEFT", hardfiltered_left_kmers)
-    right_primer_candidates = find_lowest_scoring("RIGHT", hardfiltered_right_kmers)
-
-    # now calculate the mismatches for each position in the primer.
-    # based on this score calculate the 3' penalty and add to base penalty.
-    for direction, primer_candidates in [("LEFT", left_primer_candidates), ("RIGHT", right_primer_candidates)]:
-        for primer in primer_candidates:
-            primer.append(primer_per_base_mismatch(primer, alignment_cleaned))
-            primer[3] = primer[3] + penalty_3_prime(direction, primer)
+    # filter direction specific
+    left_primer_candidates, right_primer_candidates = find_potenital_primers(kmers)
 
     # progress update
     varvamp_progress(
