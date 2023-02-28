@@ -28,10 +28,10 @@ from Bio import AlignIO
 from Bio.Seq import Seq
 
 # CUSTOM
-import config
+from scr import config
 
 # DEFINITIONS
-# def for logging and progress bar:
+# def for logging and raising errors:
 def varvamp_progress(progress=0, job="", progress_text="", out=sys.stdout):
     """
     progress bar and logging
@@ -69,6 +69,11 @@ def varvamp_progress(progress=0, job="", progress_text="", out=sys.stdout):
                 file = f
             )
 
+def raise_arg_errors(args):
+    if threshold > 1 or threshold < 0:
+        print("\033[31m\033[1mError:\033[0m Threshold can only be set between 0-1", file=sys.stderr)
+        sys.exit()
+
 # defs for alignment preprocessing and gap cleaning
 def read_alignment(alignment_path):
     """
@@ -87,7 +92,7 @@ def determine_gap_cutoff(n_seqs):
     determine the cutoff for gaps that
     are covered by at least n seqs
     """
-    return int(n_seqs*(1-config.FREQUENCY_THRESHOLD))
+    return int(n_seqs*(1-threshold))
 
 def preprocess_alignment(alignment):
     """
@@ -263,7 +268,7 @@ def determine_consensus_cutoff(n_seqs):
     """
     determine the cutoff to consider a nuc conserved
     """
-    return int(n_seqs*config.FREQUENCY_THRESHOLD)
+    return int(n_seqs*threshold)
 
 def determine_nucleotide_counts(alignment, idx):
     """
@@ -695,17 +700,22 @@ def penalty_3_prime(direction, primer):
     return(penalty)
 
 
+
 if __name__ == "__main__":
 
     # arg parsing
     parser = argparse.ArgumentParser()
     parser.add_argument("alignment", help="alignment to design primers on")
     parser.add_argument("results", help="path for results dir")
+    parser.add_argument("-t", "--threshold", type = float, default=config.FREQUENCY_THRESHOLD, help="threshold for nucleotides in alignment to be considered conserved")
 
     args = parser.parse_args()
 
-    # define output folder
+    # define argument variables
     results = args.results
+    threshold = args.threshold
+    # check arguments
+    raise_arg_errors(args)
 
     # ini progress
     start_time = time.process_time()
@@ -820,9 +830,6 @@ if __name__ == "__main__":
 
 
 
-
-
-
 ########## TODO LIST ###########
 
 ##### Primer design #####
@@ -847,4 +854,5 @@ if __name__ == "__main__":
 ##### Finalize #####
 # TODO: New Github repo with current dev branch
 # TODO: Error logging
+# TODO: Confirm config
 # TODO: readme and further documentation
