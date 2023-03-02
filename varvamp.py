@@ -1,6 +1,13 @@
 #!/usr/bin/env python
 """
-VARVAMP primer design for viruses with highly variable genomes.
+varVAMP primer design for viruses with highly variable genomes. varVAMP
+first preprocesses the alignment and then creates consensus sequences
+that can contain ambiguous characters. Then it searches for conserved
+regions as defined by a user defined amount of ambiguous charaters within
+the min length of a primer. The conserved regions of a consensus sequence
+containing the most prevalent nucleotide (no wobbels) is then digested into
+kmers that which are tested for potential primers. Each primer is given a
+penalty score.
 """
 
 # INFO
@@ -149,7 +156,6 @@ if __name__ == "__main__":
         args.allowed_ambiguous
     )
 
-
     # progress update
     varvamp_progress(
         0.3,
@@ -170,8 +176,7 @@ if __name__ == "__main__":
         str(len(kmers))+" kmers"
     )
 
-    # hard filter kmers for gc, size, temp and base penatly
-    # filter direction specific
+    # find potential primers
     left_primer_candidates, right_primer_candidates = primers.find_primers(
         kmers,
         ambiguous_consensus,
@@ -190,8 +195,8 @@ if __name__ == "__main__":
     # final progress
     varvamp_progress(1)
 
-
-
+    for primer in left_primer_candidates:
+        print(primer)
 
 
 ########## TODO LIST ###########
@@ -216,7 +221,6 @@ if __name__ == "__main__":
 # TODO: Create visualization of primer mismatches
 
 ##### Finalize #####
-# TODO: New Github repo with current dev branch
 # TODO: Error logging
 # TODO: Confirm config
 # TODO: readme and further documentation

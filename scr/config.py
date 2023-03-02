@@ -3,12 +3,9 @@ varVAMP config file
 """
 
 # PARAMETERS - can be changed
-# params for cleaning deletions in alignment
-DELETION_LENGTH_MIN = 1
-MASK_LENGTH = 1 # how many Ns are used to mask deletions
-# params for consensus creation
+# alignment and consensus creation threshold
 FREQUENCY_THRESHOLD = 0.91
-# params for conserved region search
+# allowed number of ambiguous chars in min primer length
 ALLOWED_N_AMB = 4
 # basic primer parameter (min, max, opt)
 PRIMER_TMP = (59.5, 62.5, 61)

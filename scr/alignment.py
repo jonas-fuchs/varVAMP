@@ -1,5 +1,11 @@
 """
-varVAMP functions for alignment processing
+varVAMP functions for alignment processing. Transcribes RNA to DNA
+and forces lower chars. Finds deletions that are present in a higher
+frequency than 1-threshold and mask these with an N. The rationale
+is that then no nucleotide position in the alignment has a gap that
+has a high enough frequency to be considered a consensus nucleotide.
+This N is later always a stop of a conserved region, and so no primers
+are later designed that span over the gap.
 """
 
 # BUILT-INS
@@ -9,7 +15,6 @@ import re
 from Bio import AlignIO
 from Bio.Seq import Seq
 
-from scr import config
 
 def read_alignment(alignment_path):
     """
@@ -49,7 +54,7 @@ def find_gaps_in_alignment(alignment):
         # find all gaps for all sequences with regular expression -{min}
         all_gaps.append(
             [(gap.start(0), gap.end(0)-1) for gap in re.finditer(
-                "-{"+str(config.DELETION_LENGTH_MIN)+",}", seq[1])]
+                "-{1,}", seq[1])]
             )
 
     return all_gaps
@@ -151,7 +156,6 @@ def clean_gaps(alignment, gaps_to_mask):
     clean an alignment of large common deletions.
     """
     cleaned_alignment = []
-    mask = config.MASK_LENGTH*"N"
 
     for sequence in alignment:
         start = 0
@@ -161,7 +165,7 @@ def clean_gaps(alignment, gaps_to_mask):
             masked_seq_temp = sequence[1][start:stop]
             # check if the deletion is at the start
             if len(masked_seq_temp) != 0:
-                masked_seq = (masked_seq + mask + masked_seq_temp)
+                masked_seq = (masked_seq + "N" + masked_seq_temp)
             start = region[1]+1
         if max(gaps_to_mask)[1] < len(sequence[1])-1:
         # append the last gaps if it is not
@@ -169,10 +173,10 @@ def clean_gaps(alignment, gaps_to_mask):
             start = max(gaps_to_mask)[1]
             stop = len(sequence[1])-1
             masked_seq_temp = sequence[1][start:stop]
-            masked_seq = (masked_seq + mask + masked_seq_temp)
+            masked_seq = (masked_seq + "N" + masked_seq_temp)
         else:
         # append the mask to the end of the seq
-            masked_seq = masked_seq + mask
+            masked_seq = masked_seq + "N"
 
         cleaned_alignment.append([sequence[0], masked_seq])
 

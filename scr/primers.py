@@ -1,3 +1,14 @@
+"""
+This contains the definitions for evaluating if a kmer is a potential
+primer (this is highly similar to primalscheme!). Importantly, the user
+can specify if the primer can contain ambiguous characters at the 3' end.
+If passing kmers have the same start only the kmer with the min base
+penalty is retained. Further the ambigous version of the primer is checked
+for mismatches against each sequence in the alignment. This allows to calculate
+the penalty score for mismatches at the 3' end that is added to the base penalty.
+"""
+
+
 from Bio.Seq import Seq
 import primer3 as p3
 
@@ -187,13 +198,14 @@ def find_lowest_scoring(direction, hardfiltered_kmers):
 
     return candidates
 
-def primer_per_base_mismatch(primer, alignment):
+def primer_per_base_mismatch(primer, alignment, ambiguous_consensus):
     """
     calculate for a given primer with [seq, start, stop]
     percent mismatch per primer pos with the alignment.
     considers if primer or sequences have an amb nuc.
     """
     primer_per_base_mismatch = len(primer[0])*[0]
+    ambigous_primer = ambiguous_consensus[primer[1]:primer[2]]
 
     for sequence in alignment:
         # slice each sequence of the alignment for the primer
@@ -201,7 +213,7 @@ def primer_per_base_mismatch(primer, alignment):
         seq_slice = sequence[1][primer[1]:primer[2]]
         for idx, slice_nuc in enumerate(seq_slice):
             # find the respective nuc to that of the slice
-            current_primer_pos = primer[0][idx]
+            current_primer_pos = ambigous_primer[idx]
             if slice_nuc != current_primer_pos:
                 # check if the slice nucleotide is an amb pos
                 if slice_nuc in config.ambig_nucs:
@@ -220,8 +232,8 @@ def primer_per_base_mismatch(primer, alignment):
                 # check if primer has an amb pos but the current
                 # slice_nuc is not part of this amb nucleotide
                 elif current_primer_pos in config.ambig_nucs:
-                        if slice_nuc not in config.ambig_nucs[current_primer_pos]:
-                            primer_per_base_mismatch[idx] += 1
+                    if slice_nuc not in config.ambig_nucs[current_primer_pos]:
+                        primer_per_base_mismatch[idx] += 1
                 # mismatch
                 else:
                     primer_per_base_mismatch[idx] += 1
@@ -285,7 +297,10 @@ def find_primers(kmers, ambiguous_consensus, alignment):
     # based on this score calculate the 3' penalty and add to base penalty.
     for direction, primer_candidates in [("LEFT", left_primer_candidates), ("RIGHT", right_primer_candidates)]:
         for primer in primer_candidates:
-            primer.append(primer_per_base_mismatch(primer, alignment))
+            primer.append(primer_per_base_mismatch(primer,
+                alignment,
+                ambiguous_consensus
+            ))
             primer[3] = primer[3] + penalty_3_prime(direction, primer)
 
     return left_primer_candidates, right_primer_candidates
