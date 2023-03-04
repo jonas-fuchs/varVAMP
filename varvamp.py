@@ -37,7 +37,6 @@ def varvamp_progress(progress=0, job="", progress_text="", out=sys.stdout):
     """
     progress bar and logging
     """
-    results = args.results
     barLength = 40
     block = int(round(barLength*progress))
 
@@ -115,11 +114,10 @@ if __name__ == "__main__":
 
     # define argument variables and verify
     args = parser.parse_args()
-    results = args.results
-
     raise_arg_errors(args)
 
     # ini progress
+    results = args.results
     start_time = time.process_time()
     varvamp_progress()
 
@@ -194,33 +192,3 @@ if __name__ == "__main__":
 
     # final progress
     varvamp_progress(1)
-
-    for primer in left_primer_candidates:
-        print(primer)
-
-
-########## TODO LIST ###########
-
-##### Primer design #####
-# TODO: Create graph
-# TODO: Score Degeneracy
-# TODO: Overthink the final max score
-# TODO: Heuristic
-# TODO: Find best path
-
-##### Output #####
-# TODO: write BED files for conserved regions
-# TODO: write consensus sequences
-# TODO: write all primers as BED
-# TODO: write final primers and amplicons (formatted for bioinformatic workflow)
-
-##### Reporting #####
-# TODO: Write used settings
-# TODO: Create html
-# TODO: Create plot for alignment entropy and primer location
-# TODO: Create visualization of primer mismatches
-
-##### Finalize #####
-# TODO: Error logging
-# TODO: Confirm config
-# TODO: readme and further documentation
