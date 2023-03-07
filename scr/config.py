@@ -4,7 +4,7 @@ varVAMP config file
 
 # CAN BE CHANGED
 # alignment and consensus creation threshold
-FREQUENCY_THRESHOLD = 0.91  # freq at which a nucleotide is considered conserved
+FREQUENCY_THRESHOLD = 0.9  # freq at which a nucleotide is considered conserved
 ALLOWED_N_AMB = 4  # allowed number of ambiguous chars in primer
 
 # basic primer parameters
@@ -67,11 +67,11 @@ EXPLANATION for penalty scoring
     if a 3' penalty is given the first in the tuple is multiplied with the
     freq mismatch at the very 3' end. the next is multiplied with the -1 freq
     and so on. increase penalty if you want to shift amplicons torwards best
-    3' matching. empty the tuple () if you do not care about 3' mismatches.
+    3' matching. set to 0 if you do not care about 3' mismatches.
 - permutation penalty:
     the number permutations of a primer is multiplied by the penalty. for
     example 24 permutations and a penalty of 0.1 will yield a penalty of
-    2.4. set to 0 if you do not care about permutations.
+    2.4. set to 0 if you do not care about the number of permutations.
 
 In the end all scores are summed up. the score for each amplicon is
 then the score of its LEFT + RIGHT primers.

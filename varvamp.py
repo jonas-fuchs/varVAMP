@@ -14,7 +14,7 @@ penalty score.
 __author__ = "Dr. Jonas Fuchs"
 __copyright__ = "Copyright 2023"
 __license__ = "GPL"
-__version__ = "0.1"
+__version__ = "0.2"
 __email__ = "jonas.fuchs@uniklinik-freiburg.de"
 __status__ = "Development"
 
@@ -31,6 +31,7 @@ from scr import alignment
 from scr import consensus
 from scr import conserved
 from scr import primers
+from scr import scheme
 
 
 # DEFs
@@ -42,11 +43,12 @@ def varvamp_progress(progress=0, job="", progress_text="", out=sys.stdout):
     block = int(round(barLength*progress))
 
     if progress == 0:
-        print(
-            "\nStarting \033[31m\033[1mvarVAMP ◥(ºwº)◤\033[0m primer design\n",
-            file=out,
-            flush=True
-        )
+        if args.console:
+            print(
+                "\nStarting \033[31m\033[1mvarVAMP ◥(ºwº)◤\033[0m primer design\n",
+                file=out,
+                flush=True
+            )
         if not os.path.exists(results):
             os.makedirs(results)
         else:
@@ -58,12 +60,13 @@ def varvamp_progress(progress=0, job="", progress_text="", out=sys.stdout):
         if progress == 1:
             stop_time = str(round(time.process_time() - start_time, 2))
             progress_text = "all done \n\n\rvarVAMP created an amplicon scheme in " + stop_time + " sec!\n"
-            job = "Finalizing output"
-        print(
-            "\rJob:\t\t " + job + "\nProgress: \t [{0}] {1}%".format("█"*block + "-"*(barLength-block), progress*100) + "\t" + progress_text,
-            file=out,
-            flush=True
-        )
+            job = "Finalizing output."
+        if args.console:
+            print(
+                "\rJob:\t\t " + job + "\nProgress: \t [{0}] {1}%".format("█"*block + "-"*(barLength-block), progress*100) + "\t" + progress_text,
+                file=out,
+                flush=True
+            )
         with open(results+"/varvamp_log.txt", 'a') as f:
             print(
                 "\rJob:\t" + job + "\nResult:\t" + progress_text,
@@ -114,11 +117,15 @@ if __name__ == "__main__":
         default=config.ALLOWED_N_AMB,
         help="number of ambiguous characters that are allowed within a primer"
     )
-
+    parser.add_argument(
+        "--console",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="show varvamp console output"
+    )
     # define argument variables and verify
     args = parser.parse_args()
     raise_arg_errors(args)
-
     # ini progress
     results = args.results
     start_time = time.process_time()
@@ -191,6 +198,47 @@ if __name__ == "__main__":
         str(len(left_primer_candidates))
         + " fw and " + str(len(right_primer_candidates))
         + " rw potential primers"
+    )
+
+    # find best primers
+    left_primer_candidates, right_primer_candidates = primers.find_best_primers(
+        left_primer_candidates,
+        right_primer_candidates
+    )
+
+    # progress update
+    varvamp_progress(
+        0.6,
+        "Considering only high scoring primers.",
+        str(len(left_primer_candidates))
+        + " fw and " + str(len(right_primer_candidates))
+        + " rw primers"
+    )
+
+    amplicons = scheme.find_amplicons(
+        left_primer_candidates,
+        right_primer_candidates
+    )
+    amplicon_graph = scheme.create_amplicon_graph(amplicons)
+
+    # progress update
+    varvamp_progress(
+        0.7,
+        "Finding potential amplicons.",
+        str(len(amplicons)) + " potential amplicons"
+    )
+
+    coverage, amplicon_scheme = scheme.find_best_covering_scheme(
+        amplicons,
+        amplicon_graph
+    )
+
+    varvamp_progress(
+        0.8,
+        "Creating amplicon scheme.",
+        str(round(coverage/len(ambiguous_consensus)*100, 2))
+        + "% total coverage with " + str(len(amplicon_scheme))
+        + " amplioncs"
     )
 
     # final progress
