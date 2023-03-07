@@ -13,6 +13,7 @@ is found to generate a consensus sequence with wobble nucleotides.
 import collections
 from scr import config
 
+
 def determine_nucleotide_counts(alignment, idx):
     """
     count the number of each nucleotides at
@@ -53,7 +54,8 @@ def determine_nucleotide_counts(alignment, idx):
             else:
                 counter[nucleotide] = temp_dict[nucleotide]
 
-    return dict(sorted(counter.items(), key=lambda x:x[1], reverse = True))
+    return dict(sorted(counter.items(), key=lambda x: x[1], reverse=True))
+
 
 def get_consensus_nucleotides(nucleotide_counts, consensus_cutoff):
     """
@@ -70,6 +72,7 @@ def get_consensus_nucleotides(nucleotide_counts, consensus_cutoff):
 
     return consensus_nucleotides
 
+
 def get_ambiguous_char(nucleotides):
     """
     get ambiguous char from a list of nucleotides
@@ -77,6 +80,7 @@ def get_ambiguous_char(nucleotides):
     for ambiguous, permutations in config.ambig_nucs.items():
         if set(permutations) == set(nucleotides):
             return ambiguous
+
 
 def create_consensus(alignment, threshold):
     """
@@ -96,7 +100,7 @@ def create_consensus(alignment, threshold):
 
     # built consensus sequences
     for idx in range(length_consensus):
-        nucleotide_counts = determine_nucleotide_counts(alignment,idx)
+        nucleotide_counts = determine_nucleotide_counts(alignment, idx)
         consensus_nucleotide = get_consensus_nucleotides(
             nucleotide_counts,
             consensus_cutoff

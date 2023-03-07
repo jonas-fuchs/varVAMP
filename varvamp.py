@@ -32,6 +32,7 @@ from scr import consensus
 from scr import conserved
 from scr import primers
 
+
 # DEFs
 def varvamp_progress(progress=0, job="", progress_text="", out=sys.stdout):
     """
@@ -42,9 +43,9 @@ def varvamp_progress(progress=0, job="", progress_text="", out=sys.stdout):
 
     if progress == 0:
         print(
-            f"\nStarting \033[31m\033[1mvarVAMP ◥(ºwº)◤\033[0m primer design\n",
-            file = out,
-            flush = True
+            "\nStarting \033[31m\033[1mvarVAMP ◥(ºwº)◤\033[0m primer design\n",
+            file=out,
+            flush=True
         )
         if not os.path.exists(results):
             os.makedirs(results)
@@ -59,15 +60,16 @@ def varvamp_progress(progress=0, job="", progress_text="", out=sys.stdout):
             progress_text = "all done \n\n\rvarVAMP created an amplicon scheme in " + stop_time + " sec!\n"
             job = "Finalizing output"
         print(
-            f"\rJob:\t\t " + job + "\nProgress: \t [{0}] {1}%".format("█"*block + "-"*(barLength-block), progress*100) + "\t" + progress_text,
-            file = out,
-            flush= True
+            "\rJob:\t\t " + job + "\nProgress: \t [{0}] {1}%".format("█"*block + "-"*(barLength-block), progress*100) + "\t" + progress_text,
+            file=out,
+            flush=True
         )
         with open(results+"/varvamp_log.txt", 'a') as f:
             print(
                 "\rJob:\t" + job + "\nResult:\t" + progress_text,
-                file = f
+                file=f
             )
+
 
 def raise_arg_errors(args):
     """
@@ -81,6 +83,7 @@ def raise_arg_errors(args):
     if args.allowed_ambiguous > 4:
         print("\n\033[31m\033[1mWARNING:\033[0m High number of ambiguous nucleotides in primer leads to a high degeneracy. Condider reducing.")
 
+
 if __name__ == "__main__":
 
     # arg parsing
@@ -91,25 +94,25 @@ if __name__ == "__main__":
 
     parser.add_argument(
         "alignment",
-        help = "alignment to design primers on"
+        help="alignment to design primers on"
     )
     parser.add_argument(
         "results",
-        help = "path for results dir"
+        help="path for results dir"
     )
     parser.add_argument(
         "-t",
         "--threshold",
-        type = float,
-        default = config.FREQUENCY_THRESHOLD,
-        help = "threshold for nucleotides in alignment to be considered conserved"
+        type=float,
+        default=config.FREQUENCY_THRESHOLD,
+        help="threshold for nucleotides in alignment to be considered conserved"
     )
     parser.add_argument(
         "-a",
         "--allowed-ambiguous",
-        type = int,
-        default = config.ALLOWED_N_AMB,
-        help = "number of ambiguous characters that are allowed within a primer"
+        type=int,
+        default=config.ALLOWED_N_AMB,
+        help="number of ambiguous characters that are allowed within a primer"
     )
 
     # define argument variables and verify
@@ -131,8 +134,8 @@ if __name__ == "__main__":
     varvamp_progress(
         0.1,
         "Preprocessing alignment and cleaning gaps.",
-        str(len(gaps_to_mask)) + " gaps with " +
-        str(alignment.calculate_total_masked_gaps(gaps_to_mask)) + " nucleotides"
+        str(len(gaps_to_mask)) + " gaps with "
+        + str(alignment.calculate_total_masked_gaps(gaps_to_mask)) + " nucleotides"
     )
 
     # create consensus sequences
@@ -185,9 +188,9 @@ if __name__ == "__main__":
     varvamp_progress(
         0.5,
         "Filtering for primers.",
-        str(len(left_primer_candidates)) +
-        " fw and " + str(len(right_primer_candidates)) +
-        " rw potential primers"
+        str(len(left_primer_candidates))
+        + " fw and " + str(len(right_primer_candidates))
+        + " rw potential primers"
     )
 
     # final progress

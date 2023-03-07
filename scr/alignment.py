@@ -28,6 +28,7 @@ def read_alignment(alignment_path):
 
     return alignment_list
 
+
 def preprocess(alignment):
     """
     force nucleotides to lower and
@@ -44,6 +45,7 @@ def preprocess(alignment):
 
     return preprocessed_alignment
 
+
 def find_gaps_in_alignment(alignment):
     """
     find all gaps for each sequence in alignment
@@ -59,12 +61,14 @@ def find_gaps_in_alignment(alignment):
 
     return all_gaps
 
+
 def find_unique_gaps(all_gaps):
     """
     get all unique gaps
     """
     result = list(set(gaps for gap_list in all_gaps for gaps in gap_list))
     return result
+
 
 def find_internal_gaps(unique_gaps, gap):
     """
@@ -91,6 +95,7 @@ def find_internal_gaps(unique_gaps, gap):
 
     return overlapping_gaps
 
+
 def create_gap_dictionary(unique_gaps, all_gaps):
     """
     creates a dictionary with gap counts.
@@ -109,6 +114,7 @@ def create_gap_dictionary(unique_gaps, all_gaps):
                     gap_dict[overlapping_gap] = 1
 
     return gap_dict
+
 
 def find_gaps_to_mask(gap_dict, cutoff):
     """
@@ -151,6 +157,7 @@ def find_gaps_to_mask(gap_dict, cutoff):
 
     return gaps_to_mask
 
+
 def clean_gaps(alignment, gaps_to_mask):
     """
     clean an alignment of large common deletions.
@@ -168,19 +175,20 @@ def clean_gaps(alignment, gaps_to_mask):
                 masked_seq = (masked_seq + "N" + masked_seq_temp)
             start = region[1]+1
         if max(gaps_to_mask)[1] < len(sequence[1])-1:
-        # append the last gaps if it is not
-        # the end of the sequence
+            # append the last gaps if it is not
+            # the end of the sequence
             start = max(gaps_to_mask)[1]
             stop = len(sequence[1])-1
             masked_seq_temp = sequence[1][start:stop]
             masked_seq = (masked_seq + "N" + masked_seq_temp)
         else:
-        # append the mask to the end of the seq
+            # append the mask to the end of the seq
             masked_seq = masked_seq + "N"
 
         cleaned_alignment.append([sequence[0], masked_seq])
 
     return cleaned_alignment
+
 
 def calculate_total_masked_gaps(gaps_to_mask):
     """
@@ -190,10 +198,11 @@ def calculate_total_masked_gaps(gaps_to_mask):
     if gaps_to_mask:
         sum_gaps = 0
         for region in gaps_to_mask:
-            sum_gaps += region[1]- region[0] + 1
+            sum_gaps += region[1] - region[0] + 1
         return sum_gaps
     else:
         return 0
+
 
 def process_alignment(alignment_path, threshold):
     """

@@ -213,18 +213,15 @@ def find_lowest_scoring(direction, hardfiltered_kmers):
     if direction == "LEFT":
         start = 1   # start index of the forward primer
     elif direction == "RIGHT":
-        start = 2   # stop index asit is the start of the reverse primer
+        start = 2   # stop index as it is the start of the reverse primer
     hardfiltered_kmers.sort(key = lambda x:(x[start], x[3]))
 
     # pick the lowest scoring primer for primers that have the same start
-    primer_index = 1
     prev_start = -1
     for primer in hardfiltered_kmers:
         if primer[start] != prev_start:
-            primer.append(direction+"_"+str(primer_index))
             candidates.append(primer)
             prev_start = primer[start]
-            primer_index += 1
 
     return candidates
 
@@ -301,9 +298,9 @@ def get_penalty_3_prime(direction, primer):
 
     for i in range(0,len(config.PRIMER_3_PENALTY)):
         if direction == "RIGHT":
-            penalty += primer[5][i]*config.PRIMER_3_PENALTY[i]
+            penalty += primer[4][i]*config.PRIMER_3_PENALTY[i]
         elif direction == "LEFT":
-            penalty += primer[5][len(primer[0])-1-i]*config.PRIMER_3_PENALTY[i]
+            penalty += primer[4][len(primer[0])-1-i]*config.PRIMER_3_PENALTY[i]
 
     return(penalty)
 
@@ -350,9 +347,77 @@ def find_primers(kmers, ambiguous_consensus, alignment):
                 alignment,
                 ambiguous_consensus
             ))
-            primer.append(get_penalty_3_prime(direction, primer))
-            primer.append(get_permutation_penalty(
+            primer[3] += get_penalty_3_prime(direction, primer) #add 3 prime penalty to base penalty
+            primer[3] += get_permutation_penalty( #also add permutation penalty
                 ambiguous_consensus[primer[1]:primer[2]]
-            ))
+            )
+
+    return left_primer_candidates, right_primer_candidates
+
+
+def create_primer_dictionary(primer_candidates, direction):
+    """
+    creates a primer dictionary from primer list
+    """
+    primer_dict = {}
+    primer_idx = 0
+
+    for primer in primer_candidates:
+        primer_name = direction + "_" + str(primer_idx)
+        primer_dict[primer_name] = primer
+        primer_idx += 1
+
+    return primer_dict
+
+def find_best_primers(left_primer_candidates, right_primer_candidates):
+    """
+    Primer candidates might be overlapping. Here all primers are found within a
+    window that is defined by the start of the first primer of the window and its
+    stop + maximum primer length. From this list the best scoring primer is choosen.
+    This reduces the complexity of the later calculated amplicon graph while
+    retaining well scoring primers within a reasonable range.
+    """
+    for direction, primer_candidates in [("LEFT", left_primer_candidates), ("RIGHT", right_primer_candidates)]:
+        # ini lists
+        primers_to_retain = []
+        primers_temp = []
+        writeable = False
+        # set the first search window in relation to the first primer
+        best_scoring = [0,primer_candidates[0][3]]
+        search_window = [primer_candidates[0][1], primer_candidates[0][2]+config.PRIMER_SIZES[1]]
+
+        for idx, primer in enumerate(primer_candidates):
+            # append primers if their start is within the current window
+            if primer[1] in range(search_window[0], search_window[1]):
+                primers_temp.append([idx, primer[3]])
+                writeable = False
+                # if the end of the primer list is reached, make the appended
+                # primers writeable
+                if idx == len(primer_candidates)-1:
+                    writeable = True
+            else:
+                writeable = True
+
+            if writeable:
+                # check in the temporary list of primers for the one with
+                # the best score...
+                for primer_temp in primers_temp:
+                    if primer_temp[1] < best_scoring[1]:
+                        best_scoring = primer_temp
+                # ... and append to final list
+                primers_to_retain.append(best_scoring[0])
+                # if the end has not been reached, initialize a new window
+                if idx != len(primer_candidates)-1:
+                    search_window = [primer[1], primer[2]+config.PRIMER_SIZES[1]]
+                    best_scoring = [idx, primer[3]]
+                    primers_temp = [[idx, primer[3]]]
+
+        # subset the primer candidate list with the remembered indices
+        subset = [primer_candidates[i] for i in primers_to_retain]
+        # and put these in the right lists
+        if direction == "LEFT":
+            left_primer_candidates = create_primer_dictionary(subset, direction)
+        if direction == "RIGHT":
+            right_primer_candidates = create_primer_dictionary(subset, direction)
 
     return left_primer_candidates, right_primer_candidates
