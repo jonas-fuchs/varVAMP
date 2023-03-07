@@ -55,7 +55,7 @@ class Graph(object):
         return self.graph[node1][node2]
 
 
-def find_amplicons(left_primer_candidates, right_primer_candidates):
+def find_amplicons(left_primer_candidates, right_primer_candidates, opt_len, max_len, min_overlap):
     """
     finds all possible amplicons, creates a dictionary
     """
@@ -67,11 +67,11 @@ def find_amplicons(left_primer_candidates, right_primer_candidates):
         for right in right_primer_candidates:
             right_primer = right_primer_candidates[right]
             amplicon_length = right_primer[2] - left_primer[1]
-            if config.OPT_AMPLICON_LENGTH <= amplicon_length <= config.MAX_AMPLICON_LENGTH:
+            if opt_len <= amplicon_length <= max_len:
                 if primers.calc_heterodimer(right_primer[0], left_primer[0]).tm <= config.MAX_DIMER_TMP:
                     # calculate length dependend amplicon costs as the cumulative primer
                     # score multiplied by the fold length of the optimal length.
-                    amplicon_costs = (right_primer[3] + left_primer[3])*(amplicon_length/config.OPT_AMPLICON_LENGTH)
+                    amplicon_costs = (right_primer[3] + left_primer[3])*(amplicon_length/min_overlap)
                     amplicon_name = "amplicon_"+str(amplicon_number)
                     amplicon_dict[amplicon_name] = [
                         left_primer[1],  # start
@@ -86,7 +86,7 @@ def find_amplicons(left_primer_candidates, right_primer_candidates):
     return amplicon_dict
 
 
-def create_amplicon_graph(amplicons):
+def create_amplicon_graph(amplicons, min_overlap):
     """
     creates the amplicon graph.
     """
@@ -96,7 +96,7 @@ def create_amplicon_graph(amplicons):
 
     # add the maximum len of a primer to ensure that possible amplicon starts
     # before the min overlap
-    min_overlap = config.MIN_OVERLAP + config.PRIMER_SIZES[2]
+    min_overlap = min_overlap + config.PRIMER_SIZES[2]
 
     for current in amplicons:
         # remember all vertices

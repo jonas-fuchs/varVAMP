@@ -8,12 +8,14 @@ for mismatches against each sequence in the alignment. This allows to calculate
 the penalty score for mismatches at the 3' end. Also the number of permutations
 is calculated and multiplied by the permutation penalty.
 """
-
+# BUILT-INS
 import itertools
 
+# LIBS
 from Bio.Seq import Seq
 import primer3 as p3
 
+# varVAMP
 from scr import config
 
 
@@ -295,12 +297,12 @@ def get_penalty_3_prime(direction, primer):
     the higher the penalty.
     """
     penalty = 0
-
-    for i in range(0,len(config.PRIMER_3_PENALTY)):
-        if direction == "RIGHT":
-            penalty += primer[4][i]*config.PRIMER_3_PENALTY[i]
-        elif direction == "LEFT":
-            penalty += primer[4][len(primer[0])-1-i]*config.PRIMER_3_PENALTY[i]
+    if config.PRIMER_3_PENALTY:
+        for i in range(0,len(config.PRIMER_3_PENALTY)):
+            if direction == "RIGHT":
+                penalty += primer[4][i]*config.PRIMER_3_PENALTY[i]
+            elif direction == "LEFT":
+                penalty += primer[4][len(primer[0])-1-i]*config.PRIMER_3_PENALTY[i]
 
     return(penalty)
 

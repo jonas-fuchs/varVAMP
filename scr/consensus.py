@@ -9,8 +9,10 @@ nucleotide is used for the majority consensus sequence. If the list
 contains multiple nucleotides the appropriate ambiguous character
 is found to generate a consensus sequence with wobble nucleotides.
 """
-
+# BUILT-INS
 import collections
+
+# varVAMP
 from scr import config
 
 

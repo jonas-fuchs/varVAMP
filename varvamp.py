@@ -80,12 +80,23 @@ def raise_arg_errors(args):
     """
     # threshold error
     if args.threshold > 1 or args.threshold < 0:
-        sys.exit("\n\033[31m\033[1mERROR:\033[0m Threshold can only be between 0-1\n")
+        sys.exit("\n\033[31m\033[1mERROR:\033[0m threshold can only be between 0-1\n")
     if args.allowed_ambiguous < 0:
-        sys.exit("\n\033[31m\033[1mERROR:\033[0m Set the number of ambiguous nucleotides >= 0.\n")
+        sys.exit("\n\033[31m\033[1mERROR:\033[0m set the number of ambiguous nucleotides >= 0.\n")
     if args.allowed_ambiguous > 4:
-        print("\n\033[31m\033[1mWARNING:\033[0m High number of ambiguous nucleotides in primer leads to a high degeneracy. Condider reducing.")
-
+        print("\n\033[31m\033[1mWARNING:\033[0m high number of ambiguous nucleotides in primer leads to a high degeneracy. Condider reducing.")
+    if args.opt_length > args.max_length:
+        sys.exit("\n\033[31m\033[1mERROR:\033[0m Optimal length can not be higher than the maximum amplicon length.\n")
+    if args.opt_length < 0 or args.max_length < 0:
+        sys.exit("\n\033[31m\033[1mERROR:\033[0m amplicon lengths can not be negative.\n")
+    if args.opt_length < 200 or args.max_length < 200:
+        print("\n\033[31m\033[1mWARNING:\033[0m your amplicon lengths might be to small. Consider increasing")
+    if args.overlap < 0:
+        sys.exit("\n\033[31m\033[1mERROR:\033[0m overlap size can not be negative.\n")
+    if args.overlap < 50:
+        print("\n\033[31m\033[1mWARNING:\033[0m small overlaps might hinder downstream analyses. Consider increasing.")
+    if args.overlap > args.opt_length:
+        sys.exit("\n\033[31m\033[1mERROR:\033[0m overlaps can not be higher than the length of amplicons.\n")
 
 if __name__ == "__main__":
 
@@ -104,6 +115,27 @@ if __name__ == "__main__":
         help="path for results dir"
     )
     parser.add_argument(
+        "-ol",
+        "--opt-length",
+        help="optimal length of the amplicons",
+        type=int,
+        default=config.OPT_AMPLICON_LENGTH
+    )
+    parser.add_argument(
+        "-ml",
+        "--max-length",
+        help="max length of the amplicons",
+        type=int,
+        default=config.MAX_AMPLICON_LENGTH
+    )
+    parser.add_argument(
+        "-o",
+        "--overlap",
+        type=float,
+        default=config.MIN_OVERLAP,
+        help="min overlap of the amplicons"
+    )
+    parser.add_argument(
         "-t",
         "--threshold",
         type=float,
@@ -117,6 +149,7 @@ if __name__ == "__main__":
         default=config.ALLOWED_N_AMB,
         help="number of ambiguous characters that are allowed within a primer"
     )
+
     parser.add_argument(
         "--console",
         action=argparse.BooleanOptionalAction,
@@ -131,6 +164,15 @@ if __name__ == "__main__":
     start_time = time.process_time()
     varvamp_progress()
 
+    # check if config is ok
+    config.confirm_config()
+
+    varvamp_progress(
+        0.1,
+        "Checking config.",
+        "config file is ok"
+    )
+
     # preprocess and clean alignment of gaps
     alignment_cleaned, gaps_to_mask = alignment.process_alignment(
         args.alignment,
@@ -139,7 +181,7 @@ if __name__ == "__main__":
 
     # progress update
     varvamp_progress(
-        0.1,
+        0.2,
         "Preprocessing alignment and cleaning gaps.",
         str(len(gaps_to_mask)) + " gaps with "
         + str(alignment.calculate_total_masked_gaps(gaps_to_mask)) + " nucleotides"
@@ -153,7 +195,7 @@ if __name__ == "__main__":
 
     # progress update
     varvamp_progress(
-        0.2,
+        0.3,
         "Creating consensus sequences.",
         "length of the consensus is " + str(len(majority_consensus)) + " nt"
     )
@@ -166,7 +208,7 @@ if __name__ == "__main__":
 
     # progress update
     varvamp_progress(
-        0.3,
+        0.4,
         "Finding conserved regions.",
         str(conserved.mean(conserved_regions, majority_consensus))+"% conserved"
     )
@@ -179,7 +221,7 @@ if __name__ == "__main__":
 
     # progress update
     varvamp_progress(
-        0.4,
+        0.5,
         "Digesting into kmers.",
         str(len(kmers))+" kmers"
     )
@@ -193,7 +235,7 @@ if __name__ == "__main__":
 
     # progress update
     varvamp_progress(
-        0.5,
+        0.6,
         "Filtering for primers.",
         str(len(left_primer_candidates))
         + " fw and " + str(len(right_primer_candidates))
@@ -208,7 +250,7 @@ if __name__ == "__main__":
 
     # progress update
     varvamp_progress(
-        0.6,
+        0.7,
         "Considering only high scoring primers.",
         str(len(left_primer_candidates))
         + " fw and " + str(len(right_primer_candidates))
@@ -217,13 +259,16 @@ if __name__ == "__main__":
 
     amplicons = scheme.find_amplicons(
         left_primer_candidates,
-        right_primer_candidates
+        right_primer_candidates,
+        args.opt_length,
+        args.max_length,
+        args.overlap
     )
-    amplicon_graph = scheme.create_amplicon_graph(amplicons)
+    amplicon_graph = scheme.create_amplicon_graph(amplicons, args.overlap)
 
     # progress update
     varvamp_progress(
-        0.7,
+        0.8,
         "Finding potential amplicons.",
         str(len(amplicons)) + " potential amplicons"
     )
@@ -234,7 +279,7 @@ if __name__ == "__main__":
     )
 
     varvamp_progress(
-        0.8,
+        0.9,
         "Creating amplicon scheme.",
         str(round(coverage/len(ambiguous_consensus)*100, 2))
         + "% total coverage with " + str(len(amplicon_scheme))
