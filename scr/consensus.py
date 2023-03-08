@@ -128,12 +128,3 @@ def create_consensus(alignment, threshold):
         majority_consensus = majority_consensus + consensus_nucleotide[0]
 
     return majority_consensus, ambiguous_consensus
-
-
-def write_fasta(out_dir, seq_id, seq):
-    """
-    write fasta files
-    """
-    out = f"{out_dir}{seq_id}.fasta"
-    with open(out, 'w') as o:
-        print(f">{seq_id}\t{seq}", file=o)

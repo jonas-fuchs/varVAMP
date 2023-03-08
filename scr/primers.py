@@ -2,7 +2,7 @@
 """
             INFO
 ------------------------------
-This contains the main workflow.
+This contains definitions for primer creation and evaluation.
 
            LICENCE
 -------------------------------
@@ -10,14 +10,17 @@ todo
 
          EXPLANATIONS
 -------------------------------
-This contains the definitions for evaluating if a kmer is a potential
-primer (the core is highly similar to primalscheme!). Importantly, the user
-can specify if the primer can contain ambiguous characters at the 3' end.
+Digest the conserved regions into kmers and for each kmer evaluates if
+the kmer passes as a primer. Importantly, you can specify if the primer can
+contain ambiguous characters at the 3' end.
 If passing kmers have the same start only the kmer with the min base
 penalty is retained. Further the ambigous version of the primer is checked
 for mismatches against each sequence in the alignment. This allows to calculate
 the penalty score for mismatches at the 3' end. Also the number of permutations
 is calculated and multiplied by the permutation penalty.
+Lastly only the best scoring primers in a certain range is retained. This
+region is defined by the first primer of the region + the maximum length of
+a primer.
 """
 
 # BUILT-INS

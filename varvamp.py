@@ -16,11 +16,11 @@ that can contain ambiguous characters. Then it searches for conserved
 regions as defined by a user defined amount of ambiguous charaters within
 the min length of a primer. The conserved regions of a consensus sequence
 containing the most prevalent nucleotide (no wobbels) is then digested into
-kmers which are considered potential primers if they pass all primer settings.
-These primers are further filtered for high scoring primers for each region
-where primers were found. Then it constructs all possible amplicons and from
-that determines which amplicons are overlapping. A graph based approach is
-used to find the best amplicon scheme.
+kmers which are considered potential primers if they pass all primer
+requirements. These primers are further filtered for high scoring primers
+for each region. Then it constructs all possible amplicons and determines
+which amplicons are overlapping. A graph based approach is used to find the
+best amplicon scheme.
 """
 
 # INFO
@@ -36,6 +36,7 @@ import sys
 import os
 import shutil
 import time
+import datetime
 import argparse
 
 # varVAMP
@@ -45,9 +46,72 @@ from scr import consensus
 from scr import conserved
 from scr import primers
 from scr import scheme
-
+from scr import reporting
 
 # DEFs
+def arg_parsing():
+    """
+    argparsing for varVAMP
+    """
+    # arg parsing
+    parser = argparse.ArgumentParser()
+    if len(sys.argv[1:]) < 1:
+        parser.print_help()
+        sys.exit("\033[31m\033[1mError:\033[0m No arguments")
+
+    parser.add_argument(
+        "alignment",
+        help="alignment to design primers on"
+    )
+    parser.add_argument(
+        "results",
+        help="path for results dir"
+    )
+    parser.add_argument(
+        "-ol",
+        "--opt-length",
+        help="optimal length of the amplicons",
+        type=int,
+        default=config.OPT_AMPLICON_LENGTH
+    )
+    parser.add_argument(
+        "-ml",
+        "--max-length",
+        help="max length of the amplicons",
+        type=int,
+        default=config.MAX_AMPLICON_LENGTH
+    )
+    parser.add_argument(
+        "-o",
+        "--overlap",
+        type=float,
+        default=config.MIN_OVERLAP,
+        help="min overlap of the amplicons"
+    )
+    parser.add_argument(
+        "-t",
+        "--threshold",
+        type=float,
+        default=config.FREQUENCY_THRESHOLD,
+        help="threshold for nucleotides in alignment to be considered conserved"
+    )
+    parser.add_argument(
+        "-a",
+        "--allowed-ambiguous",
+        type=int,
+        default=config.ALLOWED_N_AMB,
+        help="number of ambiguous characters that are allowed within a primer"
+    )
+    parser.add_argument(
+        "--console",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="show varvamp console output"
+    )
+
+    return parser.parse_args()
+
+
 def varvamp_progress(progress=0, job="", progress_text=""):
     """
     progress bar, main progress logging and folder creation
@@ -66,13 +130,13 @@ def varvamp_progress(progress=0, job="", progress_text=""):
         else:
             shutil.rmtree(results_dir)
             os.makedirs(results_dir)
-        os.makedirs(all_data_dir)
+        os.makedirs(data_dir)
         with open(results_dir+"varvamp_log.txt", 'w') as f:
             f.write('VARVAMP log \n\n')
     else:
         if progress == 1:
             stop_time = str(round(time.process_time() - start_time, 2))
-            progress_text = f"all done \n\n\rvarVAMP created an amplicon scheme in {stop_time} sec!\n"
+            progress_text = f"all done \n\n\rvarVAMP created an amplicon scheme in {stop_time} sec!\n{datetime.datetime.now()}"
             job = "Finalizing output."
         if args.console:
             print(
@@ -279,80 +343,20 @@ def confirm_config():
 
 if __name__ == "__main__":
 
-    # arg parsing
-    parser = argparse.ArgumentParser()
-    if len(sys.argv[1:]) < 1:
-        parser.print_help()
-        sys.exit("\033[31m\033[1mError:\033[0m No arguments")
-
-    parser.add_argument(
-        "alignment",
-        help="alignment to design primers on"
-    )
-    parser.add_argument(
-        "results",
-        help="path for results dir"
-    )
-    parser.add_argument(
-        "-ol",
-        "--opt-length",
-        help="optimal length of the amplicons",
-        type=int,
-        default=config.OPT_AMPLICON_LENGTH
-    )
-    parser.add_argument(
-        "-ml",
-        "--max-length",
-        help="max length of the amplicons",
-        type=int,
-        default=config.MAX_AMPLICON_LENGTH
-    )
-    parser.add_argument(
-        "-o",
-        "--overlap",
-        type=float,
-        default=config.MIN_OVERLAP,
-        help="min overlap of the amplicons"
-    )
-    parser.add_argument(
-        "-t",
-        "--threshold",
-        type=float,
-        default=config.FREQUENCY_THRESHOLD,
-        help="threshold for nucleotides in alignment to be considered conserved"
-    )
-    parser.add_argument(
-        "-a",
-        "--allowed-ambiguous",
-        type=int,
-        default=config.ALLOWED_N_AMB,
-        help="number of ambiguous characters that are allowed within a primer"
-    )
-    parser.add_argument(
-        "--console",
-        action=argparse.BooleanOptionalAction,
-        default=True,
-        help="show varvamp console output"
-    )
-
-    args = parser.parse_args()
-
-    # start time
+    # ini varVAMP
     start_time = time.process_time()
-    # create dirs
+    args = arg_parsing()
     if not args.results.endswith("/"):
         results_dir = args.results+"/"
     else:
         results_dir = args.results
-    all_data_dir = args.results+"all_data/"
-    # ini progress
+    data_dir = args.results+"data/"
     varvamp_progress()
-
-    # check if all arguments are ok
     raise_arg_errors(args)
+
     # check if config is ok
     confirm_config()
-
+    # progress update
     varvamp_progress(
         0.1,
         "Checking config.",
@@ -364,7 +368,8 @@ if __name__ == "__main__":
         args.alignment,
         args.threshold
     )
-
+    # write alignment
+    reporting.write_alignment(data_dir, alignment_cleaned)
     # progress update
     varvamp_progress(
         0.2,
@@ -377,12 +382,9 @@ if __name__ == "__main__":
         alignment_cleaned,
         args.threshold
     )
-
-    # write to all_data
-    consensus.write_fasta(all_data_dir, "majority_consensus", majority_consensus)
-    consensus.write_fasta(all_data_dir, "ambiguous_consensus", ambiguous_consensus)
-
-
+    # write consensus sequence
+    reporting.write_fasta(data_dir, "majority_consensus", majority_consensus)
+    reporting.write_fasta(results_dir, "ambiguous_consensus", ambiguous_consensus)
     # progress update
     varvamp_progress(
         0.3,
@@ -395,11 +397,11 @@ if __name__ == "__main__":
         ambiguous_consensus,
         args.allowed_ambiguous
     )
-
     # raise error if no conserved regions were found
     if not conserved_regions:
-        raise_error("nothing conserved. Lower the threshod!", exit = True)
-
+        raise_error("nothing conserved. Lower the threshod!", exit=True)
+    # write conserved regions to bed file
+    reporting.conserved_to_bed(conserved_regions, data_dir)
     # progress update
     varvamp_progress(
         0.4,
@@ -412,7 +414,6 @@ if __name__ == "__main__":
         conserved_regions,
         majority_consensus
     )
-
     # progress update
     varvamp_progress(
         0.5,
@@ -426,13 +427,10 @@ if __name__ == "__main__":
         ambiguous_consensus,
         alignment_cleaned
     )
-
     # raise error if no primers were found
     for type, primer_candidates in [("LEFT", left_primer_candidates),("RIGHT", right_primer_candidates)]:
         if not primer_candidates:
-            raise_error(f"no {type} primers found.\n", exit = True)
-
-
+            raise_error(f"no {type} primers found.\n", exit=True)
     # progress update
     varvamp_progress(
         0.6,
@@ -445,7 +443,8 @@ if __name__ == "__main__":
         left_primer_candidates,
         right_primer_candidates
     )
-
+    # write primers
+    reporting.write_all_primers(data_dir, left_primer_candidates, right_primer_candidates)
     # progress update
     varvamp_progress(
         0.7,
@@ -460,7 +459,6 @@ if __name__ == "__main__":
         args.opt_length,
         args.max_length
     )
-
     # raise error if no amplicons were found
     if not amplicons:
         raise_error(
@@ -468,10 +466,8 @@ if __name__ == "__main__":
             "amplicon length or lower threshold!\n",
             exit=True
         )
-
     # build the amplicon graph
     amplicon_graph = scheme.create_amplicon_graph(amplicons, args.overlap)
-
     # progress update
     varvamp_progress(
         0.8,
@@ -479,19 +475,27 @@ if __name__ == "__main__":
         str(len(amplicons)) + " potential amplicons"
     )
 
+    # search for amplicon scheme
     coverage, amplicon_scheme = scheme.find_best_covering_scheme(
         amplicons,
         amplicon_graph
     )
-
     percent_coverage = round(coverage/len(ambiguous_consensus)*100, 2)
-
+    # write all relevant files for the scheme
+    reporting.write_scheme_to_files(
+        results_dir,
+        amplicon_scheme,
+        amplicons,
+        ambiguous_consensus,
+        left_primer_candidates,
+        right_primer_candidates
+    )
+    # progress update
     varvamp_progress(
         0.9,
         "Creating amplicon scheme.",
         f"{percent_coverage} % total coverage with {len(amplicon_scheme)} amplicons"
     )
-
     # raise low coverage warning
     if percent_coverage < 70:
         raise_error(
