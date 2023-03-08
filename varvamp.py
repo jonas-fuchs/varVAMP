@@ -37,7 +37,7 @@ from scr import scheme
 # DEFs
 def varvamp_progress(progress=0, job="", progress_text="", out=sys.stdout):
     """
-    progress bar and logging
+    progress bar, logging and folder creation
     """
     barLength = 40
     block = int(round(barLength*progress))
@@ -49,17 +49,18 @@ def varvamp_progress(progress=0, job="", progress_text="", out=sys.stdout):
                 file=out,
                 flush=True
             )
-        if not os.path.exists(results):
-            os.makedirs(results)
+        if not os.path.exists(results_dir):
+            os.makedirs(results_dir)
         else:
-            shutil.rmtree(results)
-            os.makedirs(results)
-        with open(results+"/varvamp_log.txt", 'w') as f:
+            shutil.rmtree(results_dir)
+            os.makedirs(results_dir)
+        os.makedirs(all_data_dir)
+        with open(results_dir+"varvamp_log.txt", 'w') as f:
             f.write('VARVAMP log \n')
     else:
         if progress == 1:
             stop_time = str(round(time.process_time() - start_time, 2))
-            progress_text = "all done \n\n\rvarVAMP created an amplicon scheme in " + stop_time + " sec!\n"
+            progress_text = f"all done \n\n\rvarVAMP created an amplicon scheme in {stop_time} sec!\n"
             job = "Finalizing output."
         if args.console:
             print(
@@ -67,9 +68,9 @@ def varvamp_progress(progress=0, job="", progress_text="", out=sys.stdout):
                 file=out,
                 flush=True
             )
-        with open(results+"/varvamp_log.txt", 'a') as f:
+        with open(results_dir+"varvamp_log.txt", 'a') as f:
             print(
-                "\rJob:\t" + job + "\nResult:\t" + progress_text,
+                f"\rJob:\t {job} \nResult:\t {progress_text}",
                 file=f
             )
 
@@ -97,6 +98,7 @@ def raise_arg_errors(args):
         print("\n\033[31m\033[1mWARNING:\033[0m small overlaps might hinder downstream analyses. Consider increasing.")
     if args.overlap > args.opt_length:
         sys.exit("\n\033[31m\033[1mERROR:\033[0m overlaps can not be higher than the length of amplicons.\n")
+
 
 if __name__ == "__main__":
 
@@ -159,9 +161,11 @@ if __name__ == "__main__":
     # define argument variables and verify
     args = parser.parse_args()
     raise_arg_errors(args)
+
     # ini progress
-    results = args.results
     start_time = time.process_time()
+    results_dir = args.results+"/"
+    all_data_dir = args.results+"all_data/"
     varvamp_progress()
 
     # check if config is ok
@@ -170,7 +174,7 @@ if __name__ == "__main__":
     varvamp_progress(
         0.1,
         "Checking config.",
-        "config file is ok"
+        "config file passed"
     )
 
     # preprocess and clean alignment of gaps
@@ -183,8 +187,7 @@ if __name__ == "__main__":
     varvamp_progress(
         0.2,
         "Preprocessing alignment and cleaning gaps.",
-        str(len(gaps_to_mask)) + " gaps with "
-        + str(alignment.calculate_total_masked_gaps(gaps_to_mask)) + " nucleotides"
+        f"{len(gaps_to_mask)} gaps with {alignment.calculate_total_masked_gaps(gaps_to_mask)} nucleotides"
     )
 
     # create consensus sequences
@@ -197,7 +200,7 @@ if __name__ == "__main__":
     varvamp_progress(
         0.3,
         "Creating consensus sequences.",
-        "length of the consensus is " + str(len(majority_consensus)) + " nt"
+        f"length of the consensus is {len(majority_consensus)} nt"
     )
 
     # generate conserved region list
@@ -206,11 +209,15 @@ if __name__ == "__main__":
         args.allowed_ambiguous
     )
 
+    # raise error if no conserved regions were found
+    if not conserved_regions:
+        sys.exit("\n\033[31m\033[1mERROR:\033[0m nothing conserved. Lower the threshod!\n")
+
     # progress update
     varvamp_progress(
         0.4,
         "Finding conserved regions.",
-        str(conserved.mean(conserved_regions, majority_consensus))+"% conserved"
+        f"{conserved.mean(conserved_regions, majority_consensus)} % conserved"
     )
 
     # produce kmers for all conserved regions
@@ -223,7 +230,7 @@ if __name__ == "__main__":
     varvamp_progress(
         0.5,
         "Digesting into kmers.",
-        str(len(kmers))+" kmers"
+        f"{len(kmers)} kmers"
     )
 
     # find potential primers
@@ -233,13 +240,16 @@ if __name__ == "__main__":
         alignment_cleaned
     )
 
+    # raise error if no primers were found
+    for type, primer_candidates in [("LEFT", left_primer_candidates),("RIGHT", right_primer_candidates)]:
+        if not primer_candidates:
+            sys.exit(f"\n\033[31m\033[1mERROR:\033[0m no {type} primers found.\n")
+
     # progress update
     varvamp_progress(
         0.6,
         "Filtering for primers.",
-        str(len(left_primer_candidates))
-        + " fw and " + str(len(right_primer_candidates))
-        + " rw potential primers"
+        f"{len(left_primer_candidates)} fw and {len(right_primer_candidates)} rw potential primers"
     )
 
     # find best primers
@@ -252,18 +262,22 @@ if __name__ == "__main__":
     varvamp_progress(
         0.7,
         "Considering only high scoring primers.",
-        str(len(left_primer_candidates))
-        + " fw and " + str(len(right_primer_candidates))
-        + " rw primers"
+        f"{len(left_primer_candidates)} fw and {len(right_primer_candidates)} rw primers"
     )
 
+    # find all possible amplicons
     amplicons = scheme.find_amplicons(
         left_primer_candidates,
         right_primer_candidates,
         args.opt_length,
-        args.max_length,
-        args.overlap
+        args.max_length
     )
+
+    # raise error if no amplicons were found
+    if not amplicons:
+        sys.exit("\n\033[31m\033[1mERROR:\033[0m no amplicons found. Increase the max amplicon length or lower threshold!\n")
+
+    # build the amplicon graph
     amplicon_graph = scheme.create_amplicon_graph(amplicons, args.overlap)
 
     # progress update
@@ -278,13 +292,21 @@ if __name__ == "__main__":
         amplicon_graph
     )
 
+    percent_coverage = round(coverage/len(ambiguous_consensus)*100, 2)
+
     varvamp_progress(
         0.9,
         "Creating amplicon scheme.",
-        str(round(coverage/len(ambiguous_consensus)*100, 2))
-        + "% total coverage with " + str(len(amplicon_scheme))
-        + " amplioncs"
+        f"{percent_coverage} % total coverage with {len(amplicon_scheme)} amplicons"
     )
+
+    # raise low coverage warning
+    if percent_coverage < 70:
+        print("\n\033[31m\033[1mWARNING:\033[0m coverage < 70 %. Possible solutions:")
+        print("\t - lower threshold")
+        print("\t - increase amplicons lengths")
+        print("\t - increase number of ambiguous nucleotides")
+        print("\t - relax primer settings (not recommended) \n")
 
     # final progress
     varvamp_progress(1)

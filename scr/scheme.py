@@ -55,7 +55,7 @@ class Graph(object):
         return self.graph[node1][node2]
 
 
-def find_amplicons(left_primer_candidates, right_primer_candidates, opt_len, max_len, min_overlap):
+def find_amplicons(left_primer_candidates, right_primer_candidates, opt_len, max_len):
     """
     finds all possible amplicons, creates a dictionary
     """
@@ -68,10 +68,10 @@ def find_amplicons(left_primer_candidates, right_primer_candidates, opt_len, max
             right_primer = right_primer_candidates[right]
             amplicon_length = right_primer[2] - left_primer[1]
             if opt_len <= amplicon_length <= max_len:
-                if primers.calc_heterodimer(right_primer[0], left_primer[0]).tm <= config.MAX_DIMER_TMP:
+                if primers.calc_dimer(right_primer[0], left_primer[0]).tm <= config.MAX_DIMER_TMP:
                     # calculate length dependend amplicon costs as the cumulative primer
                     # score multiplied by the fold length of the optimal length.
-                    amplicon_costs = (right_primer[3] + left_primer[3])*(amplicon_length/min_overlap)
+                    amplicon_costs = (right_primer[3] + left_primer[3])*(amplicon_length/opt_len)
                     amplicon_name = "amplicon_"+str(amplicon_number)
                     amplicon_dict[amplicon_name] = [
                         left_primer[1],  # start
@@ -221,30 +221,48 @@ def find_best_covering_scheme(amplicons, amplicon_graph):
         # scheme that covers more of the genome
         if amplicons[start_node][0] + best_coverage <= max_stop:
             previous_nodes, shortest_path = dijkstra_algorithm(amplicon_graph, start_node)
-            target_node, score = get_end_node(previous_nodes, shortest_path, amplicons)
-            coverage = amplicons[target_node][1] - amplicons[start_node][0]
-            # if the new coverage is larger, go for the larger coverage
-            if coverage > best_coverage:
-                best_start_node = start_node
-                best_target_node = target_node
-                best_previous_nodes = previous_nodes
-                best_shortest_path = shortest_path
-                best_score = score
-                best_coverage = coverage
-            # if the coverages are identical, go for the lowest costs
-            elif coverage == best_coverage:
-                if score < best_score:
+            # only continue if there are previous_nodes
+            if previous_nodes:
+                target_node, score = get_end_node(previous_nodes, shortest_path, amplicons)
+                coverage = amplicons[target_node][1] - amplicons[start_node][0]
+                # if the new coverage is larger, go for the larger coverage
+                if coverage > best_coverage:
                     best_start_node = start_node
                     best_target_node = target_node
                     best_previous_nodes = previous_nodes
                     best_shortest_path = shortest_path
                     best_score = score
                     best_coverage = coverage
+                # if the coverages are identical, go for the lowest costs
+                elif coverage == best_coverage:
+                    if score < best_score:
+                        best_start_node = start_node
+                        best_target_node = target_node
+                        best_previous_nodes = previous_nodes
+                        best_shortest_path = shortest_path
+                        best_score = score
+                        best_coverage = coverage
+            else:
+                # check if the single amplicon has the largest coverage so far
+                coverage = amplicons[start_node][1] - amplicons[start_node][0]
+                if coverage > best_coverage:
+                    best_start_node = start_node
+                    best_previous_nodes = previous_nodes
+                    best_shortest_path = shortest_path
+                    best_score = amplicons[start_node][5]
+                    best_coverage = coverage
+
+
         # no need to check more, the best covering amplicon scheme was found and
         # has the minimal score compared to the schemes with the same coverage
         else:
             break
 
-    final_amplicon_scheme = get_min_path(best_previous_nodes, best_shortest_path, best_start_node, best_target_node)
+    if best_previous_nodes:
+        final_amplicon_scheme = get_min_path(best_previous_nodes, best_shortest_path, best_start_node, best_target_node)
+    else:
+        # if no previous nodes are found but the single amplicon results in the largest
+        # coverage - return as the best scheme
+        final_amplicon_scheme = [best_start_node]
 
     return best_coverage, final_amplicon_scheme

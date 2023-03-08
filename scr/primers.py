@@ -49,20 +49,8 @@ def calc_hairpin(primer):
             dna_conc = config.DNA_CONC
         )
 
-def calc_homodimer(primer):
-    """
-    Calculate the homodimerization thermodynamics of the primer.
-    Return primer3 thermo object.
-    """
-    return p3.calc_homodimer(
-        primer.upper(),
-        mv_conc=config.MV_CONC,
-        dv_conc=config.DV_CONC,
-        dna_conc=config.DNA_CONC,
-        dntp_conc=config.DNTP_CONC,
-    )
 
-def calc_heterodimer(primer1, primer2):
+def calc_dimer(primer1, primer2):
     """
     Calculate the heterodimerization thermodynamics of two DNA sequences.
     Return primer3 thermo object.
@@ -185,7 +173,7 @@ def hardfilter_primers(primer):
         (config.PRIMER_GC_RANGE[0] <= calc_gc(primer) <= config.PRIMER_GC_RANGE[1]) and
         (calc_max_polyx(primer) <= config.MAX_POLYX) and
         (calc_max_dinuc_repeats(primer) <= config.MAX_DINUC_REPEATS) and
-        (calc_homodimer(primer).tm <= config.MAX_DIMER_TMP)
+        (calc_dimer(primer, primer).tm <= config.MAX_DIMER_TMP)
     )
 
 def filter_primer_direction_specific(direction, primer, ambiguous_consensus):

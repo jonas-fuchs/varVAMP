@@ -109,7 +109,7 @@ def confirm_config():
         if len(tup) != 3:
             sys.exit(f"\n\033[31m\033[1mERROR:\033[0m {type} tuple has to have the form (min, max, opt)\n")
         if PRIMER_TMP[0] > PRIMER_TMP[1]:
-            sys.exit(f"\n\033[31m\033[1mERROR:\033[0m min {type} should not exeed min {type}\n")
+            sys.exit(f"\n\033[31m\033[1mERROR:\033[0m min {type} should not exeed max {type}\n")
         if PRIMER_TMP[0] > PRIMER_TMP[2]:
             sys.exit(f"\n\033[31m\033[1mERROR:\033[0m min {type} should not exeed opt {type}\n")
         if PRIMER_TMP[2] > PRIMER_TMP[1]:
@@ -140,7 +140,7 @@ def confirm_config():
 
     # specific warnings
     if PRIMER_HAIRPIN < 0:
-        print("\n\033[31m\033[1mWARNING:\033[0m decreasing hairpin melting temp to negative values will massively influence successful primer search.")
+        print("\n\033[31m\033[1mWARNING:\033[0m decreasing hairpin melting temp to negative values will influence successful primer search.")
     if MAX_DIMER_TMP < 0:
         print("\n\033[31m\033[1mWARNING:\033[0m there is no need to set max dimer melting temp below 0.")
     if PRIMER_MAX_BASE_PENALTY < 8:
