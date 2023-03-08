@@ -1,4 +1,15 @@
+#!/usr/bin/env python
 """
+            INFO
+------------------------------
+Function for alignment preprocessing
+
+           LICENCE
+-------------------------------
+todo
+
+         EXPLANATIONS
+-------------------------------
 varVAMP functions for alignment processing. Transcribes RNA to DNA
 and forces lower chars. Finds deletions that are present in a higher
 frequency than 1-threshold and mask these with an N. The rationale

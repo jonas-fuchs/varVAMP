@@ -1,4 +1,15 @@
+#!/usr/bin/env python
 """
+            INFO
+------------------------------
+This contains the main workflow.
+
+           LICENCE
+-------------------------------
+todo
+
+         EXPLANATIONS
+-------------------------------
 This contains the definitions for evaluating if a kmer is a potential
 primer (the core is highly similar to primalscheme!). Importantly, the user
 can specify if the primer can contain ambiguous characters at the 3' end.
@@ -8,6 +19,7 @@ for mismatches against each sequence in the alignment. This allows to calculate
 the penalty score for mismatches at the 3' end. Also the number of permutations
 is calculated and multiplied by the permutation penalty.
 """
+
 # BUILT-INS
 import itertools
 
