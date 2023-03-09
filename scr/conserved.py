@@ -33,7 +33,6 @@ def find_regions(consensus_amb, allowed_ambiguous):
     """
     # init the variables
     current_window = []
-    windows_written = 0
     writable = False
     in_ambiguous_region = True
     last_amb = 0
@@ -79,11 +78,10 @@ def find_regions(consensus_amb, allowed_ambiguous):
 
                 if writable:
                     writable = False
-                    window_length = idx-1-current_window[0]
+                    window_length = idx-current_window[0]
                     if window_length >= config.PRIMER_SIZES[0]:
                         # check if the writable window has a sufficient length.
-                        conserved_regions.append([current_window[0], idx-1, ])
-                        windows_written += 1
+                        conserved_regions.append([current_window[0], idx])
                         # reset the window and the list of amb positions
                         # after it was written
                         current_window = []

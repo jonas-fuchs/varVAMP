@@ -30,7 +30,7 @@ def write_alignment(dir, alignment):
     out = f"{dir}alignment_cleaned.fasta"
     with open(out, "w") as o:
         for seq in alignment:
-            print(f"{seq[0]}\n{seq[1]}", file=o)
+            print(f">{seq[0]}\n{seq[1]}", file=o)
 
 
 def conserved_to_bed(conserved_regions, dir):
@@ -148,6 +148,7 @@ def write_scheme_to_files(dir, amplicon_scheme, amplicons, ambiguous_consensus, 
                     primer[0],
                     pool,
                     seq,
+                    len(primer[1][0]),
                     gc,
                     temp,
                     score,
