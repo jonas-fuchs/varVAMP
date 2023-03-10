@@ -1,24 +1,5 @@
-#!/usr/bin/env python
 """
-            INFO
-------------------------------
-This contains all varVAMP settings.
-
-           LICENCE
--------------------------------
-todo
-
-        EXPLANATIONS
--------------------------------
-varVAMP functions for creating consensus sequences. Determines the
-frequency of all nucleotides at each position of the alignment and
-considers also ambiguous characters present in the alignment. Then
-this frequency list is sorted ascending to decending and the list
-of nucleotides is reduced in a way that only nucleotides are retained
-until the threshold is reached (excluding gaps). The most prevalent
-nucleotide is used for the majority consensus sequence. If the list
-contains multiple nucleotides the appropriate ambiguous character
-is found to generate a consensus sequence with wobble nucleotides.
+consensus creation
 """
 
 # BUILT-INS

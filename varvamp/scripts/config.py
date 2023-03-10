@@ -1,22 +1,13 @@
 #!/usr/bin/env python
 """
-            INFO
-------------------------------
 This contains all varVAMP settings.
 
 
-           LICENCE
--------------------------------
-todo
-
-
-        EXPLANATIONS
--------------------------------
 About settings that can also be defined by arguments:
 
-Some settings (like amplicon sizes) can be defined via arguments. These then
-overwrite the settings in the config file. You can also adjust settings here
-and don't give arguments.
+    Some settings (like amplicon sizes) can be defined via arguments. These then
+    overwrite the settings in the config file. You can also adjust settings here
+    and don't give arguments.
 
 About penalties:
 

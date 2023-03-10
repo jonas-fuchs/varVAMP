@@ -1,15 +1,8 @@
 #!/usr/bin/env python3
 """
-            INFO
-------------------------------
-This contains the main workflow.
+main workflow
 
-           LICENCE
--------------------------------
-todo
 
-         EXPLANATIONS
--------------------------------
 varVAMP primer design for viruses with highly variable genomes. varVAMP
 first preprocesses the alignment and then creates consensus sequences
 that can contain ambiguous characters. Then it searches for conserved
@@ -30,7 +23,6 @@ import shutil
 import time
 import datetime
 import argparse
-import pkg_resources
 
 # varVAMP
 from . import _program
@@ -558,6 +550,7 @@ def main(sysargs = sys.argv[1:]):
 
     # final progress
     varvamp_progress(log_file, progress=1, start_time=start_time)
+
 
 if __name__ == '__main__':
     main()

@@ -1,13 +1,5 @@
-#!/usr/bin/env python
 """
-            INFO
-------------------------------
-Contains functions for writing the raw data and visualization.
-
-           LICENCE
--------------------------------
-todo
-
+data writing and visualization.
 """
 # BUILT-INS
 import os

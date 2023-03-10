@@ -1,24 +1,5 @@
-#!/usr/bin/env python
 """
-            INFO
-------------------------------
-Definitions for finding and digesting conserved regions.
-
-           LICENCE
--------------------------------
-todo
-
-         EXPLANATIONS
--------------------------------
-Here, a window of a potential conserved region is left open as long as not more
-ambiguous charaters than specified are within the min length of a primer. If the
-window does not match the criteria, all sub-windows are also considered. A window
-is closed and considered a conserved region when the window length >= min length
-of the primer. Importantly a window is always closed when a "N" is found as
-this marks a potential gap.
-
-These conserved regions are then digested into all potential kmers from
-min to max of the primer length.
+finding and digesting conserved regions.
 """
 
 # varVAMP

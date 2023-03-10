@@ -1,22 +1,5 @@
-#!/usr/bin/env python
 """
-            INFO
-------------------------------
 Function for alignment preprocessing
-
-           LICENCE
--------------------------------
-todo
-
-         EXPLANATIONS
--------------------------------
-varVAMP functions for alignment processing. Transcribes RNA to DNA
-and forces lower chars. Finds deletions that are present in a higher
-frequency than 1-threshold and mask these with an N. The rationale
-is that then no nucleotide position in the alignment has a gap that
-has a high enough frequency to be considered a consensus nucleotide.
-This N is later always a stop of a conserved region, and so no primers
-are later designed that span over the gap.
 """
 
 # BUILT-INS

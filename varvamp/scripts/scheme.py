@@ -1,16 +1,5 @@
-#!/usr/bin/env python
 """
-            INFO
-------------------------------
-This contains definitions for the amplicon search.
-
-           LICENCE
--------------------------------
-todo
-
-         EXPLANATIONS
--------------------------------
-todo
+definitions for the amplicon search.
 """
 
 # BUILT-INS
