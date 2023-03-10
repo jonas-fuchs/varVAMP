@@ -22,7 +22,7 @@ min to max of the primer length.
 """
 
 # varVAMP
-from scr import config
+from varvamp.scripts import config
 
 
 def find_regions(consensus_amb, allowed_ambiguous):

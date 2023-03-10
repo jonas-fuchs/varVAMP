@@ -31,7 +31,7 @@ from Bio.Seq import Seq
 import primer3 as p3
 
 # varVAMP
-from scr import config
+from varvamp.scripts import config
 
 
 def calc_gc(primer):

@@ -1,0 +1,3 @@
+biopython>=1.79
+matplotlib>=3.5.1
+primer3-py>=1.1.0

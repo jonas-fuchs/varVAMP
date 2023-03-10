@@ -1,0 +1,17 @@
+setup.py
+varvamp/__init__.py
+varvamp/command.py
+varvamp.egg-info/PKG-INFO
+varvamp.egg-info/SOURCES.txt
+varvamp.egg-info/dependency_links.txt
+varvamp.egg-info/entry_points.txt
+varvamp.egg-info/not-zip-safe
+varvamp.egg-info/requires.txt
+varvamp.egg-info/top_level.txt
+varvamp/scripts/alignment.py
+varvamp/scripts/config.py
+varvamp/scripts/consensus.py
+varvamp/scripts/conserved.py
+varvamp/scripts/primers.py
+varvamp/scripts/reporting.py
+varvamp/scripts/scheme.py

@@ -1,3 +1,6 @@
 test/**
-scr/__pycache__/**
-varVAMP_dev.py
+build/**
+varvamp/__pycache__/**
+varvamp/scripts/__pycache__/**
+varvamp/varVAMP_dev.py
+varvamp/varvamp.egg-info/**

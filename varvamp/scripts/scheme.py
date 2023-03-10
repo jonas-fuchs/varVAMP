@@ -17,9 +17,7 @@ todo
 import sys
 
 # varVAMP
-from scr import config
-from scr import primers
-
+from varvamp.scripts import config, primers
 
 class Graph(object):
     """

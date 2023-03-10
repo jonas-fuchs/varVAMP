@@ -9,16 +9,19 @@ Contains functions for writing the raw data and visualization.
 todo
 
 """
+# BUILT-INS
+import os
 
 # varVAMP
-from scr import primers
+from varvamp.scripts import primers
 
 
 def write_fasta(dir, seq_id, seq):
     """
     write fasta files
     """
-    out = f"{dir}{seq_id}.fasta"
+    name = seq_id + ".fasta"
+    out = os.path.join(dir, name)
     with open(out, 'w') as o:
         print(f">{seq_id}\n{seq}", file=o)
 
@@ -27,7 +30,8 @@ def write_alignment(dir, alignment):
     """
     write alignment to file
     """
-    out = f"{dir}alignment_cleaned.fasta"
+    name = "alignment_cleaned.fasta"
+    out = os.path.join(dir, name)
     with open(out, "w") as o:
         for seq in alignment:
             print(f">{seq[0]}\n{seq[1]}", file=o)
@@ -85,10 +89,10 @@ def write_scheme_to_files(dir, amplicon_scheme, amplicons, ambiguous_consensus, 
     write all relevant bed files and a tsv file with all primer stats
     """
     # ini
-    tsv_file = dir + "primers.tsv"
-    primer_bed_file = dir + "primers.bed"
-    amplicon_bed_file = dir + "amplicons.bed"
-    tabular_file = dir + "primer_to_amplicon_assignment.tabular"
+    tsv_file = os.path.join(dir,"primers.tsv")
+    primer_bed_file =  os.path.join(dir, "primers.bed")
+    amplicon_bed_file =  os.path.join(dir, "amplicons.bed")
+    tabular_file =  os.path.join(dir, "primer_to_amplicon_assignment.tabular")
     # counter for new amplicon name
     counter = 0
 

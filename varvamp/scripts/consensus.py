@@ -25,7 +25,7 @@ is found to generate a consensus sequence with wobble nucleotides.
 import collections
 
 # varVAMP
-from scr import config
+from varvamp.scripts import config
 
 
 def determine_nucleotide_counts(alignment, idx):
