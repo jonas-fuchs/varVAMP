@@ -24,7 +24,7 @@ vsearch --cluster_fast <my_sequences.fasta> --clusters <output_dir> --id <float>
 
 ## You just want to test out varVAMP?
 
-No worries, we got you! Test it with an alignment for [Hepatitis E virus](varvamp/example_data). These sequences were pre-selected with ```vsearch --id 0.83``` from available HepE sequence in GenBank and aligned with MAFFT! varVAMP should finish in seconds with the standard settings.
+No worries, we got you! Test it with an alignment for [Hepatitis E virus](././varvamp/example_data). These sequences were pre-selected with ```vsearch --id 0.83``` from available HepE sequence in GenBank and aligned with MAFFT! varVAMP should finish in seconds with the standard settings.
 
 
 #### [Previous: Installation](./installation.md)&emsp;&emsp;[Next: Usage](./usage.md)
