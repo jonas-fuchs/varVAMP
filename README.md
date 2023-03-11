@@ -8,7 +8,7 @@
 
 <img src="./docs/varvamp.png" alt="varVAMP logo" />
 
-This program is currently being developed and in an alpha state. So far only the primer design for multiplex PCRs tiling the entire viral genome are implemented. These amplicons can than be used for Illumina or Oxford Nanopore sequencing. Currently working on primerdesign for sanger and qPCR design. You are welcome to use this software. If you successfully design primers, drop me a mail. It might be possible to collaborate!
+This program is currently being developed and in an alpha state. So far only the primer design for multiplex PCRs tiling the entire viral genome are implemented. These amplicons can be used for Illumina or Oxford Nanopore sequencing. Currently working on primerdesign for sanger and qPCR design. You are welcome to use this software. If you successfully design primers, drop me a mail. It might be possible to collaborate!
 
 # Documentation
 
