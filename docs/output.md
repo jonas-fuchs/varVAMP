@@ -21,4 +21,4 @@ It also produces some secondary output files [*data/*]:
 | conserved_regions.bed | A bed file showing where the conserved regions lie on the ambiguous consensus. |
 | majority_consensus.fasta | Consensus sequence that does not have ambiguous characters but instead has the most prevalent nucleotide at each position. |
 
-#### [Previous: usage](./usage.md)&emsp;&emsp;[Next: how varVAMP works](./how_varvamp_works.md)
+#### [Previous: Usage](./usage.md)&emsp;&emsp;[Next: How varVAMP works](./how_varvamp_works.md)
