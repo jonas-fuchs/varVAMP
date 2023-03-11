@@ -17,11 +17,11 @@ We have had good experience in using varVAMP with the sequence identity based cl
 
 To do this, install vsearch and cluster your sequences via:
 
-``shell
+```shell
 vsearch --cluster_fast <my_sequences.fasta> --clusters <output_dir> --id 0.83
 ```
 
-### You just want to test out varVAMP?
+## You just want to test out varVAMP?
 
 No worries, we got you! Test it with an alignment for [Hepatitis E virus][varvamp/example_data]. These sequences were pre-selected with vsearch (--id 0.83) from available HepE sequence in GenBank and aligned with MAFFT! varVAMP should finish in seconds with the standard settings.
 
