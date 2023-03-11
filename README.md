@@ -15,7 +15,7 @@
 
 * [Installation](docs/installation.md)
 * [Usage](docs/usage.md)
-* [Output description](docs/output.md)
+* [Output](docs/output.md)
 * [How it works](docs/how_varvamp_works.md)
 
 ---

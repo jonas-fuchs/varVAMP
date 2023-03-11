@@ -1,6 +1,8 @@
 ## Usage
 
-In the most simple case varvamp will take an alignment and a output directory to store the results in-
+
+In the most simple case varvamp will take an alignment and a output directory to store the results in.
+**Minimal usage:**
 
 ```shell
 varvamp <alignment> <output>
@@ -8,22 +10,19 @@ varvamp <alignment> <output>
 
 In this case varVAMP uses as standard settings:
 
-* optimal_length = 1000 (optimal amplicon length)
-* max_length = 2000 (maximum amplicon length)
-* overlap = 100 (minimum overlap length)
-* threshold = 0.9 (nucleotide consensus threshold)
-* allowed_ambiguous = 4 (number of allowed ambiguous characters in a primer)
+* OPT_LENGTH = 1000 (optimal amplicon length)
+* MAX_LENGTH = 2000 (maximum amplicon length)
+* OVERLAP = 100 (minimum overlap length)
+* THRESHOLD = 0.9 (nucleotide consensus threshold)
+* ALLOWED_AMBIGUOUS = 4 (number of allowed ambiguous characters in a primer)
 
-These settings are quite relaxed and can produce decent results for diverse viruses (80-90 % sequence identity). However, you can likely optimize the result. To to so, type:
+These settings are quite relaxed and can produce decent results for diverse viruses (80-90 % sequence identity). However, you can likely optimize the result.
+
+**Full usage:**
 ```shell
-varvamp --help
+varvamp <alignment> <output> [OPTIONS]
 ```
-Full usage:
 ```
-usage: varvamp <alignment> <output> [options]
-
-varvamp: variable virus amplicon design
-
 positional arguments:
   alignment output_dir  alignment to design primers on
 
