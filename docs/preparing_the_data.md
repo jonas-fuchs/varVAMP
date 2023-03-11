@@ -8,7 +8,7 @@ cat *.fasta > my_sequences.fasta
 ```shell
 mafft my_sequences.fasta > my_alignment.fasta
 ```
-*That's already it. Your input is ready for varVAMP!*
+**That's already it. Your input is ready for varVAMP!**
 
 
 ### BUT...
