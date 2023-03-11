@@ -89,4 +89,4 @@ python3 install .
 ```
 If you did everything right, varVAMPs config check passes otherwise it will produce an error. If that happens you can simply perform a git pull or adjust the settings that produced a warning.
 
-#### [Previous: Installation](./installation.md)&emsp;&emsp;[Next: Output](./output.md)
+#### [Previous: Data preparation](./preparing_the_data.md)&emsp;&emsp;[Next: Output](./output.md)

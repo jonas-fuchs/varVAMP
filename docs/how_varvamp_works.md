@@ -33,4 +33,6 @@ The number permutations of a primer is multiplied by the penalty. For example 24
 
 In the end all scores of a primer are summed up and yield a final score. The score for each amplicon is then the score of its LEFT + RIGHT primers multiplied by the fold increase of the amplicon length comapred to the optional length. This insures that in the final scheme not only large amplicons are used.
 
+### Some final thoughts
+
 #### [Previous: Output](./output.md)
