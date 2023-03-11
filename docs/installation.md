@@ -22,4 +22,4 @@ git pull
 python3 install .
 ```
 
-#### [next: Usage](./usage.md)
+#### [Next: Usage](./usage.md)
