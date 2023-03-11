@@ -10,11 +10,11 @@ varvamp <alignment> <output>
 
 In this case varVAMP uses as standard settings:
 
-* OPT_LENGTH = 1000 (optimal amplicon length)
-* MAX_LENGTH = 2000 (maximum amplicon length)
-* OVERLAP = 100 (minimum overlap length)
-* THRESHOLD = 0.9 (nucleotide consensus threshold)
-* ALLOWED_AMBIGUOUS = 4 (number of allowed ambiguous characters in a primer)
+* ```OPT_LENGTH``` = 1000 (optimal amplicon length)
+* ```MAX_LENGTH``` = 2000 (maximum amplicon length)
+* ```OVERLAP``` = 100 (minimum overlap length)
+* ```THRESHOLD``` = 0.9 (nucleotide consensus threshold)
+* ```ALLOWED_AMBIGUOUS``` = 4 (number of allowed ambiguous characters in a primer)
 
 These settings are quite relaxed and can produce decent results for diverse viruses (80-90 % sequence identity). However, you can likely optimize the result.
 

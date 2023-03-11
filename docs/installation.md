@@ -4,19 +4,19 @@ varVAMP runs on UNIX Systems and MacOSX. Python3 >=3.9 has to be installed.
 
 ## Installation
 Install varVAMP by cloning this repository:
-```bash
+```shell
 git clone https://github.com/jonas-fuchs/varVAMP
 cd varVAMP
 python3 install .
 ```
 That was already it. To check if it worked:
-```bash
+```shell
 varvamp -v
 ```
 You should see the current varVAMP version.
 
 ## Update
-```bash
+```shell
 cd varVAMP
 git pull
 python3 install .
