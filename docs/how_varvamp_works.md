@@ -3,16 +3,47 @@
 ### Overview
 varVAMP primer design for viruses with highly variable genomes. varVAMP first preprocesses the alignment and then creates consensus sequences that can contain ambiguous characters. Then it searches for conserved regions as defined by a user defined amount of ambiguous charaters within
 the min length of a primer. The conserved regions of a consensus sequence containing the most prevalent nucleotide is then digested into kmers which are considered potential primers if they pass all primer requirements. These primers are further filtered for high scoring primers for each region. Then it constructs all possible amplicons and determines which amplicons are overlapping. A graph based approach is used to find the best amplicon scheme.
-
+---
 ### Alignment preprocessing
+The alignment preprocessing contains three steps.
+1. Convert RNA to DNA
+2. Force nucleotides to lower charaters
+3. Clean gaps.
+The last part is most important. Larger insertions in single viral sequences enlarge the length of the alignment and therefore the length of amplicons will be overestimated. varVAMP masks regions it deletes with an "N" and knows now that it is not allowed to design primers spanning the potential insertion site.
 
 ### Consensus generation
+varVAMP creates consensus sequence on the basis of the threshold. If a nucleotide is present in this or a higher frequency in all aligned sequences it is considered a consensus nucleotide. If not, the frequencies of the highest scoring nucleotides are added until the threshold is reached and the appropriate ambiguous nucleotide character is used. Importantly, varVAMP is aware of ambiguous nucleotides in the alignment and handels them by de-multiplexing the character into real nucleotides and adding its portion to the nucleotide counts at the alignment position.
 
 ### Conserved region search
+varVAMP searches for conserved regions as defined by a user-defined number of ambiguous bases that is allowed within the minimal length of a primer. The algorithm opens windows over the ambiguous consensus sequence and determines if a window satisfies these constraints.
 
 ### Primer search
+varVAMP uses primer3-py to search for potential primers. The evaluation if primers match certain criteria was adapted from [primalscheme](www.github.com/aresti/primalscheme). The primer search contains multiple steps:
+1. Digest the conserved regions in kmers with the min and max length of primers.
+2. Evaluate if these kmers are potential primers (temperature etc) and score their base penalty.
+3. Hardfilter kmers that do not satisfy the max base penalty constraint and number of allowed ambiguous characters at the 3'end.
+4. Filter primers with the same start for the primer with the lowest score.
+5. Score the 3' penalty and permutation penalty.
+6. Find best primers over the sequence as defined by the lowest score in a window defined by the end of the first primer in this window + the max primer length. This greatly reduces the complexity while retaining well scoring primers.
 
 ### Amplicon search
+
+#### Amplicon-tiling
+To search for the best scoring amplicon, varVAMP uses a graph based approach.
+1. Create all possible amplicons with the given length constraints.
+2. Create a graph for amplicons that satisfy the overlap constraints. The cost to go to the next node is determined by the amplicon score.
+3. Use the dijkstra algorithm to find the shortest paths from a given start node.
+4. Determine potential stop nodes as those amplicons that have the furthest stop in the alignment.
+5. Determine shortest paths between the start and all potential stop nodes. Get the lowest scoring.
+6. Repeat this process for each start node until the best coverage is reached.
+
+This then is the best scoring amplicon scheme!
+
+#### Sanger sequencing
+not yet implemented
+
+#### qPCR
+not yet implemented
 
 ### Penalty calculation
 
