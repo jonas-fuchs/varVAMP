@@ -2,6 +2,7 @@
 
 
 In the most simple case varvamp will take an alignment and a output directory to store the results in.
+
 **Minimal usage:**
 
 ```shell
