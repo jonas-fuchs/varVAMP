@@ -1,5 +1,5 @@
 """
-definitions for the amplicon search.
+amplicon search
 """
 
 # BUILT-INS

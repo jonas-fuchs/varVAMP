@@ -1,5 +1,5 @@
 """
-Function for alignment preprocessing
+alignment preprocessing
 """
 
 # BUILT-INS

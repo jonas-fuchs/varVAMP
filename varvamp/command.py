@@ -1,19 +1,5 @@
-#!/usr/bin/env python3
 """
 main workflow
-
-
-varVAMP primer design for viruses with highly variable genomes. varVAMP
-first preprocesses the alignment and then creates consensus sequences
-that can contain ambiguous characters. Then it searches for conserved
-regions as defined by a user defined amount of ambiguous charaters within
-the min length of a primer. The conserved regions of a consensus sequence
-containing the most prevalent nucleotide (no wobbels) is then digested into
-kmers which are considered potential primers if they pass all primer
-requirements. These primers are further filtered for high scoring primers
-for each region. Then it constructs all possible amplicons and determines
-which amplicons are overlapping. A graph based approach is used to find the
-best amplicon scheme.
 """
 
 # BUILT-INS
@@ -27,7 +13,13 @@ import argparse
 # varVAMP
 from . import _program
 from varvamp import __version__
-from varvamp.scripts import alignment, config, consensus, conserved, primers, reporting, scheme
+from varvamp.scripts import alignment
+from varvamp.scripts import config
+from varvamp.scripts import consensus
+from varvamp.scripts import conserved
+from varvamp.scripts import primers
+from varvamp.scripts import reporting
+from varvamp.scripts import scheme
 
 # DEFs
 def get_args(sysargs):
@@ -41,12 +33,9 @@ def get_args(sysargs):
         usage='''varvamp <alignment> <output> [options]''')
 
     parser.add_argument(
-        "alignment",
-        help="alignment to design primers on"
-    )
-    parser.add_argument(
-        "results",
-        help="path for results dir"
+        "input",
+        nargs=2,
+        help="alignment file and dir to write results"
     )
     parser.add_argument(
         "-ol",
@@ -88,6 +77,12 @@ def get_args(sysargs):
         action=argparse.BooleanOptionalAction,
         default=True,
         help="show varvamp console output"
+    )
+    parser.add_argument(
+        "-v",
+        "--version",
+        action='version',
+        version=f"varvamp {__version__}"
     )
 
     if len(sysargs) < 1:
@@ -223,10 +218,10 @@ def raise_arg_errors(args, log_file):
         )
 
 
-def confirm_config():
+def confirm_config(args, log_file):
     """
     checks the config. raises error and warnings
-    if nececarry.
+    if nececarry. writes settings to log
     """
     error = False
 
@@ -356,6 +351,23 @@ def confirm_config():
             log_file
         )
 
+    # write all settings to file
+    var_dic = vars(config)
+    with open(log_file, 'a') as f:
+        print(
+            "arg dependend settings\n",
+            f"OPT_LENGTH = {args.opt_length}",
+            f"MAX_LENGTH = {args.max_length}",
+            f"MIN_OVERLAP = {args.overlap}",
+            f"THRESHOLD = {args.threshold}",
+            f"ALLOWED_N_AMB = {args.allowed_ambiguous}",
+            "\nconfig settings\n",
+            sep="\n",
+            file=f
+        )
+        for var in all_vars:
+            print(f"{var} = {var_dic[var]}",file=f)
+
 
 def main(sysargs = sys.argv[1:]):
     """
@@ -371,14 +383,14 @@ def main(sysargs = sys.argv[1:]):
     # - ini time
     start_time = time.process_time()
     # - create folder paths
-    results_dir, data_dir, log_file = create_dir_structure(args.results)
+    results_dir, data_dir, log_file = create_dir_structure(args.input[1])
     # raise arg errors
     raise_arg_errors(args, log_file)
     # - update progress
     varvamp_progress(log_file)
 
     # config check
-    confirm_config()
+    confirm_config(args, log_file)
     # - progress update
     varvamp_progress(
         log_file,
@@ -389,7 +401,7 @@ def main(sysargs = sys.argv[1:]):
 
     # preprocess and clean alignment of gaps
     alignment_cleaned, gaps_to_mask = alignment.process_alignment(
-        args.alignment,
+        args.input[0],
         args.threshold
     )
     # - write alignment
@@ -426,7 +438,7 @@ def main(sysargs = sys.argv[1:]):
     # - raise error if no conserved regions were found
     if not conserved_regions:
         raise_error(
-            "nothing conserved. Lower the threshod!",
+            "nothing conserved. Lower the threshold!",
             log_file,
             exit=True
         )
@@ -548,9 +560,16 @@ def main(sysargs = sys.argv[1:]):
             log_file
         )
 
-    # final progress
+    # plotting
+    reporting.varvamp_plot(
+        results_dir,
+        args.threshold,
+        alignment_cleaned,
+        conserved_regions,
+        amplicon_scheme,
+        amplicons,
+        left_primer_candidates,
+        right_primer_candidates
+    )
+    # - final progress
     varvamp_progress(log_file, progress=1, start_time=start_time)
-
-
-if __name__ == '__main__':
-    main()
