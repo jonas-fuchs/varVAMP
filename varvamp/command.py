@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 main workflow
 """
@@ -546,7 +545,3 @@ def main(sysargs = sys.argv[1:]):
 
     # final progress
     varvamp_progress(log_file, progress=1, start_time=start_time)
-
-
-if __name__ == '__main__':
-    main()
