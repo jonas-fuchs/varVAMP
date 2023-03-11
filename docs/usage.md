@@ -25,7 +25,7 @@ varvamp <alignment> <output> [OPTIONS]
 ```
 ```
 positional arguments:
-  alignment output_dir  alignment to design primers on
+  input                 alignment file and dir to write results
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -42,6 +42,7 @@ optional arguments:
   --console, --no-console
                         show varvamp console output (default: True)
   -v, --version         show program's version number and exit
+
 ```
 
 ## Further customization (advanced)
