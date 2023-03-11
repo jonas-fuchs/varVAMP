@@ -12,14 +12,15 @@ varVAMP produces multiple main output files:
 | primer.tsv | A tab seperated file with important paramenters for the primers including the sequence. |
 | varvamp_log.txt | Log file. |
 
-## The data dir
+It also produces some secondary output files (data/):
 
 Additionally varVAMP produces the following secondary outputs:
 
-* alignment_cleaned: The preprocessed alignment.
-* all_primers.bed: A bed file with all high scoring primers that varVAMP found.
-* conserved_regions.bed: A bed file showing where the conserved regions lie on the ambiguous consensus.
-* majority_consensus.fasta: Consensus sequence that does not have ambiguous characters but instead has the most prevalent nucleotide at each position.
+| Output | Description |
+| --- | --- |
+| alignment_cleaned | The preprocessed alignment. |
+| all_primers.bed | A bed file with all high scoring primers that varVAMP found. |
+| conserved_regions.bed | A bed file showing where the conserved regions lie on the ambiguous consensus. |
+| majority_consensus.fasta | Consensus sequence that does not have ambiguous characters but instead has the most prevalent nucleotide at each position. |
 
-#### [PREVIOUS: ](./usage.md)
-#### [NEXT: ](./how_varvamp_works.md)
+#### [previous: usage](./usage.md) [next: how varVAMP works](./how_varvamp_works.md)
