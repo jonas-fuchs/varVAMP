@@ -12,6 +12,7 @@ varVAMP produces multiple main output files:
 | primer.tsv | A tab seperated file with important paramenters for the primers including the sequence. |
 | varvamp_log.txt | Log file. |
 
+
 It also produces some secondary output files [*data/*]:
 
 | Output | Description |

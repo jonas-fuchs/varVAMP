@@ -29,7 +29,7 @@ Each position in the primer is scored for mismatches in all sequences. If a 3' p
 ```python3
 PRIMER_PERMUTATION_PENALTY
 ```
-The number permutations of a primer is multiplied by the penalty. For example 24 permutations and a penalty of 0.1 will yield a penalty of 2.4. set to 0 if you do not care about the number of permutations.
+The number permutations of a primer is multiplied by the penalty. For example 24 permutations and a penalty of 0.1 will yield a penalty of 2.4. Set to 0 if you do not care about the number of permutations.
 
 In the end all scores of a primer are summed up and yield a final score. The score for each amplicon is then the score of its LEFT + RIGHT primers multiplied by the fold increase of the amplicon length comapred to the optional length. This insures that in the final scheme not only large amplicons are used.
 

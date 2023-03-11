@@ -5,6 +5,7 @@ setup(
     name='varvamp',
     version=__version__,
     python_requires=">=3.9",
+    license_files = ('licence.txt'),
     packages = find_packages(),
     install_requires=[
         "biopython>=1.79",
