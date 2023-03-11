@@ -218,10 +218,10 @@ def raise_arg_errors(args, log_file):
         )
 
 
-def confirm_config():
+def confirm_config(args, log_file):
     """
     checks the config. raises error and warnings
-    if nececarry.
+    if nececarry. writes settings to log
     """
     error = False
 
@@ -351,6 +351,23 @@ def confirm_config():
             log_file
         )
 
+    # write all settings to file
+    var_dic = vars(config)
+    with open(log_file, 'a') as f:
+        print(
+            "arg dependend settings\n",
+            f"OPT_LENGTH = {args.opt_length}",
+            f"MAX_LENGTH = {args.max_length}",
+            f"MIN_OVERLAP = {args.overlap}",
+            f"THRESHOLD = {args.threshold}",
+            f"ALLOWED_N_AMB = {args.allowed_ambiguous}",
+            "\nconfig settings\n",
+            sep="\n",
+            file=f
+        )
+        for var in all_vars:
+            print(f"{var} = {var_dic[var]}",file=f)
+
 
 def main(sysargs = sys.argv[1:]):
     """
@@ -373,7 +390,7 @@ def main(sysargs = sys.argv[1:]):
     varvamp_progress(log_file)
 
     # config check
-    confirm_config()
+    confirm_config(args, log_file)
     # - progress update
     varvamp_progress(
         log_file,
@@ -421,7 +438,7 @@ def main(sysargs = sys.argv[1:]):
     # - raise error if no conserved regions were found
     if not conserved_regions:
         raise_error(
-            "nothing conserved. Lower the threshod!",
+            "nothing conserved. Lower the threshold!",
             log_file,
             exit=True
         )
