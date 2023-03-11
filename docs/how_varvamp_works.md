@@ -25,7 +25,7 @@ varVAMP uses primer3-py to search for potential primers. The evaluation if prime
 3. Hardfilter kmers that do not satisfy the max base penalty constraint and number of allowed ambiguous characters at the 3'end.
 4. Filter primers with the same start for the primer with the lowest score.
 5. Score the 3' penalty and permutation penalty.
-6. Find best primers over the sequence as defined by the lowest score in a window defined by the end of the first primer in this window + the max primer length. This greatly reduces the complexity while retaining well scoring primers.
+6. Fin lowest scoring primer in a window. This  window is defined by the end of the first primer in the window + the max primer length. This greatly reduces the complexity while retaining well scoring primers.
 
 ### Amplicon search
 
@@ -41,10 +41,10 @@ To search for the best scoring amplicon, varVAMP uses a graph based approach.
 This then is the best scoring amplicon scheme!
 
 #### Sanger sequencing
-not yet implemented
+coming soon
 
 #### qPCR
-not yet implemented
+coming soon
 
 ### Penalty calculation
 

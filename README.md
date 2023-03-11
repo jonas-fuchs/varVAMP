@@ -2,13 +2,13 @@
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
-**var**iable **V**irus**AMP**licons is a tool to design amplicons for highly diverse viruses (like Hepatits E or Polio virus).
+**var**iable **V**irus**AMP**licons is a tool to design primers for highly diverse viruses.
 
-**varVAMP has three different modes:**
+**varVAMP comes in three different flavors:**
 
 * Amplicon sequencing
-* Sanger sequencing (not implemented yet)
-* qPCR (not implemented yet)
+* Sanger sequencing (coming soon)
+* qPCR (coming soon)
 
 
 # Documentation
