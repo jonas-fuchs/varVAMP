@@ -6,7 +6,7 @@
 
 **varVAMP comes in three different flavors:**
 
-<img align="right" width="150px" src="./docs/varvamp.png" alt="varVAMP logo" />
+<img src="./docs/varvamp.png" alt="varVAMP logo" />
 
 
 This program is currently being developed and in an alpha state. You are welcome to use it. If you successfully design primers, drop me a mail. It might be possible to further collaborate!
