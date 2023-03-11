@@ -2,18 +2,23 @@
 
 In the most simple case varvamp will take an alignment and a output directory to store the results in. It uses as standard settings:
 
-* optimal_length = 1000 (optimal amplicon length)
-* max_length = 2000 (maximum amplicon length)
-* overlap = 100 (minimum overlap length)
-* threshold = 0.9 (nucleotide consensus threshold)
-* allowed_ambiguous = 4 (number of allowed ambiguous characters in a primer)
+* optimal_length = 1000
+(optimal amplicon length)
+* max_length = 2000
+(maximum amplicon length)
+* overlap = 100
+(minimum overlap length)
+* threshold = 0.9
+(nucleotide consensus threshold)
+* allowed_ambiguous = 4
+(number of allowed ambiguous characters in a primer)
 
 These settings are quite relaxed and can produce decent results for diverse viruses (80-90 % sequence identity). However, you can likely optimize the result. To to so, type:
 ```bash
 varvamp --help
 ```
 Full usage:
-```bash
+```
 usage: varvamp <alignment> <output> [options]
 
 varvamp: variable virus amplicon design
@@ -82,3 +87,6 @@ To apply these new settings just repeat the installation procedure in the varVAM
 python3 install .
 ```
 If you did everything right, varVAMPs config check passes otherwise it will produce an error. If that happens you can simply perform a git pull or adjust the settings that produced a warning.
+
+#### [PREVIOUS: ](./installation.md)
+#### [NEXT: ](./output.md)

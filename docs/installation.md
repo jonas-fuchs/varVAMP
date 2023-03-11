@@ -14,10 +14,6 @@ That was already it. To check if it worked:
 varvamp -v
 ```
 You should see the current varVAMP version.
-```bash
-varvamp -h
-```
-Displays all argument options.
 
 ## Update
 ```bash
