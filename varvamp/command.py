@@ -27,7 +27,13 @@ import argparse
 # varVAMP
 from . import _program
 from varvamp import __version__
-from varvamp.scripts import alignment, config, consensus, conserved, primers, reporting, scheme
+from varvamp.scripts import alignment
+from varvamp.scripts import config
+from varvamp.scripts import consensus
+from varvamp.scripts import conserved
+from varvamp.scripts import primers
+from varvamp.scripts import reporting
+from varvamp.scripts import scheme
 
 # DEFs
 def get_args(sysargs):
@@ -41,12 +47,9 @@ def get_args(sysargs):
         usage='''varvamp <alignment> <output> [options]''')
 
     parser.add_argument(
-        "alignment",
-        help="alignment to design primers on"
-    )
-    parser.add_argument(
-        "results",
-        help="path for results dir"
+        "alignment output_dir",
+        nargs=2,
+        help="alignment file and dir to write results"
     )
     parser.add_argument(
         "-ol",
@@ -88,6 +91,12 @@ def get_args(sysargs):
         action=argparse.BooleanOptionalAction,
         default=True,
         help="show varvamp console output"
+    )
+    parser.add_argument(
+        "-v",
+        "--version",
+        action='version',
+        version=f"varvamp {__version__}"
     )
 
     if len(sysargs) < 1:

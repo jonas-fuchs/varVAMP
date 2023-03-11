@@ -1,22 +1,11 @@
 from setuptools import setup, find_packages
-from setuptools.command.build_py import build_py
-import os
-
 from varvamp import __version__, _program
 
 setup(
     name='varvamp',
     version=__version__,
     python_requires=">=3.9",
-    scripts=[
-        "varvamp/scripts/alignment.py",
-        "varvamp/scripts/config.py",
-        "varvamp/scripts/consensus.py",
-        "varvamp/scripts/conserved.py",
-        "varvamp/scripts/primers.py",
-        "varvamp/scripts/reporting.py",
-        "varvamp/scripts/scheme.py"
-    ],
+    packages = find_packages(),
     install_requires=[
         "biopython>=1.79",
         "matplotlib>=3.5.1",

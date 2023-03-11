@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """
 This contains all varVAMP settings.
 
@@ -55,12 +54,12 @@ DNTP_CONC = 0.8  # dntp concentration mM
 DNA_CONC = 50  # primer concentration nM
 
 # multipliers for primer base penalties
-PRIMER_TM_PENALTY = 2
-PRIMER_GC_PENALTY = 0.2
-PRIMER_SIZE_PENALTY = 0.5
-PRIMER_MAX_BASE_PENALTY = 8
-PRIMER_3_PENALTY = (10, 10, 10)  # 3' penalty from the 3' - each must be > 0
-PRIMER_PERMUTATION_PENALTY = 0.1  # penalty for the number of permutations of a primer must be >0
+PRIMER_TM_PENALTY = 2  # temperature penalty
+PRIMER_GC_PENALTY = 0.2  # gc penalty
+PRIMER_SIZE_PENALTY = 0.5  # size penalty
+PRIMER_MAX_BASE_PENALTY = 8  # penalty for primer hardfiltering
+PRIMER_3_PENALTY = (10, 10, 10)  # penalties for 3' mismatches
+PRIMER_PERMUTATION_PENALTY = 0.1  # penalty for the number of permutations
 
 # amplicon settings
 MIN_OVERLAP = 100
