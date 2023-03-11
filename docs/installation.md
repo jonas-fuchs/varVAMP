@@ -22,4 +22,4 @@ git pull
 python3 install .
 ```
 
-#### [Next: Usage](./preparing_the_data.md)
+#### [Next: Preparing your data](./preparing_the_data.md)
