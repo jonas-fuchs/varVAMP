@@ -1,35 +1,5 @@
 """
 This contains all varVAMP settings.
-
-
-About settings that can also be defined by arguments:
-
-    Some settings (like amplicon sizes) can be defined via arguments. These then
-    overwrite the settings in the config file. You can also adjust settings here
-    and don't give arguments.
-
-About penalties:
-
-    - base penalty:
-        each primer is scored for its deviation from the optimal temperature, gc,
-        and size. primer base penalties are higher than the max base penalty are
-        hardfiltered.
-    - primer 3' penalty:
-        each position in the primer is scored for mismatches in all sequences.
-        if a 3' penalty is given the first in the tuple is multiplied with the
-        freq mismatch at the very 3' end. the next is multiplied with the -1 freq
-        and so on. increase penalty if you want to shift amplicons torwards best
-        3' matching. set to 0 if you do not care about 3' mismatches.
-    - permutation penalty:
-        the number permutations of a primer is multiplied by the penalty. for
-        example 24 permutations and a penalty of 0.1 will yield a penalty of
-        2.4. set to 0 if you do not care about the number of permutations.
-
-    In the end all scores are summed up. The score for each amplicon is
-    then the score of its LEFT + RIGHT primers multiplied by the fold
-    increase of the amplicon length comapred to the optional length.
-    This insures that in the final scheme not only large amplicons are
-    used.
 """
 
 # CAN BE CHANGED
