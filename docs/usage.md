@@ -48,11 +48,11 @@ optional arguments:
 Although, we believe that this will be in the most cases not necessary, you can customize all settings for varVAMP that are not specified via commands in the config.py. Here are also all default parameters stored if no optional arguments are given.
 
 Go to the configs location:
-```bash
+```shell
 cd varVAMP/varvamp/scripts/
 ```
 And open the config.py with an text editor, e.g.:
-```bash
+```shell
 gedit config.py
 ```
 Here you can adjust various settings including primer parameters and penalties.
@@ -83,7 +83,7 @@ PRIMER_3_PENALTY = (10, 10, 10)  # penalties for 3' mismatches
 PRIMER_PERMUTATION_PENALTY = 0.1  # penalty for the number of permutations
 ```
 To apply these new settings just repeat the installation procedure in the varVAMP dir:
-```bash
+```shell
 python3 install .
 ```
 If you did everything right, varVAMPs config check passes otherwise it will produce an error. If that happens you can simply perform a git pull or adjust the settings that produced a warning.

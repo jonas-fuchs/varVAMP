@@ -1,4 +1,7 @@
 # varVAMP
+
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+
 **var**iable **V**irus**AMP**licons is a tool to design amplicons for highly diverse viruses (like Hepatits E or Poliovirus).
 
 **varVAMP has three different modes:**
