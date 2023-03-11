@@ -10,7 +10,9 @@ setup(
     install_requires=[
         "biopython>=1.79",
         "matplotlib>=3.5.1",
-        "primer3-py>=1.1.0"
+        "primer3-py>=1.1.0",
+        "pandas>=1.4.4",
+        "numpy>=1.23.3"
     ],
     description='varvamp',
     url='https://github.com/jonas-fuchs/varVAMP',

@@ -33,7 +33,7 @@ def get_args(sysargs):
         usage='''varvamp <alignment> <output> [options]''')
 
     parser.add_argument(
-        "alignment output_dir",
+        "input",
         nargs=2,
         help="alignment file and dir to write results"
     )
@@ -366,7 +366,7 @@ def main(sysargs = sys.argv[1:]):
     # - ini time
     start_time = time.process_time()
     # - create folder paths
-    results_dir, data_dir, log_file = create_dir_structure(args.results)
+    results_dir, data_dir, log_file = create_dir_structure(args.input[1])
     # raise arg errors
     raise_arg_errors(args, log_file)
     # - update progress
@@ -384,7 +384,7 @@ def main(sysargs = sys.argv[1:]):
 
     # preprocess and clean alignment of gaps
     alignment_cleaned, gaps_to_mask = alignment.process_alignment(
-        args.alignment,
+        args.input[0],
         args.threshold
     )
     # - write alignment
@@ -543,5 +543,16 @@ def main(sysargs = sys.argv[1:]):
             log_file
         )
 
-    # final progress
+    # plotting
+    reporting.varvamp_plot(
+        results_dir,
+        args.threshold,
+        alignment_cleaned,
+        conserved_regions,
+        amplicon_scheme,
+        amplicons,
+        left_primer_candidates,
+        right_primer_candidates
+    )
+    # - final progress
     varvamp_progress(log_file, progress=1, start_time=start_time)
