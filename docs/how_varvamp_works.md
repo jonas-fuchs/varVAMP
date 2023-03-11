@@ -10,8 +10,7 @@ the min length of a primer. The conserved regions of a consensus sequence contai
 The alignment preprocessing contains three steps.
 1. Convert RNA to DNA
 2. Force nucleotides to lower charaters
-3. Clean gaps.
-The last part is most important. Larger insertions in single viral sequences enlarge the length of the alignment and therefore the length of amplicons will be overestimated. varVAMP masks regions it deletes with an "N" and knows now that it is not allowed to design primers spanning the potential insertion site.
+3. Clean gaps. This is the most important part. Larger insertions in single viral sequences enlarge the length of the alignment and therefore the length of amplicons will be overestimated. varVAMP masks regions it deletes with an "N" and knows now that it is not allowed to design primers spanning the potential insertion site.
 
 ### Consensus generation
 varVAMP creates consensus sequence on the basis of the threshold. If a nucleotide is present in this or a higher frequency in all aligned sequences it is considered a consensus nucleotide. If not, the frequencies of the highest scoring nucleotides are added until the threshold is reached and the appropriate ambiguous nucleotide character is used. Importantly, varVAMP is aware of ambiguous nucleotides in the alignment and handels them by de-multiplexing the character into real nucleotides and adding its portion to the nucleotide counts at the alignment position.
