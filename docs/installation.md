@@ -1,5 +1,5 @@
 ## Requirements
-varVAMP runs on UNIX Systems and MacOSX. Python3 >=3.9 has to be installed.
+varVAMP runs on UNIX Systems, MacOSX and Windows with Python3 >=3.9 installed.
 
 
 ## Installation of varvamp with pip
@@ -7,7 +7,7 @@ varVAMP runs on UNIX Systems and MacOSX. Python3 >=3.9 has to be installed.
 ```shell
 git clone https://github.com/jonas-fuchs/varVAMP
 cd varVAMP
-python3 install .
+pip install .
 ```
 That was already it. To check if it worked:
 ```shell
@@ -15,7 +15,7 @@ varvamp -v
 ```
 You should see the current varVAMP version.
 
-## Installation via requirements.txt for developement porposes
+## Installation via requirements.txt for development
 
 ```shell
 git clone https://github.com/jonas-fuchs/varVAMP
@@ -28,7 +28,7 @@ python3 varvamp -v
 ```shell
 cd varVAMP
 git pull
-python3 install .
+pip install .
 ```
 
 #### [Next: Preparing your data](./preparing_the_data.md)
