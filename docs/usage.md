@@ -86,7 +86,7 @@ PRIMER_PERMUTATION_PENALTY = 0.1  # penalty for the number of permutations
 ```
 To apply these new settings just repeat the installation procedure in the varVAMP dir:
 ```shell
-python3 install .
+pip install .
 ```
 If you did everything right, varVAMPs config check passes otherwise it will produce an error. If that happens you can simply perform a git pull or adjust the settings that produced a warning.
 

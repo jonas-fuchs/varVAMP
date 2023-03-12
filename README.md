@@ -2,13 +2,23 @@
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
-**var**iable **V**irus**AMP**licons is a tool to design primers for highly diverse viruses. It uses a graph based approach to design amplicons that tile the entire viral genome.
+**var**iable **V**irus**AMP**licons is a tool to design primers for highly diverse viruses. The input is an alignment of your viral (full-genome) sequences.
 
 **varVAMP comes in three different flavors:**
 
 <img src="./docs/varvamp.png" alt="varVAMP logo" />
 
-This program is currently being developed and in an alpha state. So far only the primer design for multiplex PCRs tiling the entire viral genome is implemented. These amplicons can be used for Illumina or Oxford Nanopore sequencing. Currently working on primerdesign for sanger and qPCR design. You are welcome to use this software. If you successfully design primers, drop me a mail. It might be possible to collaborate!
+**TILED**: varVAMP uses a graph based approach to design overlapping amplicons that tile the entire viral genome. This designs amplicons that are suitable for Oxford Nanopore or Illumina based full-genome sequencing.
+
+**SANGER** *(coming soon)*: varVAMP searches for the very best primers and reports back an amplicon which can be used for PCR-based screening approaches.
+
+**QPCR** *(coming soon)*: varVAMP searches for small amplicons with an internal primer for the probe. It minimizes temperature differences between the primers.
+
+Features that are planned, but have not been implemented yet:
+* Dimer search for amplicon schemes (currently only primer homo-dimers and hetero-dimers within the amplicon are evaluated).
+* Primer BLAST.
+
+This program is currently being developed and in an alpha state. You are welcome to use this software. If you successfully design primers, drop me a mail. It might be possible to collaborate!
 
 # Documentation
 
