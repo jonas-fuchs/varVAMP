@@ -9,7 +9,7 @@ import math
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.backends.backend_pdf
+from matplotlib.backends.backend_pdf import PdfPages
 
 
 # varVAMP
@@ -322,7 +322,7 @@ def varvamp_plot(dir, threshold, alignment_cleaned, conserved_regions, amplicon_
             amp[1],
             linewidth=5
         )
-    # - amplicon egend
+    # - amplicon legend
     amp = amplicons[amplicon_scheme[0]]
     ax[1].hlines(
             0.8,
@@ -353,28 +353,30 @@ def varvamp_plot(dir, threshold, alignment_cleaned, conserved_regions, amplicon_
     # - save fig
     fig.savefig(out)
 
-    # second: create per base coverage plots
+    # second plot: per base coverage
     # - ini name
     name = "per_base_mismatches.pdf"
     out = os.path.join(dir, name)
     # - ini multi pdf
-    pdf = matplotlib.backends.backend_pdf.PdfPages(out)
-    # - ini figure
-    fig, ax = plt.subplots(len(primers), figsize=(12, len(primers)*4), squeeze=True)
-    fig.suptitle("Per base mismatches", fontsize=18)
-    fig.tight_layout(rect=[0.05, 0.05, 1, 0.98])
-    fig.subplots_adjust(hspace=0.5)
-    # - plotting
-    for idx, primer in enumerate(primers):
-        x = [pos+primer[1][1] for pos in range(0, len(primer[1][4]))]
-        ax[idx].bar(x, primer[1][4],
-                    color='lightgrey', edgecolor='black')
-        ax[idx].set_title(primer[0], loc = "left")
-        ax[idx].xaxis.set_ticks(np.arange(primer[1][1], primer[1][1]+len(x), 1))
-        ax[idx].xaxis.set_ticklabels(x, rotation = 45)
-        ax[idx].set_ylabel(ylabel="% of sequences")
-        ax[idx].set_xlabel("position")
-        ax[idx].set_ylim(0, 1-threshold)
-    # - to pdf
-    pdf.savefig(fig, bbox_inches='tight')
-    pdf.close()
+    with PdfPages(out) as pdf:
+        # - always print 4 primers to one page
+        for i in range(0, len(primers), 4):
+            # - ini figure
+            primers_temp = primers[i:i+4]
+            fig, ax = plt.subplots(len(primers_temp), figsize=(12, len(primers_temp)*4), squeeze=True)
+            fig.suptitle("Per base mismatches", fontsize=18)
+            fig.tight_layout(rect=[0.05, 0.05, 1, 0.98])
+            fig.subplots_adjust(hspace=0.5)
+            # - plotting
+            for idx, primer in enumerate(primers_temp):
+                x = [pos+primer[1][1] for pos in range(0, len(primer[1][4]))]
+                ax[idx].bar(x, primer[1][4],
+                            color='lightgrey', edgecolor='black')
+                ax[idx].set_title(primer[0], loc = "left")
+                ax[idx].xaxis.set_ticks(np.arange(primer[1][1], primer[1][1]+len(x), 1))
+                ax[idx].xaxis.set_ticklabels(x, rotation = 45)
+                ax[idx].set_ylabel(ylabel="% of sequences")
+                ax[idx].set_xlabel("position")
+                ax[idx].set_ylim(0, 1-threshold)
+            # - to pdf
+            pdf.savefig(fig, bbox_inches='tight')
