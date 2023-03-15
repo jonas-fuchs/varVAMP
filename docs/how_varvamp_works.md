@@ -25,7 +25,7 @@ varVAMP uses primer3-py to search for potential primers. The evaluation if prime
 3. Hardfilter kmers that do not satisfy the max base penalty constraint and number of allowed ambiguous characters at the 3'end.
 4. Filter primers with the same start for the primer with the lowest score.
 5. Score the 3' penalty and permutation penalty.
-6. Fin lowest scoring primer in a window. This  window is defined by the end of the first primer in the window + the max primer length. This greatly reduces the complexity while retaining well scoring primers.
+6. Find lowest scoring primer in a window. This  window is defined by the end of the first primer in the window + the max primer length. This greatly reduces the complexity while retaining well scoring primers.
 
 ### Amplicon search
 
@@ -65,4 +65,4 @@ The number permutations of a primer is multiplied by the penalty. For example 24
 
 In the end all scores of a primer are summed up and yield a final score. The score for each amplicon is then the score of its LEFT + RIGHT primers multiplied by the fold increase of the amplicon length comapred to the optional length. This insures that in the final scheme not only large amplicons are used.
 
-#### [Previous: Output](./output.md)
+#### [Previous: Output](./output.md)&emsp;&emsp;[Next: FAQ](./FAQ.md)
