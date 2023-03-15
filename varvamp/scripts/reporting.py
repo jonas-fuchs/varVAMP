@@ -245,7 +245,7 @@ def varvamp_plot(dir, threshold, alignment_cleaned, conserved_regions, amplicon_
     creates overview plot for the amplicon design
     and per base coverage plots
     """
-    # first: create the overview plot
+    # first plot: overview
     # - create pdf name
     name = "amplicon_plot.pdf"
     out = os.path.join(dir, name)
@@ -353,7 +353,7 @@ def varvamp_plot(dir, threshold, alignment_cleaned, conserved_regions, amplicon_
     # - save fig
     fig.savefig(out)
 
-    # second plot: per base coverage
+    # second plot: per base primer mismatches
     # - ini name
     name = "per_base_mismatches.pdf"
     out = os.path.join(dir, name)

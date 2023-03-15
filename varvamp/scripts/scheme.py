@@ -4,6 +4,7 @@ amplicon search
 
 # BUILT-INS
 import sys
+import heapq
 
 # varVAMP
 from varvamp.scripts import config, primers
@@ -128,40 +129,27 @@ def dijkstra_algorithm(graph, start_node):
     """
     implementation of the dijkstra algorithm
     """
-    unvisited_nodes = list(graph.get_nodes())
-    # save the cost of visiting each node
-    shortest_path = {}
-    # save the shortest known path to a node found so far
-    previous_nodes = {}
 
-    # initialize the "infinity" value of unvisited nodes
-    max_value = sys.maxsize
-    for node in unvisited_nodes:
-        shortest_path[node] = max_value
-    # initialize the starting node with 0
+    previous_nodes = {}
+    shortest_path = {vertex: float('infinity') for vertex in graph.get_nodes()}
     shortest_path[start_node] = 0
 
-    # visit all nodes
-    while unvisited_nodes:
-        # find the node with the lowest score
-        current_min_node = None
-        for node in unvisited_nodes:  # Iterate over the nodes
-            if current_min_node == None:
-                current_min_node = node
-            elif shortest_path[node] < shortest_path[current_min_node]:
-                current_min_node = node
+    pq = [(0, start_node)]
 
-        # retrieve the current node's neighbors and updates their distances
-        neighbors = graph.get_outgoing_edges(current_min_node)
-        for neighbor in neighbors:
-            tentative_value = shortest_path[current_min_node] + graph.value(current_min_node, neighbor)
-            if tentative_value < shortest_path[neighbor]:
-                shortest_path[neighbor] = tentative_value
-                # update the best path to the current node
-                previous_nodes[neighbor] = current_min_node
+    while len(pq) > 0:
+        current_distance, current_node = heapq.heappop(pq)
 
-        # mark the node as "visited"
-        unvisited_nodes.remove(current_min_node)
+        if current_distance > shortest_path[current_node]:
+            continue
+
+        for neighbor in graph.get_outgoing_edges(current_node):
+            distance = current_distance + graph.value(current_node, neighbor)
+
+            # Only consider this new path if it's a better path
+            if distance < shortest_path[neighbor]:
+                shortest_path[neighbor] = distance
+                previous_nodes[neighbor] = current_node
+                heapq.heappush(pq, (distance, neighbor))
 
     return previous_nodes, shortest_path
 
