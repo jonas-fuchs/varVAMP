@@ -359,6 +359,11 @@ def confirm_config(args, log_file):
             "large GC clamps will results in too high 3'end stability",
             log_file
         )
+    if config.PRIMER_MAX_GC_END < 5 and config.PRIMER_MAX_GC_END < config.PRIMER_GC_CLAMP:
+        raise_error(
+            f"GC clamp of {config.PRIMER_GC_CLAMP} length will not be enforced as there are only {config.PRIMER_MAX_GC_END} gc characters allowed at the 3' end",
+            log_file
+        )
     if config.PRIMER_MAX_GC_END > 5:
         raise_error(
             "only the last 5 nucleotides of the 3' end are considered for GC 3'end calculation.",

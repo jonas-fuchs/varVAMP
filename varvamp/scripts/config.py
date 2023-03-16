@@ -14,11 +14,11 @@ PRIMER_SIZES = (17, 27, 20)  # size (min, max, opt)
 PRIMER_MAX_POLYX = 4  # max number of polyx repeats
 PRIMER_MAX_DINUC_REPEATS = 4  # max number of dinucleotide repeats
 PRIMER_HAIRPIN = 45  # max melting temp for secondary structures
-PRIMER_MAX_DIMER_TMP = 45  # max melting temp for dimers (homo- or heterodimers)
 PRIMER_MAX_GC_END = 3  # max GCs in the last 5 bases of the primer
 PRIMER_GC_CLAMP = 1  # min number of GC nucleotides at the very 3' end
-PRIMER_MAX_DIMER_TMP_3_PRIME = 35  # max melting temperature of dimers considering only the 5 bases of the 3 prime
 PRIMER_MIN_3_WITHOUT_AMB = 2  # min len of 3' without ambiguous charaters
+PRIMER_MAX_DIMER_TMP = 45  # max melting temp for dimers (homo- or heterodimers)
+PRIMER_MAX_DIMER_TMP_3_PRIME = 35  # max melting temperature of dimers considering only the 5 last bases of the 3 prime
 
 # PCR parameters - adjust to your PCR
 PCR_MV_CONC = 50  # monovalent cations mM
