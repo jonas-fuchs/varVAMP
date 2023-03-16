@@ -10,19 +10,19 @@ import primer3 as p3
 from varvamp.scripts import config
 
 
-def calc_gc(primer):
+def calc_gc(seq):
     """
     calculate the gc of a sequence
     """
-    return 100*(primer.count("g")+primer.count("G")+primer.count("c")+primer.count("C"))/len(primer)
+    return 100*(seq.count("g")+seq.count("G")+seq.count("c")+seq.count("C"))/len(seq)
 
 
-def calc_temp(primer):
+def calc_temp(seq):
     """
     calculate the melting temperature
     """
     return p3.calc_tm(
-            primer.upper(),
+            seq.upper(),
             mv_conc=config.MV_CONC,
             dv_conc=config.DV_CONC,
             dntp_conc=config.DNTP_CONC,
@@ -30,12 +30,12 @@ def calc_temp(primer):
         )
 
 
-def calc_hairpin(primer):
+def calc_hairpin(seq):
     """
     calculates hairpins
     """
     return p3.calc_hairpin(
-            primer.upper(),
+            seq.upper(),
             mv_conc=config.MV_CONC,
             dv_conc=config.DV_CONC,
             dntp_conc=config.DNTP_CONC,
@@ -43,14 +43,14 @@ def calc_hairpin(primer):
         )
 
 
-def calc_dimer(primer1, primer2):
+def calc_dimer(seq1, seq2):
     """
     Calculate the heterodimerization thermodynamics of two DNA sequences.
     Return primer3 thermo object.
     """
     return p3.calc_heterodimer(
-        primer1.upper(),
-        primer2.upper(),
+        seq1.upper(),
+        seq2.upper(),
         mv_conc=config.MV_CONC,
         dv_conc=config.DV_CONC,
         dna_conc=config.DNA_CONC,
@@ -58,29 +58,30 @@ def calc_dimer(primer1, primer2):
     )
 
 
-def calc_max_polyx(primer):
+def calc_max_polyx(seq):
     """
-    calculate maximum polyx in primers
+    calculate maximum polyx of a seq
     """
-    previous_nuc = primer[0]
-    counter = 1
-    max_polyx = 1
-    for nuc in primer[1:]:
+    previous_nuc = seq[0]
+    counter = 0
+    max_polyx = 0
+    for nuc in seq[1:]:
         if nuc == previous_nuc:
             counter += 1
         else:
-            counter = 1
+            counter = 0
             previous_nuc = nuc
         if counter > max_polyx:
             max_polyx = counter
     return(max_polyx)
 
 
-def calc_max_dinuc_repeats(primer):
+def calc_max_dinuc_repeats(seq):
     """
-    calculate the amount of repeating dinucleotides
+    calculate the amount of repeating
+    dinucleotides in a sequence
     """
-    for s in [primer, primer[1:]]:
+    for s in [seq, seq[1:]]:
         previous_dinuc = s[0:2]
         max_dinuc = 0
         counter = 0
@@ -95,43 +96,15 @@ def calc_max_dinuc_repeats(primer):
     return max_dinuc
 
 
-def check_end_gc(primer):
-    """
-    check how many gc nucleotides
-    are within the last 5 bases of
-    the 3' end
-    """
-    return primer[-5:].count('g') + primer[-5:].count('c')
-
-
-def three_prime_ambiguous(amb_primer):
-    """
-    determine if a sequence contains an ambiguous char at the 3'prime
-    """
-    len_3_prime = config.MIN_3_WITHOUT_AMB
-
-    if len_3_prime != 0:
-        for nuc in amb_primer[len(amb_primer)-len_3_prime:]:
-            if nuc not in config.nucs:
-                is_amb = True
-                break
-            else:
-                is_amb = False
-    else:
-        is_amb = False
-
-    return is_amb
-
-
-def calc_base_penalty(primer):
+def calc_base_penalty(seq):
     """
     Calculate intrinsic primer penalty.
     """
     penalty = 0
 
-    tm = calc_temp(primer)
-    gc = calc_gc(primer)
-    size = len(primer)
+    tm = calc_temp(seq)
+    gc = calc_gc(seq)
+    size = len(seq)
 
     # TEMP penalty
     if tm > config.PRIMER_TMP[2]:
@@ -164,6 +137,48 @@ def calc_base_penalty(primer):
     return penalty
 
 
+def filter_kmer_direction_independent(kmer):
+    """
+    filter kmer for temperature, gc content,
+    poly x, dinucleotide repeats and homodimerization
+    """
+    return(
+        (config.PRIMER_TMP[0] <= calc_temp(kmer) <= config.PRIMER_TMP[1])
+        and (config.PRIMER_GC_RANGE[0] <= calc_gc(kmer) <= config.PRIMER_GC_RANGE[1])
+        and (calc_max_polyx(kmer) <= config.MAX_POLYX)
+        and (calc_max_dinuc_repeats(kmer) <= config.MAX_DINUC_REPEATS)
+        and (calc_dimer(kmer, kmer).tm <= config.MAX_DIMER_TMP)
+    )
+
+
+def calc_end_gc(seq):
+    """
+    check how many gc nucleotides
+    are within the last 5 bases of
+    the 3' end
+    """
+    return seq[-5:].count('g') + seq[-5:].count('c')
+
+
+def is_three_prime_ambiguous(amb_seq):
+    """
+    determine if a sequence contains an ambiguous char at the 3'prime
+    """
+    len_3_prime = config.MIN_3_WITHOUT_AMB
+
+    if len_3_prime != 0:
+        for nuc in amb_seq[len(amb_seq)-len_3_prime:]:
+            if nuc not in config.nucs:
+                is_amb = True
+                break
+            else:
+                is_amb = False
+    else:
+        is_amb = False
+
+    return is_amb
+
+
 def rev_complement(seq):
     """
     reverse complement a sequence
@@ -171,44 +186,56 @@ def rev_complement(seq):
     return(str(Seq(seq).reverse_complement()))
 
 
-def hardfilter_primers(primer):
+def filter_kmer_direction_dependend(direction, kmer, ambiguous_consensus):
     """
-    hard filter primers for temperature, gc content,
-    poly x, dinucleotide repeats and homodimerization
+    filter for 3'ambiguous, hairpin temp and end GC content.
+    this differs depending on the direction of the kmer.
     """
+    # get the correct kmer to test
+    if direction == "LEFT":
+        kmer_seq = kmer[0]
+        amb_kmer_seq = ambiguous_consensus[kmer[1]:kmer[2]]
+    elif direction == "RIGHT":
+        kmer_seq = rev_complement(kmer[0])
+        amb_kmer_seq = rev_complement(ambiguous_consensus[kmer[1]:kmer[2]])
+    # calculate haipin and 3' prime GC
+    hairpin_tm = calc_hairpin(kmer_seq).tm
+    gc_end = calc_end_gc(kmer_seq)
+    # filter kmer
     return(
-        (config.PRIMER_TMP[0] <= calc_temp(primer) <= config.PRIMER_TMP[1])
-        and (config.PRIMER_GC_RANGE[0] <= calc_gc(primer) <= config.PRIMER_GC_RANGE[1])
-        and (calc_max_polyx(primer) <= config.MAX_POLYX)
-        and (calc_max_dinuc_repeats(primer) <= config.MAX_DINUC_REPEATS)
-        and (calc_dimer(primer, primer).tm <= config.MAX_DIMER_TMP)
+        (hairpin_tm <= config.PRIMER_HAIRPIN)
+        and (gc_end <= config.MAX_GC_END)
+        and not is_three_prime_ambiguous(amb_kmer_seq)
     )
 
 
-def filter_primer_direction_specific(direction, kmer, ambiguous_consensus):
+def filter_kmers(kmers, ambiguous_consensus):
     """
-    filter for 3'ambiguous,0 hairpin and end GC.
-    this differs depending on the direction of the primer.
+    hardfilter kmers based on their seq and direction
     """
-    # get the correct primer to test
-    if direction == "LEFT":
-        primer = kmer[0]
-        amb_primer = ambiguous_consensus[kmer[1]:kmer[2]]
-    elif direction == "RIGHT":
-        primer = rev_complement(kmer[0])
-        amb_primer = rev_complement(ambiguous_consensus[kmer[1]:kmer[2]])
 
-    #calculate haipin and 3' prime GC
-    hairpin_tm = calc_hairpin(primer).tm
-    gc_end = check_end_gc(primer)
+    left_primer_candidates = []
+    right_primer_candidates = []
 
-    # filter primer
-    if hairpin_tm <= config.PRIMER_HAIRPIN and gc_end <= config.MAX_GC_END:
-        if not three_prime_ambiguous(amb_primer):
-            return kmer
+    for kmer in kmers:
+        if filter_kmer_direction_independent(kmer[0]):
+            base_penalty = calc_base_penalty(kmer[0])
+            if base_penalty <= config.PRIMER_MAX_BASE_PENALTY:
+                for direction in ["LEFT", "RIGHT"]:
+                    if filter_kmer_direction_dependend(direction, kmer, ambiguous_consensus):
+                        if direction == "LEFT":
+                            left_primer_candidates.append(
+                                [kmer[0], kmer[1], kmer[2], base_penalty]
+                            )
+                        if direction == "RIGHT":
+                            right_primer_candidates.append(
+                                [kmer[0], kmer[1], kmer[2], base_penalty]
+                            )
+
+    return left_primer_candidates, right_primer_candidates
 
 
-def find_lowest_scoring(direction, hardfiltered_kmers):
+def filter_for_lowest_scoring(direction, primer_candidates):
     """
     sort the primers by start and base penalty.
     for primers that have the same start, retain only
@@ -221,11 +248,11 @@ def find_lowest_scoring(direction, hardfiltered_kmers):
         start = 1   # start index of the forward primer
     elif direction == "RIGHT":
         start = 2   # stop index as it is the start of the reverse primer
-    hardfiltered_kmers.sort(key=lambda x: (x[start], x[3]))
+    primer_candidates.sort(key=lambda x: (x[start], x[3]))
 
     # pick the lowest scoring primer for primers that have the same start
     prev_start = -1
-    for primer in hardfiltered_kmers:
+    for primer in primer_candidates:
         if primer[start] != prev_start:
             candidates.append(primer)
             prev_start = primer[start]
@@ -233,12 +260,12 @@ def find_lowest_scoring(direction, hardfiltered_kmers):
     return candidates
 
 
-def get_permutation_penalty(ambiguous_primer):
+def calc_permutation_penalty(amb_seq):
     # get all permutations of a primer with ambiguous nucleotides and
     # multiply with permutation penalty
     permutations = 0
 
-    for nuc in ambiguous_primer:
+    for nuc in amb_seq:
         if nuc in config.ambig_nucs:
             n = len(config.ambig_nucs[nuc])
             if permutations != 0:
@@ -249,15 +276,17 @@ def get_permutation_penalty(ambiguous_primer):
     return permutations*config.PRIMER_PERMUTATION_PENALTY
 
 
-def primer_per_base_mismatch(primer, alignment, ambiguous_consensus):
+def get_per_base_mismatches(primer, alignment, ambiguous_consensus):
     """
     calculate for a given primer with [seq, start, stop]
-    percent mismatch per primer pos with the alignment.
+    the percent mismatch per primer pos with the alignment.
     considers if primer or sequences have an amb nuc.
     """
+    # ini list
     primer_per_base_mismatch = len(primer[0])*[0]
+    # get primer with ambiguous nucs
     ambigous_primer = ambiguous_consensus[primer[1]:primer[2]]
-
+    # test it against all sequences in the alignment
     for sequence in alignment:
         # slice each sequence of the alignment for the primer
         # start and stop positions
@@ -295,7 +324,7 @@ def primer_per_base_mismatch(primer, alignment, ambiguous_consensus):
     return primer_per_base_mismatch
 
 
-def get_penalty_3_prime(direction, primer):
+def calc_penalty_3_prime(direction, primer):
     """
     calculate the penalty for mismatches at the 3' end.
     the more mismatches are closer to the 3' end of the primer,
@@ -314,51 +343,29 @@ def get_penalty_3_prime(direction, primer):
 
 def find_primers(kmers, ambiguous_consensus, alignment):
     """
-    hardfilter kmers and further filter
-    for potential primers
+    filter kmers direction specific, get the lowest scoring and append penalties
+    --> potential primers
     """
 
-    hardfiltered_left_kmers = []
-    hardfiltered_right_kmers = []
+    # filter kmers direction specific
+    left_primer_candidates, right_primer_candidates = filter_kmers(kmers, ambiguous_consensus)
 
-    for kmer in kmers:
-        if hardfilter_primers(kmer[0]):
-            base_penalty = calc_base_penalty(kmer[0])
-            if base_penalty <= config.PRIMER_MAX_BASE_PENALTY:
-                if filter_primer_direction_specific(
-                    "LEFT",
-                    kmer,
-                    ambiguous_consensus
-                ):
-                    hardfiltered_left_kmers.append(
-                        [kmer[0], kmer[1], kmer[2], base_penalty]
-                    )
-                if filter_primer_direction_specific(
-                    "RIGHT",
-                    kmer,
-                    ambiguous_consensus
-                ):
-                    hardfiltered_right_kmers.append(
-                        [kmer[0], kmer[1], kmer[2], base_penalty]
-                    )
-
-    # filter kmers and complement kmers for possible primers
-    left_primer_candidates = find_lowest_scoring("LEFT", hardfiltered_left_kmers)
-    right_primer_candidates = find_lowest_scoring("RIGHT", hardfiltered_right_kmers)
-
-    # now calculate the mismatches for each position in the primer.
-    # based on this score calculate the 3' penalty and n ambiguous chars.
     for direction, primer_candidates in [("LEFT", left_primer_candidates), ("RIGHT", right_primer_candidates)]:
+        # filter for lowest scoring with the same start
+        primer_candidates = filter_for_lowest_scoring(direction, primer_candidates)
+        # append scores
         for primer in primer_candidates:
-            primer.append(primer_per_base_mismatch(
-                primer,
-                alignment,
-                ambiguous_consensus
-            ))
-            primer[3] += get_penalty_3_prime(direction, primer)  # add 3 prime penalty to base penalty
-            primer[3] += get_permutation_penalty(  # also add permutation penalty
-                ambiguous_consensus[primer[1]:primer[2]]
+            primer.append(
+                get_per_base_mismatches(
+                    primer,
+                    alignment,
+                    ambiguous_consensus
+                )
             )
+        primer[3] += calc_penalty_3_prime(direction, primer)  # add 3 prime penalty to base penalty
+        primer[3] += calc_permutation_penalty(  # also add permutation penalty
+            ambiguous_consensus[primer[1]:primer[2]]
+        )
 
     return left_primer_candidates, right_primer_candidates
 
