@@ -37,7 +37,7 @@ def write_alignment(dir, alignment):
             print(f">{seq[0]}\n{seq[1]}", file=o)
 
 
-def conserved_to_bed(conserved_regions, dir):
+def write_conserved_to_bed(conserved_regions, dir):
     """
     write conserved regions as bed file
     """
@@ -56,7 +56,7 @@ def conserved_to_bed(conserved_regions, dir):
             counter += 1
 
 
-def primers_to_bed(outfile, primer_name, primer_prop, direction):
+def write_primers_to_bed(outfile, primer_name, primer_prop, direction):
     """
     write primers as bed file
     """
@@ -81,7 +81,7 @@ def write_all_primers(dir, left_primer_candidates, right_primer_candidates):
 
     for direction, primer_candidates in [("+", left_primer_candidates), ("-", right_primer_candidates)]:
         for primer in primer_candidates:
-            primers_to_bed(outfile, primer, primer_candidates[primer], direction)
+            write_primers_to_bed(outfile, primer, primer_candidates[primer], direction)
 
 
 def get_primers_from_amp_dic(amp, amplicons, left_primer_candidates, right_primer_candidates):
@@ -173,7 +173,7 @@ def write_scheme_to_files(dir, amplicon_scheme, amplicons, ambiguous_consensus, 
                     file=tsv
                 )
                 # write primer bed file
-                primers_to_bed(primer_bed_file, primer[0], primer[1], direction)
+                write_primers_to_bed(primer_bed_file, primer[0], primer[1], direction)
 
 
 def entropy(pos, states):

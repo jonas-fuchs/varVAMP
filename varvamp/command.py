@@ -43,20 +43,20 @@ def get_args(sysargs):
         "--opt-length",
         help="optimal length of the amplicons",
         type=int,
-        default=config.OPT_AMPLICON_LENGTH
+        default=config.AMPLICON_OPT_LENGTH
     )
     parser.add_argument(
         "-ml",
         "--max-length",
         help="max length of the amplicons",
         type=int,
-        default=config.MAX_AMPLICON_LENGTH
+        default=config.AMPLICON_MAX_LENGTH
     )
     parser.add_argument(
         "-o",
         "--overlap",
         type=float,
-        default=config.MIN_OVERLAP,
+        default=config.AMPLICON_MIN_OVERLAP,
         help="min overlap of the amplicons"
     )
     parser.add_argument(
@@ -70,7 +70,7 @@ def get_args(sysargs):
         "-a",
         "--allowed-ambiguous",
         type=int,
-        default=config.ALLOWED_N_AMB,
+        default=config.PRIMER_ALLOWED_N_AMB,
         help="number of ambiguous characters that are allowed within a primer"
     )
     parser.add_argument(
@@ -229,28 +229,29 @@ def confirm_config(args, log_file):
     # check if all variables exists
     all_vars = [
         "FREQUENCY_THRESHOLD",
-        "ALLOWED_N_AMB",
+        "PRIMER_ALLOWED_N_AMB",
         "PRIMER_TMP",
         "PRIMER_GC_RANGE",
         "PRIMER_SIZES",
         "PRIMER_HAIRPIN",
-        "MAX_POLYX",
-        "MAX_DINUC_REPEATS",
-        "MAX_DIMER_TMP",
-        "MIN_3_WITHOUT_AMB",
-        "MV_CONC",
-        "DV_CONC",
-        "DNTP_CONC",
-        "DNA_CONC",
+        "PRIMER_MAX_POLYX",
+        "PRIMER_MAX_DINUC_REPEATS",
+        "PRIMER_MAX_DIMER_TMP",
+        "PRIMER_MAX_DIMER_TMP_3_PRIME",
+        "PRIMER_MIN_3_WITHOUT_AMB",
+        "PCR_MV_CONC",
+        "PCR_DV_CONC",
+        "PCR_DNTP_CONC",
+        "PCR_DNA_CONC",
         "PRIMER_TM_PENALTY",
         "PRIMER_GC_PENALTY",
         "PRIMER_SIZE_PENALTY",
         "PRIMER_MAX_BASE_PENALTY",
         "PRIMER_3_PENALTY",
         "PRIMER_PERMUTATION_PENALTY",
-        "MAX_AMPLICON_LENGTH",
-        "OPT_AMPLICON_LENGTH",
-        "MIN_OVERLAP"
+        "AMPLICON_OPT_LENGTH",
+        "AMPLICON_MAX_LENGTH",
+        "AMPLICON_MIN_OVERLAP"
     ]
 
     for var in all_vars:
@@ -302,12 +303,14 @@ def confirm_config(args, log_file):
 
     # check values that cannot be zero
     non_negative_var = [
-        ("max polyx nucleotides", config.MAX_POLYX),
-        ("max polyx nucleotides", config.MAX_DINUC_REPEATS),
-        ("min number of 3 prime nucleotides without ambiguous nucleotides", config.MIN_3_WITHOUT_AMB),
-        ("monovalent cation concentration", config.MV_CONC),
-        ("divalent cation concentration", config.DV_CONC),
-        ("dNTP concentration", config.DNTP_CONC),
+        ("max polyx repeats", config.PRIMER_MAX_POLYX),
+        ("max dinucleotide repeats", config.PRIMER_MAX_DINUC_REPEATS),
+        ("max GCs at the 3' end", config.PRIMER_MAX_GC_END),
+        ("GC clamp", config.PRIMER_GC_CLAMP),
+        ("min number of 3 prime nucleotides without ambiguous nucleotides", config.PRIMER_MIN_3_WITHOUT_AMB),
+        ("monovalent cation concentration", config.PCR_MV_CONC),
+        ("divalent cation concentration", config.PCR_DV_CONC),
+        ("dNTP concentration", config.PCR_DNTP_CONC),
         ("primer temperatur penalty", config.PRIMER_TM_PENALTY),
         ("primer gc penalty", config.PRIMER_GC_PENALTY),
         ("primer size penalty", config.PRIMER_SIZE_PENALTY),
@@ -341,7 +344,7 @@ def confirm_config(args, log_file):
             "will influence successful primer search!",
             log_file
         )
-    if config.MAX_DIMER_TMP < 0:
+    if config.PRIMER_MAX_DIMER_TMP < 0:
         raise_error(
             "there is no need to set max dimer melting temp below 0.",
             log_file
@@ -349,6 +352,21 @@ def confirm_config(args, log_file):
     if config.PRIMER_MAX_BASE_PENALTY < 8:
         raise_error(
             "decreasing the base penalty will hardfilter more primers.",
+            log_file
+        )
+    if config.PRIMER_GC_CLAMP > 3:
+        raise_error(
+            "large GC clamps will results in too high 3'end stability",
+            log_file
+        )
+    if config.PRIMER_MAX_GC_END > 5:
+        raise_error(
+            "only the last 5 nucleotides of the 3' end are considered for GC 3'end calculation.",
+            log_file
+        )
+    if config.PRIMER_MAX_DIMER_TMP_3_PRIME > config.PRIMER_MAX_DIMER_TMP:
+        raise_error(
+            "primer dimer temperature of the last 5 bases should not be lower than the dimer temperature",
             log_file
         )
 
@@ -444,7 +462,7 @@ def main(sysargs=sys.argv[1:]):
             exit=True
         )
     # - write conserved regions to bed file
-    reporting.conserved_to_bed(conserved_regions, data_dir)
+    reporting.write_conserved_to_bed(conserved_regions, data_dir)
     # - progress update
     varvamp_progress(
         log_file,

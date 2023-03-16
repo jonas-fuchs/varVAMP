@@ -59,6 +59,17 @@ class Graph(object):
         return self.graph[node1][node2]
 
 
+def test_for_heterodimer(seq1, seq2):
+    """
+    tests for heterodimers
+    """
+    return(
+        (primers.calc_dimer(seq1, seq2).tm <= config.PRIMER_MAX_DIMER_TMP)
+        and (primers.calc_dimer(seq1[-5:], seq2).tm <= config.PRIMER_MAX_DIMER_TMP_3_PRIME)
+        and (primers.calc_dimer(seq1, seq2[-5:]).tm <= config.PRIMER_MAX_DIMER_TMP_3_PRIME)
+    )
+
+
 def find_amplicons(left_primer_candidates, right_primer_candidates, opt_len, max_len):
     """
     finds all possible amplicons, creates a dictionary
@@ -72,7 +83,7 @@ def find_amplicons(left_primer_candidates, right_primer_candidates, opt_len, max
             right_primer = right_primer_candidates[right]
             amplicon_length = right_primer[2] - left_primer[1]
             if opt_len <= amplicon_length <= max_len:
-                if primers.calc_dimer(right_primer[0], left_primer[0]).tm <= config.MAX_DIMER_TMP:
+                if test_for_heterodimer(left_primer[0], primers.rev_complement(right_primer[0])):
                     # calculate length dependend amplicon costs as the cumulative primer
                     # score multiplied by the fold length of the optimal length.
                     amplicon_costs = (right_primer[3] + left_primer[3])*(amplicon_length/opt_len)
