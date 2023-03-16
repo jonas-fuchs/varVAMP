@@ -5,7 +5,7 @@ data writing and visualization.
 import os
 import math
 
-#LIBS
+# LIBS
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -94,7 +94,7 @@ def get_primers_from_amp_dic(amp, amplicons, left_primer_candidates, right_prime
     right_name = amplicons[amp][3]
     right_primer = right_primer_candidates[right_name]
 
-    return (left_name, left_primer),(right_name, right_primer)
+    return (left_name, left_primer), (right_name, right_primer)
 
 
 def write_scheme_to_files(dir, amplicon_scheme, amplicons, ambiguous_consensus, left_primer_candidates, right_primer_candidates):
@@ -102,10 +102,10 @@ def write_scheme_to_files(dir, amplicon_scheme, amplicons, ambiguous_consensus, 
     write all relevant bed files and a tsv file with all primer stats
     """
     # ini
-    tsv_file = os.path.join(dir,"primers.tsv")
-    primer_bed_file =  os.path.join(dir, "primers.bed")
-    amplicon_bed_file =  os.path.join(dir, "amplicons.bed")
-    tabular_file =  os.path.join(dir, "primer_to_amplicon_assignment.tabular")
+    tsv_file = os.path.join(dir, "primers.tsv")
+    primer_bed_file = os.path.join(dir, "primers.bed")
+    amplicon_bed_file = os.path.join(dir, "amplicons.bed")
+    tabular_file = os.path.join(dir, "primer_to_amplicon_assignment.tabular")
     # counter for new amplicon name
     counter = 0
 
@@ -132,8 +132,8 @@ def write_scheme_to_files(dir, amplicon_scheme, amplicons, ambiguous_consensus, 
                 amplicons[amp][1],  # stop
                 new_name,
                 pool,
-                sep = "\t",
-                file = bed
+                sep="\t",
+                file=bed
             )
             # get primers
             left, right = get_primers_from_amp_dic(
@@ -146,11 +146,11 @@ def write_scheme_to_files(dir, amplicon_scheme, amplicons, ambiguous_consensus, 
             print(
                 left[0],
                 right[0],
-                sep = "\t",
-                file = tabular
+                sep="\t",
+                file=tabular
             )
             # write primer tsv and primer bed
-            for direction, primer in [("+", left), ("-",right)]:
+            for direction, primer in [("+", left), ("-", right)]:
                 # get the ambiguous seq and rev complement for RIGHT primers
                 seq = ambiguous_consensus[primer[1][1]:primer[1][2]]
                 if direction == "-":
@@ -169,8 +169,8 @@ def write_scheme_to_files(dir, amplicon_scheme, amplicons, ambiguous_consensus, 
                     gc,
                     temp,
                     score,
-                    sep = "\t",
-                    file = tsv
+                    sep="\t",
+                    file=tsv
                 )
                 # write primer bed file
                 primers_to_bed(primer_bed_file, primer[0], primer[1], direction)
@@ -185,8 +185,8 @@ def entropy(pos, states):
     ent = 0.0
     if len(pos) < 2:
         return ent
-    for char in unique_chars:
     # calculate the entropy at the particular position
+    for char in unique_chars:
         freq = pos.count(char)
         if freq > 0:
             freq = float(freq)/float(len(pos))
@@ -208,7 +208,6 @@ def alignment_entropy(alignment_cleaned):
     # iterate over alignment positions and the sequences
     for nuc_pos in range(0, len(alignment_cleaned[0][1])):
         pos = []
-        entropy_temp = []
         for seq_number in range(0, len(alignment_cleaned)):
             pos.append(alignment_cleaned[seq_number][1][nuc_pos])
         entropys.append(entropy(pos, 4))
@@ -228,7 +227,7 @@ def get_primer_list(amplicon_scheme, amplicons, left_primer_candidates, right_pr
     """
     primer_list = []
     for amp in amplicon_scheme:
-        left, right =get_primers_from_amp_dic(
+        left, right = get_primers_from_amp_dic(
             amp,
             amplicons,
             left_primer_candidates,
@@ -372,9 +371,9 @@ def varvamp_plot(dir, threshold, alignment_cleaned, conserved_regions, amplicon_
                 x = [pos+primer[1][1] for pos in range(0, len(primer[1][4]))]
                 ax[idx].bar(x, primer[1][4],
                             color='lightgrey', edgecolor='black')
-                ax[idx].set_title(primer[0], loc = "left")
+                ax[idx].set_title(primer[0], loc="left")
                 ax[idx].xaxis.set_ticks(np.arange(primer[1][1], primer[1][1]+len(x), 1))
-                ax[idx].xaxis.set_ticklabels(x, rotation = 45)
+                ax[idx].xaxis.set_ticklabels(x, rotation=45)
                 ax[idx].set_ylabel(ylabel="% of sequences")
                 ax[idx].set_xlabel("position")
                 ax[idx].set_ylim(0, 1-threshold)

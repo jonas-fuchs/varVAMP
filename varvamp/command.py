@@ -21,6 +21,7 @@ from varvamp.scripts import primers
 from varvamp.scripts import reporting
 from varvamp.scripts import scheme
 
+
 # DEFs
 def get_args(sysargs):
     """
@@ -107,7 +108,7 @@ def create_dir_structure(dir):
         os.makedirs(results_dir)
     os.makedirs(data_dir)
 
-    log_file = os.path.join(results_dir,"varvamp_log.txt")
+    log_file = os.path.join(results_dir, "varvamp_log.txt")
 
     return results_dir, data_dir, log_file
 
@@ -149,9 +150,9 @@ def raise_error(message, log_file, exit=False):
     # print to log
     with open(log_file, 'a') as f:
         if exit:
-            print(f"ERROR: {message}", file = f)
+            print(f"ERROR: {message}", file=f)
         else:
-            print(f"WARNING: {message}", file = f)
+            print(f"WARNING: {message}", file=f)
     # print to console
     if exit:
         sys.exit(f"\n\033[31m\033[1mERROR:\033[0m {message}")
@@ -267,7 +268,7 @@ def confirm_config(args, log_file):
             exit=True
         )
     # confirm tuples
-    for type, tup in [("temp", config.PRIMER_TMP), ("gc",config.PRIMER_GC_RANGE), ("size", config.PRIMER_SIZES)]:
+    for type, tup in [("temp", config.PRIMER_TMP), ("gc", config.PRIMER_GC_RANGE), ("size", config.PRIMER_SIZES)]:
         if len(tup) != 3:
             raise_error(
                 f"{type} tuple has to have the form (min, max, opt)!",
@@ -366,10 +367,10 @@ def confirm_config(args, log_file):
             file=f
         )
         for var in all_vars:
-            print(f"{var} = {var_dic[var]}",file=f)
+            print(f"{var} = {var_dic[var]}", file=f)
 
 
-def main(sysargs = sys.argv[1:]):
+def main(sysargs=sys.argv[1:]):
     """
     main varvamp workflow
     """
@@ -472,7 +473,7 @@ def main(sysargs = sys.argv[1:]):
         alignment_cleaned
     )
     # - raise error if no primers were found
-    for type, primer_candidates in [("LEFT", left_primer_candidates),("RIGHT", right_primer_candidates)]:
+    for type, primer_candidates in [("LEFT", left_primer_candidates), ("RIGHT", right_primer_candidates)]:
         if not primer_candidates:
             raise_error(
                 f"no {type} primers found.\n",

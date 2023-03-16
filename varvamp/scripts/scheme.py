@@ -9,6 +9,7 @@ import heapq
 # varVAMP
 from varvamp.scripts import config, primers
 
+
 class Graph(object):
     """
     a graph class
@@ -241,8 +242,6 @@ def find_best_covering_scheme(amplicons, amplicon_graph):
                     best_shortest_path = shortest_path
                     best_score = amplicons[start_node][5]
                     best_coverage = coverage
-
-
         # no need to check more, the best covering amplicon scheme was found and
         # has the minimal score compared to the schemes with the same coverage
         else:
