@@ -10,11 +10,12 @@ ALLOWED_N_AMB = 4  # allowed number of ambiguous chars in primer
 # basic primer parameters
 PRIMER_TMP = (57, 63, 60)  # temperatur (min, max, opt)
 PRIMER_GC_RANGE = (40, 60, 50)  # gc (min, max, opt)
-PRIMER_SIZES = (18, 27, 20)  # size (min, max, opt)
-PRIMER_HAIRPIN = 47  # max melting temp for secondary structures
+PRIMER_SIZES = (17, 27, 20)  # size (min, max, opt)
+PRIMER_HAIRPIN = 45  # max melting temp for secondary structures
 MAX_POLYX = 5  # max number of polyx
 MAX_DINUC_REPEATS = 2  # max number of dinucleotide repeats
-MAX_DIMER_TMP = 21  # max melting temp for dimers (homo- or heterodimers)
+MAX_DIMER_TMP = 45  # max melting temp for dimers (homo- or heterodimers)
+MAX_GC_END = 3  # max GC content in the last 5 bases of the primer
 MIN_3_WITHOUT_AMB = 2  # min len of 3' without ambiguous charaters
 
 # PCR parameters - adjust to your PCR

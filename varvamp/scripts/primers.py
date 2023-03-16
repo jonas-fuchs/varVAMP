@@ -95,6 +95,15 @@ def calc_max_dinuc_repeats(primer):
     return max_dinuc
 
 
+def check_end_gc(primer):
+    """
+    check how many gc nucleotides
+    are within the last 5 bases of
+    the 3' end
+    """
+    return primer[-5:].count('g') + primer[-5:].count('c')
+
+
 def three_prime_ambiguous(amb_primer):
     """
     determine if a sequence contains an ambiguous char at the 3'prime
@@ -165,7 +174,7 @@ def rev_complement(seq):
 def hardfilter_primers(primer):
     """
     hard filter primers for temperature, gc content,
-    poly x, dinucleotide repeats and homodimerization.
+    poly x, dinucleotide repeats and homodimerization
     """
     return(
         (config.PRIMER_TMP[0] <= calc_temp(primer) <= config.PRIMER_TMP[1])
@@ -176,20 +185,27 @@ def hardfilter_primers(primer):
     )
 
 
-def filter_primer_direction_specific(direction, primer, ambiguous_consensus):
+def filter_primer_direction_specific(direction, kmer, ambiguous_consensus):
     """
-    filter for 3'ambiguous and hairpin - this differs
-    depending on the direction of the primer.
+    filter for 3'ambiguous,0 hairpin and end GC.
+    this differs depending on the direction of the primer.
     """
+    # get the correct primer to test
     if direction == "LEFT":
-        amb_kmer = ambiguous_consensus[primer[1]:primer[2]]
-        hairpin_tm = calc_hairpin(primer[0]).tm
+        primer = kmer[0]
+        amb_primer = ambiguous_consensus[kmer[1]:kmer[2]]
     elif direction == "RIGHT":
-        amb_kmer = rev_complement(ambiguous_consensus[primer[1]:primer[2]])
-        hairpin_tm = calc_hairpin(rev_complement(primer[0])).tm
-    if hairpin_tm <= config.PRIMER_HAIRPIN:
-        if not three_prime_ambiguous(amb_kmer):
-            return primer
+        primer = rev_complement(kmer[0])
+        amb_primer = rev_complement(ambiguous_consensus[kmer[1]:kmer[2]])
+
+    #calculate haipin and 3' prime GC
+    hairpin_tm = calc_hairpin(primer).tm
+    gc_end = check_end_gc(primer)
+
+    # filter primer
+    if hairpin_tm <= config.PRIMER_HAIRPIN and gc_end <= config.MAX_GC_END:
+        if not three_prime_ambiguous(amb_primer):
+            return kmer
 
 
 def find_lowest_scoring(direction, hardfiltered_kmers):
