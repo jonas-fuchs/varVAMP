@@ -10,21 +10,6 @@ import primer3 as p3
 from varvamp.scripts import config
 
 
-def get_permutations(seq):
-    """
-    get all permutations of an ambiguous sequence
-    """
-    groups = itertools.groupby(s, lambda char:char not in config.ambig_nucs)
-    splits = []
-    for b,group in groups:
-        if b:
-            splits.extend([[g] for g in group])
-        else:
-            for nuc in group:
-                splits.append(config.ambig_nucs[nuc])
-    return[''.join(p) for p in itertools.product(*splits)]
-
-
 def calc_gc(seq):
     """
     calculate the gc of a sequence
