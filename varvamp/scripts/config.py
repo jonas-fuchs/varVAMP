@@ -1,5 +1,5 @@
 """
-This contains all varVAMP settings.
+This contains all varVAMP parameters.
 """
 
 # CAN BE CHANGED
@@ -30,7 +30,7 @@ PCR_DNA_CONC = 50  # primer concentration nM
 PRIMER_TM_PENALTY = 2  # temperature penalty
 PRIMER_GC_PENALTY = 0.2  # gc penalty
 PRIMER_SIZE_PENALTY = 0.5  # size penalty
-PRIMER_MAX_BASE_PENALTY = 8  # penalty for primer hardfiltering
+PRIMER_MAX_BASE_PENALTY = 8  # max base penalty for a primer
 PRIMER_3_PENALTY = (10, 10, 10)  # penalties for 3' mismatches
 PRIMER_PERMUTATION_PENALTY = 0.1  # penalty for the number of permutations
 

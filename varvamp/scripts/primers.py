@@ -10,11 +10,26 @@ import primer3 as p3
 from varvamp.scripts import config
 
 
+def get_permutations(seq):
+    """
+    get all permutations of an ambiguous sequence
+    """
+    groups = itertools.groupby(s, lambda char:char not in config.ambig_nucs)
+    splits = []
+    for b,group in groups:
+        if b:
+            splits.extend([[g] for g in group])
+        else:
+            for nuc in group:
+                splits.append(config.ambig_nucs[nuc])
+    return[''.join(p) for p in itertools.product(*splits)]
+
+
 def calc_gc(seq):
     """
     calculate the gc of a sequence
     """
-    return 100*(seq.count("g")+seq.count("G")+seq.count("c")+seq.count("C"))/len(seq)
+    return 100*(seq.count("g")+seq.count("c"))/len(seq)
 
 
 def calc_temp(seq):
@@ -216,13 +231,10 @@ def filter_kmer_direction_dependend(direction, kmer, ambiguous_consensus):
     elif direction == "RIGHT":
         kmer_seq = rev_complement(kmer[0])
         amb_kmer_seq = rev_complement(ambiguous_consensus[kmer[1]:kmer[2]])
-    # calculate haipin and 3' prime GC
-    hairpin_tm = calc_hairpin(kmer_seq).tm
-    gc_end = calc_end_gc(kmer_seq)
     # filter kmer
     return(
-        (hairpin_tm <= config.PRIMER_HAIRPIN)
-        and (gc_end <= config.PRIMER_MAX_GC_END)
+        (calc_hairpin(kmer_seq).tm <= config.PRIMER_HAIRPIN)
+        and (calc_end_gc(kmer_seq) <= config.PRIMER_MAX_GC_END)
         and gc_clamp_present(kmer_seq)
         and not is_three_prime_ambiguous(amb_kmer_seq)
     )
@@ -258,7 +270,7 @@ def filter_for_lowest_scoring(direction, primer_candidates):
     """
     sort the primers by start and base penalty.
     for primers that have the same start, retain only
-    the lowest scoring and now give a fixed number.
+    the lowest scoring.
     """
     candidates = []
 
@@ -280,8 +292,10 @@ def filter_for_lowest_scoring(direction, primer_candidates):
 
 
 def calc_permutation_penalty(amb_seq):
-    # get all permutations of a primer with ambiguous nucleotides and
-    # multiply with permutation penalty
+    """
+    get all permutations of a primer with ambiguous
+    nucleotides and multiply with permutation penalty
+    """
     permutations = 0
 
     for nuc in amb_seq:
@@ -299,10 +313,11 @@ def get_per_base_mismatches(primer, alignment, ambiguous_consensus):
     """
     calculate for a given primer with [seq, start, stop]
     the percent mismatch per primer pos with the alignment.
-    considers if primer or sequences have an amb nuc.
+    considers if primer or sequences have an amb nuc. returns
+    a list of percent mismatches for each primer position.
     """
     # ini list
-    primer_per_base_mismatch = len(primer[0])*[0]
+    mismatches = len(primer[0])*[0]
     # get primer with ambiguous nucs
     ambigous_primer = ambiguous_consensus[primer[1]:primer[2]]
     # test it against all sequences in the alignment
@@ -323,39 +338,40 @@ def get_per_base_mismatches(primer, alignment, ambiguous_consensus):
                         # check if these sets have no overlap
                         # -> mismatch
                         if len(slice_nuc_set.intersection(pri_set)) == 0:
-                            primer_per_base_mismatch[idx] += 1
+                            mismatches[idx] += 1
                     # if no amb pos is in primer then check if primer nuc
                     # is part of the amb slice nuc
                     elif current_primer_pos not in config.ambig_nucs[slice_nuc]:
-                        primer_per_base_mismatch[idx] += 1
+                        mismatches[idx] += 1
                 # check if primer has an amb pos but the current
                 # slice_nuc is not part of this amb nucleotide
                 elif current_primer_pos in config.ambig_nucs:
                     if slice_nuc not in config.ambig_nucs[current_primer_pos]:
-                        primer_per_base_mismatch[idx] += 1
+                        mismatches[idx] += 1
                 # mismatch
                 else:
-                    primer_per_base_mismatch[idx] += 1
+                    mismatches[idx] += 1
 
     # gives a percent mismatch over all positions of the primer from 5' to 3'
-    primer_per_base_mismatch = [round(x/len(alignment), 2) for x in primer_per_base_mismatch]
+    mismatches = [round(x/len(alignment), 2) for x in mismatches]
 
-    return primer_per_base_mismatch
+    return mismatches
 
 
-def calc_3_prime_penalty(direction, primer):
+def calc_3_prime_penalty(direction, mismatches):
     """
     calculate the penalty for mismatches at the 3' end.
     the more mismatches are closer to the 3' end of the primer,
-    the higher the penalty.
+    the higher the penalty. uses the previously claculated
+    per primer mismatch list
     """
-    penalty = 0
     if config.PRIMER_3_PENALTY:
-        for i in range(0, len(config.PRIMER_3_PENALTY)):
-            if direction == "RIGHT":
-                penalty += primer[4][i]*config.PRIMER_3_PENALTY[i]
-            elif direction == "LEFT":
-                penalty += primer[4][len(primer[0])-1-i]*config.PRIMER_3_PENALTY[i]
+        if direction == "RIGHT":
+            penalty = sum([m * p for m, p in zip(mismatches[0:len(config.PRIMER_3_PENALTY)], config.PRIMER_3_PENALTY)])
+        elif direction == "LEFT":
+            penalty = sum([m * p for m, p in zip(mismatches[::-1][0:len(config.PRIMER_3_PENALTY)], config.PRIMER_3_PENALTY)])
+    else:
+        penalty = 0
 
     return(penalty)
 
@@ -383,7 +399,7 @@ def find_primers(kmers, ambiguous_consensus, alignment):
                         ambiguous_consensus
                     )
                 )
-            primer[3] += calc_3_prime_penalty(direction, primer)  # add 3 prime penalty to base penalty
+            primer[3] += calc_3_prime_penalty(direction, primer[4])  # add 3 prime penalty to base penalty
             primer[3] += calc_permutation_penalty(  # also add permutation penalty
                 ambiguous_consensus[primer[1]:primer[2]]
             )
