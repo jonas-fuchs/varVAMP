@@ -4,6 +4,7 @@ data writing and visualization.
 # BUILT-INS
 import os
 import math
+import itertools
 
 # LIBS
 import pandas as pd
@@ -14,6 +15,7 @@ from matplotlib.backends.backend_pdf import PdfPages
 
 # varVAMP
 from varvamp.scripts import primers
+from varvamp.scripts import config
 
 
 def write_fasta(dir, seq_id, seq):
@@ -97,6 +99,22 @@ def get_primers_from_amp_dic(amp, amplicons, left_primer_candidates, right_prime
     return (left_name, left_primer), (right_name, right_primer)
 
 
+def get_permutations(seq):
+    """
+    get all permutations of an ambiguous sequence. needed to
+    correctly report the gc and the temperature.
+    """
+    groups = itertools.groupby(seq, lambda char:char not in config.ambig_nucs)
+    splits = []
+    for b, group in groups:
+        if b:
+            splits.extend([[g] for g in group])
+        else:
+            for nuc in group:
+                splits.append(config.ambig_nucs[nuc])
+    return[''.join(p) for p in itertools.product(*splits)]
+
+
 def write_scheme_to_files(dir, amplicon_scheme, amplicons, ambiguous_consensus, left_primer_candidates, right_primer_candidates):
     """
     write all relevant bed files and a tsv file with all primer stats
@@ -113,7 +131,7 @@ def write_scheme_to_files(dir, amplicon_scheme, amplicons, ambiguous_consensus, 
     with open(tsv_file, "w") as tsv, open(amplicon_bed_file, "w") as bed, open(tabular_file, "w") as tabular:
         # write header for primer tsv
         print(
-            "amlicon_name\tprimer_name\tpool\tseq\tsize\tgc\ttemp\tscore",
+            "amlicon_name\tprimer_name\tpool\tseq\tsize\tgc_best\ttemp_best\tmean_gc\tmean_temp\tscore",
             file=tsv
         )
         for idx, amp in enumerate(amplicon_scheme):
@@ -155,10 +173,13 @@ def write_scheme_to_files(dir, amplicon_scheme, amplicons, ambiguous_consensus, 
                 seq = ambiguous_consensus[primer[1][1]:primer[1][2]]
                 if direction == "-":
                     seq = primers.rev_complement(seq)
-                # calc primer parameters
-                gc = round(primers.calc_gc(primer[1][0]), 1)
-                temp = round(primers.calc_temp(primer[1][0]), 1)
-                score = round(primer[1][3], 1)
+                # calc primer parameters for all permutations
+                gc = 0
+                temp = 0
+                permutations = get_permutations(seq)
+                for permutation in permutations:
+                    gc += primers.calc_gc(permutation)
+                    temp += primers.calc_temp(permutation)
                 # write tsv file
                 print(
                     new_name,
@@ -166,9 +187,11 @@ def write_scheme_to_files(dir, amplicon_scheme, amplicons, ambiguous_consensus, 
                     pool,
                     seq,
                     len(primer[1][0]),
-                    gc,
-                    temp,
-                    score,
+                    round(primers.calc_gc(primer[1][0]),1),
+                    round(primers.calc_temp(primer[1][0]), 1),
+                    round(gc/len(permutations), 1),
+                    round(temp/len(permutations), 1),
+                    round(primer[1][3], 1),
                     sep="\t",
                     file=tsv
                 )

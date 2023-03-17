@@ -19,8 +19,8 @@ varVAMP creates consensus sequence on the basis of the threshold. If a nucleotid
 varVAMP searches for conserved regions as defined by a user-defined number of ambiguous bases that is allowed within the minimal length of a primer. The algorithm opens windows over the ambiguous consensus sequence and determines if a window satisfies these constraints.
 
 ### Primer search
-varVAMP uses primer3-py to search for potential primers. The evaluation if primers match certain criteria was adapted from [primalscheme](www.github.com/aresti/primalscheme). The primer search contains multiple steps:
-1. Digest the conserved regions in kmers with the min and max length of primers.
+varVAMP uses primer3-py to search for potential primers. Some of the evaluation if primers match certain criteria was adapted from [primalscheme](www.github.com/aresti/primalscheme). The primer search contains multiple steps:
+1. Digest the conserved regions into kmers with the min and max length of primers. This is performed on a consensus sequence that does not contain ambiguous characters but is just the majority consensus of the alignment. Therefore, primer parameters (gc, temp, thermodynamic model) will be calculated for the best fitting primer.
 2. Evaluate if these kmers are potential primers (temperature etc) and score their base penalty.
 3. Hardfilter kmers that do not satisfy the max base penalty constraint and number of allowed ambiguous characters at the 3'end.
 4. Filter primers with the same start for the primer with the lowest score.

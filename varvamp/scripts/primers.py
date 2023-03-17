@@ -347,8 +347,8 @@ def calc_3_prime_penalty(direction, mismatches):
     """
     calculate the penalty for mismatches at the 3' end.
     the more mismatches are closer to the 3' end of the primer,
-    the higher the penalty. uses the previously claculated
-    per primer mismatch list
+    the higher the penalty. uses the previously calculated
+    mismatch list.
     """
     if config.PRIMER_3_PENALTY:
         if direction == "RIGHT":
@@ -427,6 +427,7 @@ def find_best_primers(left_primer_candidates, right_primer_candidates):
         for idx, primer in enumerate(primer_candidates):
             # append primers if their start is within the current window
             if primer[1] in range(search_window[0], search_window[1]):
+                # remember the index and the score
                 primers_temp.append([idx, primer[3]])
                 writeable = False
                 # if the end of the primer list is reached, make the appended
