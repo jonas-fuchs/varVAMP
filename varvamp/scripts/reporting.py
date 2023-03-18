@@ -324,13 +324,21 @@ def varvamp_plot(dir, threshold, alignment_cleaned, conserved_regions, amplicon_
         conserved_regions[0][1],
         conserved_regions[0][1],
         label="possible primer regions",
-        linewidth=15, color="darkorange"
+        linewidth=5, color="darkorange"
     )
+    # - all primer plot
+    for primer in right_primer_candidates.items():
+        ax[1].hlines(0.85, primer[1][1], primer[1][2], linewidth=5, color="darkgrey")
+    for primer in left_primer_candidates.items():
+        ax[1].hlines(0.8, primer[1][1], primer[1][2], linewidth=5, color="dimgrey")
+    # - all primers legend
+    ax[1].hlines(0.7, primers[0][1][1], primers[0][1][2], linewidth=5, color="darkgrey", label="all right primers")
+    ax[1].hlines(0.7, primers[0][1][1], primers[0][1][2], linewidth=5, color="dimgrey", label="all left primers")
     # - amplicon plot pool 1
     for i in range(0, len(amplicon_scheme), 2):
         amp = amplicons[amplicon_scheme[i]]
         ax[1].hlines(
-            0.8,
+            0.7,
             amp[0],
             amp[1],
             linewidth=5
@@ -339,7 +347,7 @@ def varvamp_plot(dir, threshold, alignment_cleaned, conserved_regions, amplicon_
     for i in range(1, len(amplicon_scheme), 2):
         amp = amplicons[amplicon_scheme[i]]
         ax[1].hlines(
-            0.7,
+            0.6,
             amp[0],
             amp[1],
             linewidth=5
@@ -347,7 +355,7 @@ def varvamp_plot(dir, threshold, alignment_cleaned, conserved_regions, amplicon_
     # - amplicon legend
     amp = amplicons[amplicon_scheme[0]]
     ax[1].hlines(
-            0.8,
+            0.7,
             amp[0],
             amp[1],
             linewidth=5,
@@ -355,22 +363,22 @@ def varvamp_plot(dir, threshold, alignment_cleaned, conserved_regions, amplicon_
         )
     # - primer plots
     for i in range(1, len(primers), 4):
-        ax[1].hlines(0.8, primers[i][1][1], primers[i][1][2], linewidth=5, color="red")
+        ax[1].hlines(0.7, primers[i][1][1], primers[i][1][2], linewidth=5, color="red")
     for i in range(2, len(primers), 4):
-        ax[1].hlines(0.7, primers[i][1][1], primers[i][1][2], linewidth=5, color="red")
+        ax[1].hlines(0.6, primers[i][1][1], primers[i][1][2], linewidth=5, color="red")
     for i in range(3, len(primers), 4):
-        ax[1].hlines(0.7, primers[i][1][1], primers[i][1][2], linewidth=5, color="red")
+        ax[1].hlines(0.6, primers[i][1][1], primers[i][1][2], linewidth=5, color="red")
     for i in range(4, len(primers), 4):
-        ax[1].hlines(0.8, primers[i][1][1], primers[i][1][2], linewidth=5, color="red")
-    # - primer legend
-    ax[1].hlines(0.8, primers[0][1][1], primers[0][1][2], linewidth=5, color="red", label="primers")
+        ax[1].hlines(0.7, primers[i][1][1], primers[i][1][2], linewidth=5, color="red")
+    # - primer legend final primers
+    ax[1].hlines(0.7, primers[0][1][1], primers[0][1][2], linewidth=5, color="red", label="primers")
     # - finalize
     ax[1].spines['right'].set_visible(False)
     ax[1].spines['left'].set_visible(False)
     ax[1].spines['bottom'].set_visible(False)
     ax[1].axes.get_yaxis().set_visible(False)
     ax[1].set_xlabel("genome position")
-    ax[1].set_ylim((0.6, 1))
+    ax[1].set_ylim((0.5, 1))
     fig.legend()
     # - save fig
     fig.savefig(out)
