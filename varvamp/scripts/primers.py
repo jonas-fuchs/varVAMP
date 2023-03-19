@@ -373,8 +373,6 @@ def create_primer_dictionary(primer_candidates, direction):
     return primer_dict
 
 
-##### RETHINK!!!!####
-
 def find_best_primers(left_primer_candidates, right_primer_candidates):
     """
     Primer candidates are likely overlapping. Here all primers are found within a
@@ -428,6 +426,7 @@ def find_best_primers(left_primer_candidates, right_primer_candidates):
             if direction == "LEFT":
                 left_primers = create_primer_dictionary(subset, direction)
             if direction == "RIGHT":
+                subset = subset[::-1]
                 right_primers = create_primer_dictionary(subset, direction)
 
     return left_primers, right_primers

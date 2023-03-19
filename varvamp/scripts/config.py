@@ -18,7 +18,7 @@ PRIMER_MAX_GC_END = 3  # max GCs in the last 5 bases of the primer
 PRIMER_GC_CLAMP = 1  # min number of GC nucleotides at the very 3' end
 PRIMER_MIN_3_WITHOUT_AMB = 2  # min len of 3' without ambiguous charaters
 PRIMER_MAX_DIMER_TMP = 47  # max melting temp for dimers (homo- or heterodimers)
-PRIMER_MAX_DIMER_TMP_3_PRIME = 35  # max melting temperature of dimers considering only the 5 last bases of the 3 prime
+PRIMER_MAX_DIMER_TMP_3_PRIME = 37  # max melting temperature of dimers considering only the 5 last bases of the 3 prime
 
 # PCR parameters - adjust to your PCR
 PCR_MV_CONC = 50  # monovalent cations mM
