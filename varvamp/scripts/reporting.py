@@ -213,7 +213,7 @@ def entropy(pos, states):
         freq = pos.count(char)
         if freq > 0:
             freq = float(freq)/float(len(pos))
-            ent += freq*math.log(freq, 10)
+            ent += freq*math.log(freq, 50)
     if ent == 0:
         return ent
     else:

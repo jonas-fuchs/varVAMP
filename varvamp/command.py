@@ -511,11 +511,9 @@ def main(sysargs=sys.argv[1:]):
         progress_text=f"{len(left_primer_candidates)} fw and {len(right_primer_candidates)} rw potential primers"
     )
 
-    # find best primers
-    left_primer_candidates, right_primer_candidates = primers.find_best_primers(
-        left_primer_candidates,
-        right_primer_candidates
-    )
+    # - find best primers and create primer dict
+    left_primer_candidates = primers.find_best_primers(left_primer_candidates, "LEFT")
+    right_primer_candidates = primers.find_best_primers(right_primer_candidates, "RIGHT")
     # - write primers
     reporting.write_all_primers(data_dir, left_primer_candidates, right_primer_candidates)
     # - progress update

@@ -373,60 +373,33 @@ def create_primer_dictionary(primer_candidates, direction):
     return primer_dict
 
 
-def find_best_primers(left_primer_candidates, right_primer_candidates):
+def find_best_primers(primer_candidates, direction):
     """
-    Primer candidates are likely overlapping. Here all primers are found within a
-    window that is defined by the start of the first primer of the window and its
-    stop + maximum primer length. From this list the best scoring primer is choosen.
-    This reduces the complexity of the later calculated amplicon graph while
-    retaining well scoring primers within a reasonable range.
+    Primer candidates are likely overlapping. Here, the list of primers 
+    is sorted for the best to worst scoring. Then, the next best scoring
+    is retained if it does not have any nucleotides that have already
+    been covered by a better scoring primer candidate. This significantly
+    reduces the amount of primers while retaining the best scoring ones.
     """
-    for direction, primer_candidates in [("LEFT", left_primer_candidates), ("RIGHT", right_primer_candidates)]:
-        # ini lists
-        primers_to_retain = []
-        primers_temp = []
-        # depending on the direction sort the lists and define the first window
-        # go through the reverse list for the "RIGHT" primers.
-        if direction == "LEFT":
-            primer_candidates.sort(key=lambda x: (x[1]))
-            search_window = range(primer_candidates[0][1], primer_candidates[0][2]+config.PRIMER_SIZES[1]+1)
-        elif direction == "RIGHT":
-            primer_candidates.sort(key=lambda x: (x[1], x[2]))
-            primer_candidates = primer_candidates[::-1]
-            search_window = range(primer_candidates[0][1]-config.PRIMER_SIZES[1], primer_candidates[0][2]+1)
-        # ini best scoring primer to the first primer in list
-        best_scoring = [0, primer_candidates[0][3]]
+    # sort the primers for the best scoring
+    primer_candidates.sort(key=lambda x: x[3])
+    # ini everything with the top scoring primer
+    to_retain = [primer_candidates[0]]
+    primer_ranges = list(range(primer_candidates[0][1], primer_candidates[0][2]+1))
+    primer_set = set(primer_ranges)
 
-        for idx, primer in enumerate(primer_candidates):
-            # append primers if it lies within the current window and its not the end
-            if any([primer[1] in search_window, primer[2] in search_window]) and idx != len(primer_candidates)-1:
-                primers_temp.append([idx, primer[3]])
-            else:
-                # check in the temporary list of primers for the one with
-                # the best score...
-                for primer_temp in primers_temp:
-                    if primer_temp[1] < best_scoring[1]:
-                        best_scoring = primer_temp
-                # ... and append the best to final list
-                primers_to_retain.append(best_scoring[0])
-                # if the end has not been reached, initialize a new window
-                if not idx != len(primer_candidates)-1:
-                    continue
-                if direction == "LEFT":
-                    search_window = range(primer[1], primer[2]+config.PRIMER_SIZES[1]+1)
-                if direction == "RIGHT":
-                    search_window = range(primer[1]-config.PRIMER_SIZES[1], primer[2]+1)
-                # and reset to current primer
-                best_scoring = [idx, primer[3]]
-                primers_temp = [[idx, primer[3]]]
+    for primer in primer_candidates:
+        primer_positions = list(range(primer[1], primer[2]+1))
+        # check if none of the nucleotides of the next primer
+        # are already covered by a better primer
+        if not any(x in primer_positions for x in primer_set):
+            # update the primer set
+            primer_set.update(primer_positions)
+            # append this primer as it is well scoring and not overlapping
+            # with another already retained primer
+            to_retain.append(primer)
 
-            # subset the primer candidate list with the remembered indices
-            subset = [primer_candidates[i] for i in primers_to_retain]
-            # and put these in the right lists
-            if direction == "LEFT":
-                left_primers = create_primer_dictionary(subset, direction)
-            if direction == "RIGHT":
-                subset = subset[::-1]
-                right_primers = create_primer_dictionary(subset, direction)
-
-    return left_primers, right_primers
+    # sort by start
+    to_retain.sort(key=lambda x: x[1])
+    # and create a dict
+    return create_primer_dictionary(to_retain, direction)
