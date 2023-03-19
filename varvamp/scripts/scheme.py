@@ -82,21 +82,23 @@ def find_amplicons(left_primer_candidates, right_primer_candidates, opt_len, max
         for right in right_primer_candidates:
             right_primer = right_primer_candidates[right]
             amplicon_length = right_primer[2] - left_primer[1]
-            if opt_len <= amplicon_length <= max_len:
-                if test_for_heterodimer(left_primer[0], primers.rev_complement(right_primer[0])):
-                    # calculate length dependend amplicon costs as the cumulative primer
-                    # score multiplied by the fold length of the optimal length.
-                    amplicon_costs = (right_primer[3] + left_primer[3])*(amplicon_length/opt_len)
-                    amplicon_name = "amplicon_"+str(amplicon_number)
-                    amplicon_dict[amplicon_name] = [
-                        left_primer[1],  # start
-                        right_primer[2],  # stop
-                        left,  # name left primer
-                        right,  # name right primer
-                        amplicon_length,  # amplicon length
-                        amplicon_costs  # costs
-                    ]
-                    amplicon_number += 1
+            if not opt_len <= amplicon_length <= max_len:
+                continue
+            if not test_for_heterodimer(left_primer[0], primers.rev_complement(right_primer[0])):
+                continue
+            # calculate length dependend amplicon costs as the cumulative primer
+            # score multiplied by the fold length of the optimal length.
+            amplicon_costs = (right_primer[3] + left_primer[3])*(amplicon_length/opt_len)
+            amplicon_name = "amplicon_"+str(amplicon_number)
+            amplicon_dict[amplicon_name] = [
+                left_primer[1],  # start
+                right_primer[2],  # stop
+                left,  # name left primer
+                right,  # name right primer
+                amplicon_length,  # amplicon length
+                amplicon_costs  # costs
+            ]
+            amplicon_number += 1
 
     return amplicon_dict
 
@@ -125,13 +127,14 @@ def create_amplicon_graph(amplicons, min_overlap):
             # the current amplicon and if its non-overlapping part is large
             # enough to ensure space for a primer and the min overlap of the
             # following amplicon.
-            if all((start_overlap_pos <= possible_next[0] <= stop_overlap_pos,
+            if not all((start_overlap_pos <= possible_next[0] <= stop_overlap_pos,
                     possible_next[1] > amplicon[1] + min_overlap
                     )):
-                if current not in amplicon_graph:
-                    amplicon_graph[current] = {next: possible_next[5]}
-                else:
-                    amplicon_graph[current][next] = possible_next[5]
+                continue
+            if current not in amplicon_graph:
+                amplicon_graph[current] = {next: possible_next[5]}
+            else:
+                amplicon_graph[current][next] = possible_next[5]
 
     # return a graph object
     return Graph(nodes, amplicon_graph)
@@ -150,18 +153,16 @@ def dijkstra_algorithm(graph, start_node):
 
     while len(pq) > 0:
         current_distance, current_node = heapq.heappop(pq)
-
         if current_distance > shortest_path[current_node]:
             continue
-
         for neighbor in graph.get_outgoing_edges(current_node):
             distance = current_distance + graph.value(current_node, neighbor)
-
             # Only consider this new path if it's a better path
-            if distance < shortest_path[neighbor]:
-                shortest_path[neighbor] = distance
-                previous_nodes[neighbor] = current_node
-                heapq.heappush(pq, (distance, neighbor))
+            if not distance < shortest_path[neighbor]:
+                continue
+            shortest_path[neighbor] = distance
+            previous_nodes[neighbor] = current_node
+            heapq.heappush(pq, (distance, neighbor))
 
     return previous_nodes, shortest_path
 

@@ -21,11 +21,8 @@ varVAMP searches for conserved regions as defined by a user-defined number of am
 ### Primer search
 varVAMP uses primer3-py to search for potential primers. Some of the evaluation if primers match certain criteria was adapted from [primalscheme](www.github.com/aresti/primalscheme). The primer search contains multiple steps:
 1. Digest the conserved regions into kmers with the min and max length of primers. This is performed on a consensus sequence that does not contain ambiguous characters but is just the majority consensus of the alignment. Therefore, primer parameters (gc, temp, thermodynamic model) will be calculated for the best fitting primer.
-2. Evaluate if these kmers are potential primers (temperature etc) and score their base penalty.
-3. Hardfilter kmers that do not satisfy the max base penalty constraint and number of allowed ambiguous characters at the 3'end.
-4. Filter primers with the same start for the primer with the lowest score.
-5. Score the 3' penalty and permutation penalty.
-6. Find lowest scoring primer in a window. This  window is defined by the end of the first primer in the window + the max primer length. This greatly reduces the complexity while retaining well scoring primers.
+2. Evaluate if these kmers are potential primers direction independent (temp, gc, size etc) and direction dependent (secondary structure, gc clamp etc). Hardfilter for kmers that satisfy all constraints and calculate their penalties.
+3. Find lowest scoring primer in a window. This  window is defined by the end of the first primer in the window + the max primer length. This greatly reduces the complexity while retaining well scoring primers.
 
 ### Amplicon search
 
