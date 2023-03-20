@@ -297,14 +297,16 @@ def filter_kmer_direction_dependend(direction, kmer, ambiguous_consensus):
     """
     # get the correct amb kmer to test
     if direction == "LEFT":
+        kmer_seq = kmer[0]
         amb_kmer_seq = ambiguous_consensus[kmer[1]:kmer[2]]
     elif direction == "RIGHT":
+        kmer_seq = rev_complement(kmer[0])
         amb_kmer_seq = rev_complement(ambiguous_consensus[kmer[1]:kmer[2]])
     # filter kmer
     return(
-        (calc_hairpin(kmer[0]).tm <= config.PRIMER_HAIRPIN)
-        and (calc_end_gc(kmer[0]) <= config.PRIMER_MAX_GC_END)
-        and gc_clamp_present(kmer[0])
+        (calc_hairpin(kmer_seq).tm <= config.PRIMER_HAIRPIN)
+        and (calc_end_gc(kmer_seq) <= config.PRIMER_MAX_GC_END)
+        and gc_clamp_present(kmer_seq)
         and not is_three_prime_ambiguous(amb_kmer_seq)
     )
 
@@ -352,7 +354,7 @@ def find_primers(kmers, ambiguous_consensus, alignment):
                 )
             if direction == "RIGHT":
                 right_primer_candidates.append(
-                    [kmer[0], kmer[1], kmer[2], primer_penalty, per_base_mismatches]
+                    [rev_complement(kmer[0]), kmer[1], kmer[2], primer_penalty, per_base_mismatches]
                 )
 
     return left_primer_candidates, right_primer_candidates
@@ -375,7 +377,7 @@ def create_primer_dictionary(primer_candidates, direction):
 
 def find_best_primers(primer_candidates, direction):
     """
-    Primer candidates are likely overlapping. Here, the list of primers 
+    Primer candidates are likely overlapping. Here, the list of primers
     is sorted for the best to worst scoring. Then, the next best scoring
     is retained if it does not have any nucleotides that have already
     been covered by a better scoring primer candidate. This significantly

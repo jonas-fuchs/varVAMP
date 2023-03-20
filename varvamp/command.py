@@ -228,8 +228,13 @@ def confirm_config(args, log_file):
 
     # check if all variables exists
     all_vars = [
+        # arg dependent
         "FREQUENCY_THRESHOLD",
         "PRIMER_ALLOWED_N_AMB",
+        "AMPLICON_OPT_LENGTH",
+        "AMPLICON_MAX_LENGTH",
+        "AMPLICON_MIN_OVERLAP",
+        # arg independent
         "PRIMER_TMP",
         "PRIMER_GC_RANGE",
         "PRIMER_SIZES",
@@ -249,9 +254,6 @@ def confirm_config(args, log_file):
         "PRIMER_MAX_BASE_PENALTY",
         "PRIMER_3_PENALTY",
         "PRIMER_PERMUTATION_PENALTY",
-        "AMPLICON_OPT_LENGTH",
-        "AMPLICON_MAX_LENGTH",
-        "AMPLICON_MIN_OVERLAP"
     ]
 
     for var in all_vars:
@@ -379,17 +381,17 @@ def confirm_config(args, log_file):
     var_dic = vars(config)
     with open(log_file, 'a') as f:
         print(
-            "arg dependend settings\n",
-            f"OPT_LENGTH = {args.opt_length}",
-            f"MAX_LENGTH = {args.max_length}",
-            f"MIN_OVERLAP = {args.overlap}",
-            f"THRESHOLD = {args.threshold}",
-            f"ALLOWED_N_AMB = {args.allowed_ambiguous}",
+            "settings that can be adjusted via arguments\n",
+            f"PRIMER_OPT_LENGTH = {args.opt_length}",
+            f"PRIMER_MAX_LENGTH = {args.max_length}",
+            f"PRIMER_MIN_OVERLAP = {args.overlap}",
+            f"PRIMER_THRESHOLD = {args.threshold}",
+            f"PRIMER_ALLOWED_N_AMB = {args.allowed_ambiguous}",
             "\nconfig settings\n",
             sep="\n",
             file=f
         )
-        for var in all_vars:
+        for var in all_vars[5:]:
             print(f"{var} = {var_dic[var]}", file=f)
 
 

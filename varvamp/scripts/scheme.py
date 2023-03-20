@@ -84,7 +84,7 @@ def find_amplicons(left_primer_candidates, right_primer_candidates, opt_len, max
             amplicon_length = right_primer[2] - left_primer[1]
             if not opt_len <= amplicon_length <= max_len:
                 continue
-            if not test_for_heterodimer(left_primer[0], primers.rev_complement(right_primer[0])):
+            if not test_for_heterodimer(left_primer[0], right_primer[0]):
                 continue
             # calculate length dependend amplicon costs as the cumulative primer
             # score multiplied by the fold length of the optimal length.
@@ -146,13 +146,13 @@ def dijkstra_algorithm(graph, start_node):
     """
 
     previous_nodes = {}
-    shortest_path = {vertex: float('infinity') for vertex in graph.get_nodes()}
+    shortest_path = {node: float('infinity') for node in graph.get_nodes()}
     shortest_path[start_node] = 0
 
-    pq = [(0, start_node)]
+    nodes_to_test = [(0, start_node)]
 
-    while len(pq) > 0:
-        current_distance, current_node = heapq.heappop(pq)
+    while nodes_to_test:
+        current_distance, current_node = heapq.heappop(nodes_to_test)
         if current_distance > shortest_path[current_node]:
             continue
         for neighbor in graph.get_outgoing_edges(current_node):
@@ -162,7 +162,7 @@ def dijkstra_algorithm(graph, start_node):
                 continue
             shortest_path[neighbor] = distance
             previous_nodes[neighbor] = current_node
-            heapq.heappush(pq, (distance, neighbor))
+            heapq.heappush(nodes_to_test, (distance, neighbor))
 
     return previous_nodes, shortest_path
 
@@ -216,7 +216,7 @@ def find_best_covering_scheme(amplicons, amplicon_graph):
     coverage = 0
     best_coverage = 0
     max_stop = max(amplicons.items(), key=lambda x: x[1])[1][1]
-    best_score = sys.maxsize
+    best_score = float('infinity')
 
     for start_node in amplicons:
         # if the currently best coverage + start nucleotide of the currently tested amplicon
