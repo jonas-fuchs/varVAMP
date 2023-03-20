@@ -58,6 +58,17 @@ def calc_dimer(seq1, seq2):
     )
 
 
+def is_dimer(seq1, seq2):
+    """
+    tests for dimers. returns true if it is a dimer.
+    """
+    return(
+        (calc_dimer(seq1, seq2).tm >= config.PRIMER_MAX_DIMER_TMP)
+        or (calc_dimer(seq1[-5:], seq2).tm >= config.PRIMER_MAX_DIMER_TMP_3_PRIME)
+        or (calc_dimer(seq1, seq2[-5:]).tm >= config.PRIMER_MAX_DIMER_TMP_3_PRIME)
+    )
+
+
 def calc_max_polyx(seq):
     """
     calculate maximum polyx of a seq
@@ -274,19 +285,18 @@ def calc_3_prime_penalty(direction, mismatches):
     return(penalty)
 
 
-def filter_kmer_direction_independent(kmer):
+def filter_kmer_direction_independent(seq):
     """
     filter kmer for temperature, gc content,
     poly x, dinucleotide repeats and homodimerization
     """
     return(
-        (config.PRIMER_TMP[0] <= calc_temp(kmer) <= config.PRIMER_TMP[1])
-        and (config.PRIMER_GC_RANGE[0] <= calc_gc(kmer) <= config.PRIMER_GC_RANGE[1])
-        and (calc_max_polyx(kmer) <= config.PRIMER_MAX_POLYX)
-        and (calc_max_dinuc_repeats(kmer) <= config.PRIMER_MAX_DINUC_REPEATS)
-        and (calc_dimer(kmer, kmer).tm <= config.PRIMER_MAX_DIMER_TMP)
-        and (calc_dimer(kmer, kmer[-5:]).tm <= config.PRIMER_MAX_DIMER_TMP_3_PRIME)
-        and (calc_base_penalty(kmer) <= config.PRIMER_MAX_BASE_PENALTY)
+        (config.PRIMER_TMP[0] <= calc_temp(seq) <= config.PRIMER_TMP[1])
+        and (config.PRIMER_GC_RANGE[0] <= calc_gc(seq) <= config.PRIMER_GC_RANGE[1])
+        and (calc_max_polyx(seq) <= config.PRIMER_MAX_POLYX)
+        and (calc_max_dinuc_repeats(seq) <= config.PRIMER_MAX_DINUC_REPEATS)
+        and (calc_base_penalty(seq) <= config.PRIMER_MAX_BASE_PENALTY)
+        and not is_dimer(seq, seq)
     )
 
 
