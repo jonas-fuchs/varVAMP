@@ -242,7 +242,6 @@ def confirm_config(args, log_file):
         "PRIMER_MAX_POLYX",
         "PRIMER_MAX_DINUC_REPEATS",
         "PRIMER_MAX_DIMER_TMP",
-        "PRIMER_MAX_DIMER_TMP_3_PRIME",
         "PRIMER_MIN_3_WITHOUT_AMB",
         "PCR_MV_CONC",
         "PCR_DV_CONC",
@@ -369,11 +368,6 @@ def confirm_config(args, log_file):
     if config.PRIMER_MAX_GC_END > 5:
         raise_error(
             "only the last 5 nucleotides of the 3' end are considered for GC 3'end calculation.",
-            log_file
-        )
-    if config.PRIMER_MAX_DIMER_TMP_3_PRIME > config.PRIMER_MAX_DIMER_TMP:
-        raise_error(
-            "primer dimer temperature of the last 5 bases should not be lower than the dimer temperature",
             log_file
         )
 

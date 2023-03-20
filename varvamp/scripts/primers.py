@@ -58,17 +58,6 @@ def calc_dimer(seq1, seq2):
     )
 
 
-def is_dimer(seq1, seq2):
-    """
-    tests for dimers. returns true if it is a dimer.
-    """
-    return(
-        (calc_dimer(seq1, seq2).tm >= config.PRIMER_MAX_DIMER_TMP)
-        or (calc_dimer(seq1[-5:], seq2).tm >= config.PRIMER_MAX_DIMER_TMP_3_PRIME)
-        or (calc_dimer(seq1, seq2[-5:]).tm >= config.PRIMER_MAX_DIMER_TMP_3_PRIME)
-    )
-
-
 def calc_max_polyx(seq):
     """
     calculate maximum polyx of a seq
@@ -296,7 +285,7 @@ def filter_kmer_direction_independent(seq):
         and (calc_max_polyx(seq) <= config.PRIMER_MAX_POLYX)
         and (calc_max_dinuc_repeats(seq) <= config.PRIMER_MAX_DINUC_REPEATS)
         and (calc_base_penalty(seq) <= config.PRIMER_MAX_BASE_PENALTY)
-        and not is_dimer(seq, seq)
+        and (calc_dimer(seq, seq).tm <= config.PRIMER_MAX_DIMER_TMP)
     )
 
 

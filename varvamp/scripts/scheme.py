@@ -3,7 +3,6 @@ amplicon search
 """
 
 # BUILT-INS
-import sys
 import heapq
 
 # varVAMP
@@ -73,7 +72,7 @@ def find_amplicons(left_primer_candidates, right_primer_candidates, opt_len, max
             amplicon_length = right_primer[2] - left_primer[1]
             if not opt_len <= amplicon_length <= max_len:
                 continue
-            if primers.is_dimer(left_primer[0], right_primer[0]):
+            if primers.calc_dimer(left_primer[0], right_primer[0]).tm >= config.PRIMER_MAX_DIMER_TMP:
                 continue
             # calculate length dependend amplicon costs as the cumulative primer
             # score multiplied by the fold length of the optimal length.
@@ -116,9 +115,7 @@ def create_amplicon_graph(amplicons, min_overlap):
             # the current amplicon and if its non-overlapping part is large
             # enough to ensure space for a primer and the min overlap of the
             # following amplicon.
-            if not all((start_overlap_pos <= possible_next[0] <= stop_overlap_pos,
-                    possible_next[1] > amplicon[1] + min_overlap
-                    )):
+            if not all((start_overlap_pos <= possible_next[0] <= stop_overlap_pos, possible_next[1] > amplicon[1] + min_overlap)):
                 continue
             if current not in amplicon_graph:
                 amplicon_graph[current] = {next: possible_next[5]}
