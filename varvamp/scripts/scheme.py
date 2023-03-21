@@ -20,7 +20,9 @@ class Graph(object):
 
     def construct_graph(self, nodes, init_graph):
         """
-        This method makes sure that the graph is symmetrical.
+        This method makes sure that the graph is symmetrical, but sets the score
+        for nodes in the reverse direction to infinity to make sure dijkstra
+        never goes to an amplicon that is in the wrong direction.
         """
         graph = {}
         for node in nodes:
@@ -28,10 +30,10 @@ class Graph(object):
 
         graph.update(init_graph)
 
-        for node, edges in graph.items():
-            for adjacent_node, value in edges.items():
-                if graph[adjacent_node].get(node, False) == False:
-                    graph[adjacent_node][node] = value
+        for node, neighbors in graph.items():
+            for neighbor in neighbors.keys():
+                if graph[neighbor].get(node, False) == False:
+                    graph[neighbor][node] = float("infinity")
 
         return graph
 
@@ -41,15 +43,15 @@ class Graph(object):
         """
         return self.nodes
 
-    def get_outgoing_edges(self, node):
+    def get_neighbors(self, node):
         """
         Returns the neighbors of a node.
         """
-        connections = []
+        neighbors = []
         for out_node in self.nodes:
             if self.graph[node].get(out_node, False) != False:
-                connections.append(out_node)
-        return connections
+                neighbors.append(out_node)
+        return neighbors
 
     def value(self, node1, node2):
         """
@@ -72,7 +74,7 @@ def find_amplicons(left_primer_candidates, right_primer_candidates, opt_len, max
             amplicon_length = right_primer[2] - left_primer[1]
             if not opt_len <= amplicon_length <= max_len:
                 continue
-            if primers.calc_dimer(left_primer[0], right_primer[0]).tm >= config.PRIMER_MAX_DIMER_TMP:
+            if primers.calc_dimer(left_primer[0], right_primer[0]).tm > config.PRIMER_MAX_DIMER_TMP:
                 continue
             # calculate length dependend amplicon costs as the cumulative primer
             # score multiplied by the fold length of the optimal length.
@@ -106,21 +108,21 @@ def create_amplicon_graph(amplicons, min_overlap):
     for current in amplicons:
         # remember all vertices
         nodes.append(current)
-        amplicon = amplicons[current]
-        start_overlap_pos = amplicon[0]+config.PRIMER_SIZES[2]
-        stop_overlap_pos = amplicon[1] - min_overlap
+        current_amplicon = amplicons[current]
+        start = current_amplicon[0] + current_amplicon[4]/2
+        stop = current_amplicon[1] - min_overlap
         for next in amplicons:
-            possible_next = amplicons[next]
+            next_amplicon = amplicons[next]
             # check if the next amplicon lies within the start/stop range of
             # the current amplicon and if its non-overlapping part is large
             # enough to ensure space for a primer and the min overlap of the
             # following amplicon.
-            if not all((start_overlap_pos <= possible_next[0] <= stop_overlap_pos, possible_next[1] > amplicon[1] + min_overlap)):
+            if not all((start <= next_amplicon[0] <= stop, next_amplicon[1] > current_amplicon[1] + next_amplicon[4]/2)):
                 continue
             if current not in amplicon_graph:
-                amplicon_graph[current] = {next: possible_next[5]}
+                amplicon_graph[current] = {next: next_amplicon[5]}
             else:
-                amplicon_graph[current][next] = possible_next[5]
+                amplicon_graph[current][next] = next_amplicon[5]
 
     # return a graph object
     return Graph(nodes, amplicon_graph)
@@ -141,7 +143,7 @@ def dijkstra_algorithm(graph, start_node):
         current_distance, current_node = heapq.heappop(nodes_to_test)
         if current_distance > shortest_path[current_node]:
             continue
-        for neighbor in graph.get_outgoing_edges(current_node):
+        for neighbor in graph.get_neighbors(current_node):
             distance = current_distance + graph.value(current_node, neighbor)
             # Only consider this new path if it's a better path
             if not distance < shortest_path[neighbor]:

@@ -211,11 +211,22 @@ def raise_arg_errors(args, log_file):
             "small overlaps might hinder downstream analyses. Consider increasing.",
             log_file
         )
-    if args.overlap > args.opt_length:
+    if args.overlap > args.max_length/2 - config.PRIMER_SIZES[1]:
         raise_error(
-            "overlaps can not be higher than the length of amplicons.",
+            "min overlap must be lower than half of your maximum length - maximum primer length. To achieve optimal results reduce it to at least half of your optimal length",
             log_file,
             exit=True
+        )
+    if args.overlap > args.opt_length:
+        raise_error(
+            "overlap can not be higher than your optimal length.",
+            log_file,
+            exit=True
+        )
+    if args.overlap > args.opt_length/2:
+        raise_error(
+            "your intended overlap is higher than half of your optimal length. This reduces how well varvamps will find overlapping amplicons. Consider decreasing.",
+            log_file
         )
 
 
