@@ -104,7 +104,7 @@ def get_permutations(seq):
     get all permutations of an ambiguous sequence. needed to
     correctly report the gc and the temperature.
     """
-    groups = itertools.groupby(seq, lambda char:char not in config.ambig_nucs)
+    groups = itertools.groupby(seq, lambda char: char not in config.ambig_nucs)
     splits = []
     for b, group in groups:
         if b:
@@ -124,14 +124,14 @@ def write_scheme_to_files(dir, amplicon_scheme, amplicons, ambiguous_consensus, 
     primer_bed_file = os.path.join(dir, "primers.bed")
     amplicon_bed_file = os.path.join(dir, "amplicons.bed")
     tabular_file = os.path.join(dir, "primer_to_amplicon_assignment.tabular")
-    # counter for new amplicon name
+
     counter = 0
 
     # open files to write
     with open(tsv_file, "w") as tsv, open(amplicon_bed_file, "w") as bed, open(tabular_file, "w") as tabular:
         # write header for primer tsv
         print(
-            "amlicon_name\tprimer_name\tpool\tseq\tsize\tgc_best\ttemp_best\tmean_gc\tmean_temp\tscore",
+            "amlicon_name\tprimer_name\tpool\tstart\tstop\tseq\tsize\tgc_best\ttemp_best\tmean_gc\tmean_temp\tscore",
             file=tsv
         )
         for idx, amp in enumerate(amplicon_scheme):
@@ -141,7 +141,7 @@ def write_scheme_to_files(dir, amplicon_scheme, amplicons, ambiguous_consensus, 
             else:
                 pool = 0
             # give a new amplicon name
-            new_name = "amplicon_" + str(counter)
+            new_name = f"amplicon_{str(counter)}"
             counter += 1
             # write amplicon bed
             print(
@@ -185,9 +185,11 @@ def write_scheme_to_files(dir, amplicon_scheme, amplicons, ambiguous_consensus, 
                     new_name,
                     primer[0],
                     pool,
+                    primer[1][1],
+                    primer[1][2],
                     seq,
                     len(primer[1][0]),
-                    round(primers.calc_gc(primer[1][0]),1),
+                    round(primers.calc_gc(primer[1][0]), 1),
                     round(primers.calc_temp(primer[1][0]), 1),
                     round(gc/len(permutations), 1),
                     round(temp/len(permutations), 1),
@@ -284,10 +286,10 @@ def varvamp_plot(dir, threshold, alignment_cleaned, conserved_regions, amplicon_
     fig, ax = plt.subplots(
         2,
         1,
-        figsize=[20, 6],
+        figsize=[22, 6],
         squeeze=True,
         sharex=True,
-        gridspec_kw={'height_ratios': [6, 1]}
+        gridspec_kw={'height_ratios': [4, 1]}
     )
     fig.subplots_adjust(hspace=0)
     # - entropy plot
@@ -305,7 +307,8 @@ def varvamp_plot(dir, threshold, alignment_cleaned, conserved_regions, amplicon_
         linewidth=0.5
     )
     ax[0].set_ylim((0, 1))
-    ax[0].set_ylabel("entropy")
+    ax[0].set_xlim(0, max(entropy_df["position"]))
+    ax[0].set_ylabel("alignment entropy")
     ax[0].set_title("final amplicon design")
     ax[0].spines['top'].set_visible(False)
     ax[0].spines['right'].set_visible(False)
@@ -335,6 +338,7 @@ def varvamp_plot(dir, threshold, alignment_cleaned, conserved_regions, amplicon_
     ax[1].hlines(0.7, primers[0][1][1], primers[0][1][2], linewidth=5, color="darkgrey", label="all right primers")
     ax[1].hlines(0.7, primers[0][1][1], primers[0][1][2], linewidth=5, color="dimgrey", label="all left primers")
     # - amplicon plot pool 1
+    counter = 0
     for i in range(0, len(amplicon_scheme), 2):
         amp = amplicons[amplicon_scheme[i]]
         ax[1].hlines(
@@ -343,7 +347,16 @@ def varvamp_plot(dir, threshold, alignment_cleaned, conserved_regions, amplicon_
             amp[1],
             linewidth=5
         )
+        ax[1].text(
+            amp[0] + amp[4]/2,
+            0.55,
+            str(counter),
+            fontsize=8
+        )
+        counter += 2
+
     # - amplicon plot pool 2
+    counter = 1
     for i in range(1, len(amplicon_scheme), 2):
         amp = amplicons[amplicon_scheme[i]]
         ax[1].hlines(
@@ -352,6 +365,13 @@ def varvamp_plot(dir, threshold, alignment_cleaned, conserved_regions, amplicon_
             amp[1],
             linewidth=5
         )
+        ax[1].text(
+            amp[0] + amp[4]/2,
+            0.65,
+            str(counter),
+            fontsize=8
+        )
+        counter += 2
     # - amplicon legend
     amp = amplicons[amplicon_scheme[0]]
     ax[1].hlines(
@@ -379,9 +399,9 @@ def varvamp_plot(dir, threshold, alignment_cleaned, conserved_regions, amplicon_
     ax[1].axes.get_yaxis().set_visible(False)
     ax[1].set_xlabel("genome position")
     ax[1].set_ylim((0.5, 1))
-    fig.legend()
+    fig.legend(loc=(0.83,0.7))
     # - save fig
-    fig.savefig(out)
+    fig.savefig(out, bbox_inches='tight')
 
     # second plot: per base primer mismatches
     # - ini name
