@@ -226,29 +226,30 @@ def calc_per_base_mismatches(kmer, alignment, ambiguous_consensus):
         for idx, slice_nuc in enumerate(seq_slice):
             # find the respective nuc to that of the slice
             current_kmer_pos = amb_kmer[idx]
-            if slice_nuc != current_kmer_pos:
-                # check if the slice nucleotide is an amb pos
-                if slice_nuc in config.ambig_nucs:
-                    # check if the kmer has an amb pos
-                    if current_kmer_pos in config.ambig_nucs:
-                        slice_nuc_set = set(config.ambig_nucs[slice_nuc])
-                        pri_set = set(config.ambig_nucs[current_kmer_pos])
-                        # check if these sets have no overlap
-                        # -> mismatch
-                        if len(slice_nuc_set.intersection(pri_set)) == 0:
-                            mismatches[idx] += 1
-                    # if no amb pos is in kmer then check if kmer nuc
-                    # is part of the amb slice nuc
-                    elif current_kmer_pos not in config.ambig_nucs[slice_nuc]:
+            if slice_nuc == current_kmer_pos:
+                continue
+            # check if the slice nucleotide is an amb pos
+            if slice_nuc in config.ambig_nucs:
+                # check if the kmer has an amb pos
+                if current_kmer_pos in config.ambig_nucs:
+                    slice_nuc_set = set(config.ambig_nucs[slice_nuc])
+                    pri_set = set(config.ambig_nucs[current_kmer_pos])
+                    # check if these sets have no overlap
+                    # -> mismatch
+                    if len(slice_nuc_set.intersection(pri_set)) == 0:
                         mismatches[idx] += 1
-                # check if kmer has an amb pos but the current
-                # slice_nuc is not part of this amb nucleotide
-                elif current_kmer_pos in config.ambig_nucs:
-                    if slice_nuc not in config.ambig_nucs[current_kmer_pos]:
-                        mismatches[idx] += 1
-                # mismatch
-                else:
+                # if no amb pos is in kmer then check if kmer nuc
+                # is part of the amb slice nuc
+                elif current_kmer_pos not in config.ambig_nucs[slice_nuc]:
                     mismatches[idx] += 1
+            # check if kmer has an amb pos but the current
+            # slice_nuc is not part of this amb nucleotide
+            elif current_kmer_pos in config.ambig_nucs:
+                if slice_nuc not in config.ambig_nucs[current_kmer_pos]:
+                    mismatches[idx] += 1
+            # mismatch
+            else:
+                mismatches[idx] += 1
 
     # gives a percent mismatch over all positions of the kmer from 5' to 3'
     mismatches = [round(x/len(alignment), 2) for x in mismatches]

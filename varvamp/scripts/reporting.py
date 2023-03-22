@@ -349,7 +349,7 @@ def varvamp_plot(dir, threshold, alignment_cleaned, conserved_regions, amplicon_
         )
         ax[1].text(
             amp[0] + amp[4]/2,
-            0.55,
+            0.6,
             str(counter),
             fontsize=8
         )

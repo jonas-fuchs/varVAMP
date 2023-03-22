@@ -363,7 +363,7 @@ def confirm_config(args, log_file):
         )
     if config.PRIMER_MAX_BASE_PENALTY < 8:
         raise_error(
-            "decreasing the base penalty will hardfilter more primers.",
+            "decreasing the base penalty will filter out more primers.",
             log_file
         )
     if config.PRIMER_GC_CLAMP > 3:

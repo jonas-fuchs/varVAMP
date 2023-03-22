@@ -83,9 +83,10 @@ def find_internal_gaps(unique_gaps, gap):
             unique_set = set(range(unique_gap[0], unique_gap[1]))
             current_range = range(gap[0], gap[1])
             intersection = unique_set.intersection(current_range)
-            if intersection:
-                if min(intersection) == unique_gap[0] and max(intersection)+1 == unique_gap[1]:
-                    overlapping_gaps.append(unique_gap)
+            if not intersection:
+                continue
+            if min(intersection) == unique_gap[0] and max(intersection)+1 == unique_gap[1]:
+                overlapping_gaps.append(unique_gap)
 
     return overlapping_gaps
 
