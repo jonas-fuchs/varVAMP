@@ -60,17 +60,17 @@ class Graph(object):
         return self.graph[node1][node2]
 
 
-def find_amplicons(left_primer_candidates, right_primer_candidates, opt_len, max_len):
+def find_amplicons(all_primers, opt_len, max_len):
     """
     finds all possible amplicons, creates a dictionary
     """
     amplicon_number = 0
     amplicon_dict = {}
 
-    for left in left_primer_candidates:
-        left_primer = left_primer_candidates[left]
-        for right in right_primer_candidates:
-            right_primer = right_primer_candidates[right]
+    for left_name in all_primers["+"]:
+        left_primer = all_primers["+"][left_name]
+        for right_name in all_primers["-"]:
+            right_primer = all_primers["-"][right_name]
             amplicon_length = right_primer[2] - left_primer[1]
             if not opt_len <= amplicon_length <= max_len:
                 continue
@@ -83,8 +83,8 @@ def find_amplicons(left_primer_candidates, right_primer_candidates, opt_len, max
             amplicon_dict[amplicon_name] = [
                 left_primer[1],  # start
                 right_primer[2],  # stop
-                left,  # name left primer
-                right,  # name right primer
+                left_name,  # name left primer
+                right_name,  # name right primer
                 amplicon_length,  # amplicon length
                 amplicon_costs  # costs
             ]
@@ -195,7 +195,27 @@ def get_min_path(previous_nodes, shortest_path, start_node, target_node):
     return path[::-1]
 
 
-def find_best_covering_scheme(amplicons, amplicon_graph):
+def create_scheme_dic(amplicon_scheme, amplicons, all_primers):
+    """
+    creates the final scheme dictionary
+    """
+
+    scheme_dictionary = {
+        0:{},
+        1:{}
+    }
+
+    for pool in (0,1):
+        for amp in amplicon_scheme[pool::2]:
+            scheme_dictionary[pool][amp] = {}
+            primers = [amplicons[amp][2], amplicons[amp][3]]
+            scheme_dictionary[pool][amp][primers[0]] = all_primers["+"][primers[0]]
+            scheme_dictionary[pool][amp][primers[1]] = all_primers["-"][primers[1]]
+
+    return scheme_dictionary
+
+
+def find_best_covering_scheme(amplicons, amplicon_graph, all_primers):
     """
     this brute forces the amplicon scheme search until the largest
     coverage with the minimal costs is achieved.
@@ -248,10 +268,10 @@ def find_best_covering_scheme(amplicons, amplicon_graph):
             break
 
     if best_previous_nodes:
-        final_amplicon_scheme = get_min_path(best_previous_nodes, best_shortest_path, best_start_node, best_target_node)
+        amplicon_scheme = get_min_path(best_previous_nodes, best_shortest_path, best_start_node, best_target_node)
     else:
         # if no previous nodes are found but the single amplicon results in the largest
         # coverage - return as the best scheme
-        final_amplicon_scheme = [best_start_node]
+        amplicon_scheme = [best_start_node]
 
-    return best_coverage, final_amplicon_scheme
+    return best_coverage, create_scheme_dic(amplicon_scheme, amplicons, all_primers)

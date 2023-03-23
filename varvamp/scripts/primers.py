@@ -265,9 +265,9 @@ def calc_3_prime_penalty(direction, mismatches):
     mismatch list.
     """
     if config.PRIMER_3_PENALTY:
-        if direction == "RIGHT":
+        if direction == "-":
             penalty = sum([m * p for m, p in zip(mismatches[0:len(config.PRIMER_3_PENALTY)], config.PRIMER_3_PENALTY)])
-        elif direction == "LEFT":
+        elif direction == "+":
             penalty = sum([m * p for m, p in zip(mismatches[::-1][0:len(config.PRIMER_3_PENALTY)], config.PRIMER_3_PENALTY)])
     else:
         penalty = 0
@@ -296,10 +296,10 @@ def filter_kmer_direction_dependend(direction, kmer, ambiguous_consensus):
     this differs depending on the direction of the kmer.
     """
     # get the correct amb kmer to test
-    if direction == "LEFT":
+    if direction == "+":
         kmer_seq = kmer[0]
         amb_kmer_seq = ambiguous_consensus[kmer[1]:kmer[2]]
-    elif direction == "RIGHT":
+    elif direction == "-":
         kmer_seq = rev_complement(kmer[0])
         amb_kmer_seq = rev_complement(ambiguous_consensus[kmer[1]:kmer[2]])
     # filter kmer
@@ -336,7 +336,7 @@ def find_primers(kmers, ambiguous_consensus, alignment):
                                 ambiguous_consensus[kmer[1]:kmer[2]]
                             )
         # now check direction specific
-        for direction in ["LEFT", "RIGHT"]:
+        for direction in ["+", "-"]:
             # check if kmer passes direction filter
             if not filter_kmer_direction_dependend(direction, kmer, ambiguous_consensus):
                 continue
@@ -348,11 +348,11 @@ def find_primers(kmers, ambiguous_consensus, alignment):
             # add all penalties
             primer_penalty = base_penalty + permutation_penalty + three_prime_penalty
             # sort into lists
-            if direction == "LEFT":
+            if direction == "+":
                 left_primer_candidates.append(
                     [kmer[0], kmer[1], kmer[2], primer_penalty, per_base_mismatches]
                 )
-            if direction == "RIGHT":
+            if direction == "-":
                 right_primer_candidates.append(
                     [rev_complement(kmer[0]), kmer[1], kmer[2], primer_penalty, per_base_mismatches]
                 )
@@ -368,14 +368,18 @@ def create_primer_dictionary(primer_candidates, direction):
     primer_idx = 0
 
     for primer in primer_candidates:
-        primer_name = direction + "_" + str(primer_idx)
+        if direction == "+":
+            direction_name = "LEFT"
+        elif direction == "-":
+            direction_name = "RIGHT"
+        primer_name = direction_name + "_" + str(primer_idx)
         primer_dict[primer_name] = primer
         primer_idx += 1
 
     return primer_dict
 
 
-def find_best_primers(primer_candidates, direction):
+def find_best_primers(left_primer_candidates, right_primer_candidates):
     """
     Primer candidates are likely overlapping. Here, the list of primers
     is sorted for the best to worst scoring. Then, the next best scoring
@@ -383,25 +387,31 @@ def find_best_primers(primer_candidates, direction):
     been covered by a better scoring primer candidate. This significantly
     reduces the amount of primers while retaining the best scoring ones.
     """
-    # sort the primers for the best scoring
-    primer_candidates.sort(key=lambda x: x[3])
-    # ini everything with the top scoring primer
-    to_retain = [primer_candidates[0]]
-    primer_ranges = list(range(primer_candidates[0][1], primer_candidates[0][2]+1))
-    primer_set = set(primer_ranges)
+    all_primers = {}
 
-    for primer in primer_candidates:
-        primer_positions = list(range(primer[1], primer[2]+1))
-        # check if none of the nucleotides of the next primer
-        # are already covered by a better primer
-        if not any(x in primer_positions for x in primer_set):
-            # update the primer set
-            primer_set.update(primer_positions)
-            # append this primer as it is well scoring and not overlapping
-            # with another already retained primer
-            to_retain.append(primer)
+    for direction, primer_candidates in [("+", left_primer_candidates), ("-", right_primer_candidates)]:
+        # sort the primers for the best scoring
+        primer_candidates.sort(key=lambda x: x[3])
+        # ini everything with the top scoring primer
+        to_retain = [primer_candidates[0]]
+        primer_ranges = list(range(primer_candidates[0][1], primer_candidates[0][2]+1))
+        primer_set = set(primer_ranges)
 
-    # sort by start
-    to_retain.sort(key=lambda x: x[1])
+        for primer in primer_candidates:
+            primer_positions = list(range(primer[1], primer[2]+1))
+            # check if none of the nucleotides of the next primer
+            # are already covered by a better primer
+            if not any(x in primer_positions for x in primer_set):
+                # update the primer set
+                primer_set.update(primer_positions)
+                # append this primer as it is well scoring and not overlapping
+                # with another already retained primer
+                to_retain.append(primer)
+
+        # sort by start
+        to_retain.sort(key=lambda x: x[1])
+        # create dict
+        all_primers[direction] = create_primer_dictionary(to_retain, direction)
+
     # and create a dict
-    return create_primer_dictionary(to_retain, direction)
+    return all_primers

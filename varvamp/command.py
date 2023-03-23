@@ -503,7 +503,7 @@ def main(sysargs=sys.argv[1:]):
         alignment_cleaned
     )
     # - raise error if no primers were found
-    for type, primer_candidates in [("LEFT", left_primer_candidates), ("RIGHT", right_primer_candidates)]:
+    for type, primer_candidates in [("+", left_primer_candidates), ("-", right_primer_candidates)]:
         if not primer_candidates:
             raise_error(
                 f"no {type} primers found.\n",
@@ -519,22 +519,20 @@ def main(sysargs=sys.argv[1:]):
     )
 
     # - find best primers and create primer dict
-    left_primer_candidates = primers.find_best_primers(left_primer_candidates, "LEFT")
-    right_primer_candidates = primers.find_best_primers(right_primer_candidates, "RIGHT")
+    all_primers = primers.find_best_primers(left_primer_candidates, right_primer_candidates)
     # - write primers
-    reporting.write_all_primers(data_dir, left_primer_candidates, right_primer_candidates)
+    reporting.write_all_primers(data_dir, all_primers)
     # - progress update
     varvamp_progress(
         log_file,
         progress=0.7,
         job="Considering only high scoring primers.",
-        progress_text=f"{len(left_primer_candidates)} fw and {len(right_primer_candidates)} rw primers"
+        progress_text=f"{len(all_primers['+'])} fw and {len(all_primers['-'])} rw primers"
     )
 
     # find all possible amplicons
     amplicons = scheme.find_amplicons(
-        left_primer_candidates,
-        right_primer_candidates,
+        all_primers,
         args.opt_length,
         args.max_length
     )
@@ -559,24 +557,22 @@ def main(sysargs=sys.argv[1:]):
     # search for amplicon scheme
     coverage, amplicon_scheme = scheme.find_best_covering_scheme(
         amplicons,
-        amplicon_graph
+        amplicon_graph,
+        all_primers
     )
     percent_coverage = round(coverage/len(ambiguous_consensus)*100, 2)
     # - write all relevant files for the scheme
     reporting.write_scheme_to_files(
         results_dir,
         amplicon_scheme,
-        amplicons,
-        ambiguous_consensus,
-        left_primer_candidates,
-        right_primer_candidates
+        ambiguous_consensus
     )
     # - progress update
     varvamp_progress(
         log_file,
         progress=0.9,
         job="Creating amplicon scheme.",
-        progress_text=f"{percent_coverage} % total coverage with {len(amplicon_scheme)} amplicons"
+        progress_text=f"{percent_coverage} % total coverage with {len(amplicon_scheme[0]) + len(amplicon_scheme[1])} amplicons"
     )
     # - raise low coverage warning
     if percent_coverage < 70:
@@ -595,10 +591,8 @@ def main(sysargs=sys.argv[1:]):
         args.threshold,
         alignment_cleaned,
         conserved_regions,
+        all_primers,
         amplicon_scheme,
-        amplicons,
-        left_primer_candidates,
-        right_primer_candidates
     )
     # - final progress
     varvamp_progress(log_file, progress=1, start_time=start_time)
