@@ -68,7 +68,7 @@ def write_primers_to_bed(outfile, primer_name, primer_properties, direction):
             primer_properties[1],  # start
             primer_properties[2],  # stop
             primer_name,
-            round(primer_properties[3],1),  # score
+            round(primer_properties[3], 1),  # score
             direction,
             sep="\t",
             file=o
@@ -169,6 +169,26 @@ def write_scheme_to_files(dir, amplicon_scheme, ambiguous_consensus):
                     )
                     # write primer bed file
                     write_primers_to_bed(primer_bed_file, primer[0], primer[1], direction)
+
+
+def write_dimers(dir, not_solved):
+    """
+    write dimers for which no replacement was found to file
+    """
+    tsv_file = os.path.join(dir, "unsolvable_primer_dimers.tsv")
+    print(
+        "pool\tprimer_name_1\tprimer_name_2\tdimer melting temp",
+        file=tsv_file
+    )
+    for dimers in not_solved:
+        print(
+            dimers[0][0],
+            dimers[0][2],
+            dimers[1][2],
+            round(primers.calc_dimer(dimers[0][3][0], dimers[1][3][0]).tm, 1),
+            sep="\t",
+            file=tsv_file
+        )
 
 
 def entropy(pos, states):

@@ -16,9 +16,6 @@ For a lot of virus genera it is difficult to design pan-specific primers. varVAM
 
 **QPCR** *(coming soon)*: varVAMP searches for small amplicons with an internal primer for the probe. It minimizes temperature differences between the primers.
 
-Features that are planned, but have not been implemented yet:
-* Dimer search for amplicon schemes (currently only primer homo-dimers and hetero-dimers within the amplicon are evaluated).
-
 This program is currently being developed and in an alpha state. You are welcome to use this software. If you successfully design primers, drop me a mail. It might be possible to collaborate!
 
 # Documentation

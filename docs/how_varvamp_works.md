@@ -34,7 +34,7 @@ To search for the best scoring amplicon, varVAMP uses a graph based approach.
 4. Determine potential stop nodes as those amplicons that have the furthest stop in the alignment.
 5. Determine shortest paths between the start and all potential stop nodes. Get the lowest scoring.
 6. Repeat steps 3-5 for each start node until the best coverage is reached. This then is the best scoring amplicon scheme!
-7. Lastly, the best scoring scheme is evaluated for primer dimers in their respective pools. If a primer dimer pair is found, varVAMP evaluates for each primer their overlapping previously not considered primers (primer search step 2). It searches for the lowest scoring primer that does not form dimers with the primers in the amplicon scheme or violates other constraints. The scheme is then updated. If no alternative primers can be found, varVAMP issues a warning.
+7. Lastly, the best scoring scheme is evaluated for primer dimers in their respective pools. If a primer dimer pair is found, varVAMP evaluates for each primer their overlapping previously not considered primers (primer search step 2), and again minimizes the score. The scheme and all primers are updated. If no alternative primers can be found, varVAMP issues a warning and reports the unsolvable primer dimers.
 
 #### Sanger sequencing
 coming soon

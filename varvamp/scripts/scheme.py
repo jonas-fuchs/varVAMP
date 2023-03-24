@@ -201,11 +201,11 @@ def create_scheme_dic(amplicon_scheme, amplicons, all_primers):
     """
 
     scheme_dictionary = {
-        0:{},
-        1:{}
+        0: {},
+        1: {}
     }
 
-    for pool in (0,1):
+    for pool in (0, 1):
         for amp in amplicon_scheme[pool::2]:
             scheme_dictionary[pool][amp] = {}
             primers = [amplicons[amp][2], amplicons[amp][3]]
@@ -275,3 +275,114 @@ def find_best_covering_scheme(amplicons, amplicon_graph, all_primers):
         amplicon_scheme = [best_start_node]
 
     return best_coverage, create_scheme_dic(amplicon_scheme, amplicons, all_primers)
+
+
+def test_scheme_for_dimers(amplicon_scheme):
+    """
+    test the best scoring scheme for primer dimers
+    """
+
+    primer_dimers = []
+
+    for pool in amplicon_scheme:
+        # test the primer dimers only within the respective pools
+        tested_primers = []
+        for amp in amplicon_scheme[pool]:
+            for primer in amplicon_scheme[pool][amp]:
+                # remember where the currrent primer was in the scheme
+                current_primer = (pool, amp, primer, amplicon_scheme[pool][amp][primer])
+                current_seq = current_primer[2][0]
+                for tested in tested_primers:
+                    tested_seq = tested[2][0]
+                    if primers.calc_dimer(current_seq, tested_seq).tm <= config.PRIMER_MAX_DIMER_TMP:
+                        continue
+                    primer_dimers.append((current_primer, tested))
+                # and remember all tested primers
+                tested_primers.append(current_primer)
+
+    return primer_dimers
+
+
+def get_overlapping_primers(dimer, left_primer_candidates, right_primer_candidates):
+    """
+    get overlapping primers of a primer dimer pair that have been previously
+    excluded. returns list of list with possible primers for each primer
+    in primer dimer.
+    """
+
+    overlapping_primers = []
+    # test each primer in dimer
+    for primer in dimer:
+        overlapping_primers_temp = []
+        # check in which list to look for them
+        overlap_range = range(primer[3][1], primer[3][2]+1)
+        if "RIGHT" in primer[2]:
+            primers_to_test = right_primer_candidates
+        elif "LEFT" in primer[2]:
+            primers_to_test = left_primer_candidates
+        # and check this list for all primers that overlap
+        for potential_new in primers_to_test:
+            if potential_new[1] not in overlap_range or potential_new[2] not in overlap_range:
+                continue
+            overlapping_primers_temp.append((primer[0], primer[1], primer[2], potential_new))
+
+        overlapping_primers.append(overlapping_primers_temp)
+
+    return overlapping_primers
+
+
+def test_overlaps_for_dimers(overlapping_primers):
+    """
+    test the overlapping primers for dimers. return new primers.
+    """
+    for first_overlap in overlapping_primers[0]:
+        for second_overlap in overlapping_primers[1]:
+            # break the loop. primers are sorted by score. first pair that
+            # makes it has the lowest score
+            if primers.calc_dimer(first_overlap[3][0], second_overlap[3][0]).tm <= config.PRIMER_MAX_DIMER_TMP:
+                return [first_overlap, second_overlap]
+
+
+def check_and_solve_heterodimers(amplicon_scheme, left_primer_candidates, right_primer_candidates, all_primers):
+    """
+    check scheme for heterodimers, try to find
+    new primers that overlap and replace the existing ones.
+    this can lead to new primer dimers. therefore the
+    process is repeated until no primer dimers are found
+    in the updated scheme or all found primer dimers have
+    no replacements.
+    """
+    not_solved = []
+
+    primer_dimers = test_scheme_for_dimers(amplicon_scheme)
+
+    while primer_dimers:
+        for dimer in primer_dimers:
+            # skip the primer dimers that have not been previously solved
+            if dimer in not_solved:
+                continue
+            overlapping_primers = get_overlapping_primers(dimer, left_primer_candidates, right_primer_candidates)
+            # test all possible primers against each other for dimers
+            new_primers = test_overlaps_for_dimers(overlapping_primers)
+            # now change these primers in the scheme
+            if new_primers:
+                for new in new_primers:
+                    # overwrite in final scheme
+                    amplicon_scheme[new[0]][new[1]][new[2]] = new[3]
+                    # and in all primers
+                    if "LEFT" in new[2]:
+                        strand = "+"
+                    else:
+                        strand = "-"
+                    all_primers[strand][new[2]] = new[3]
+            # or remember the dimers for which varvamp did not find a replacement.
+            else:
+                not_solved.append(dimer)
+        # none of the primer dimers of this iteration could be solved
+        if primer_dimers == not_solved:
+            break
+        # some could be solved. lets check the updated scheme again.
+        else:
+            primer_dimers = test_scheme_for_dimers(amplicon_scheme)
+
+    return not_solved

@@ -26,7 +26,6 @@ def get_args(sysargs):
     """
     arg parsing for varvamp
     """
-    # arg parsing
     parser = argparse.ArgumentParser(
         prog=_program,
         description='varvamp: variable virus amplicon design',
@@ -98,14 +97,12 @@ def main(sysargs=sys.argv[1:]):
     """
     # start varVAMP
     args = get_args(sysargs)
-    # - supress console output
     if not args.console:
         sys.stdout = open(os.devnull, 'w')
     start_time = time.process_time()
     results_dir, data_dir, log_file = logging.create_dir_structure(args.input[1])
     logging.raise_arg_errors(args, log_file)
     logging.varvamp_progress(log_file)
-
     # config check
     logging.confirm_config(args, log_file)
     logging.varvamp_progress(
@@ -114,34 +111,28 @@ def main(sysargs=sys.argv[1:]):
         job="Checking config.",
         progress_text="config file passed"
     )
-
     # preprocess and clean alignment of gaps
     alignment_cleaned, gaps_to_mask = alignment.process_alignment(
         args.input[0],
         args.threshold
     )
-    reporting.write_alignment(data_dir, alignment_cleaned)
     logging.varvamp_progress(
         log_file,
         progress=0.2,
         job="Preprocessing alignment and cleaning gaps.",
         progress_text=f"{len(gaps_to_mask)} gaps with {alignment.calculate_total_masked_gaps(gaps_to_mask)} nucleotides"
     )
-
     # create consensus sequences
     majority_consensus, ambiguous_consensus = consensus.create_consensus(
         alignment_cleaned,
         args.threshold
     )
-    reporting.write_fasta(data_dir, "majority_consensus", majority_consensus)
-    reporting.write_fasta(results_dir, "ambiguous_consensus", ambiguous_consensus)
     logging.varvamp_progress(
         log_file,
         progress=0.3,
         job="Creating consensus sequences.",
         progress_text=f"length of the consensus is {len(majority_consensus)} nt"
     )
-
     # generate conserved region list
     conserved_regions = conserved.find_regions(
         ambiguous_consensus,
@@ -153,14 +144,12 @@ def main(sysargs=sys.argv[1:]):
             log_file,
             exit=True
         )
-    reporting.write_conserved_to_bed(conserved_regions, data_dir)
     logging.varvamp_progress(
         log_file,
         progress=0.4,
         job="Finding conserved regions.",
         progress_text=f"{conserved.mean(conserved_regions, majority_consensus)} % conserved"
     )
-
     # produce kmers for all conserved regions
     kmers = conserved.produce_kmers(
         conserved_regions,
@@ -172,7 +161,6 @@ def main(sysargs=sys.argv[1:]):
         job="Digesting into kmers.",
         progress_text=f"{len(kmers)} kmers"
     )
-
     # find potential primers
     left_primer_candidates, right_primer_candidates = primers.find_primers(
         kmers,
@@ -192,17 +180,14 @@ def main(sysargs=sys.argv[1:]):
         job="Filtering for primers.",
         progress_text=f"{len(left_primer_candidates)} fw and {len(right_primer_candidates)} rw potential primers"
     )
-
     # find best primers and create primer dict
     all_primers = primers.find_best_primers(left_primer_candidates, right_primer_candidates)
-    reporting.write_all_primers(data_dir, all_primers)
     logging.varvamp_progress(
         log_file,
         progress=0.7,
         job="Considering only high scoring primers.",
         progress_text=f"{len(all_primers['+'])} fw and {len(all_primers['-'])} rw primers"
     )
-
     # find all possible amplicons
     amplicons = scheme.find_amplicons(
         all_primers,
@@ -223,19 +208,24 @@ def main(sysargs=sys.argv[1:]):
         job="Finding potential amplicons.",
         progress_text=str(len(amplicons)) + " potential amplicons"
     )
-
     # search for amplicon scheme
     coverage, amplicon_scheme = scheme.find_best_covering_scheme(
         amplicons,
         amplicon_graph,
         all_primers
     )
-    percent_coverage = round(coverage/len(ambiguous_consensus)*100, 2)
-    reporting.write_scheme_to_files(
-        results_dir,
+    dimers_not_solved = scheme.check_and_solve_heterodimers(
         amplicon_scheme,
-        ambiguous_consensus
-    )
+        left_primer_candidates,
+        right_primer_candidates,
+        all_primers)
+    if dimers_not_solved:
+        logging.raise_error(
+            f"varVAMP found {len(dimers_not_solved)} primer dimers without replacements. Check the dimer file and perform the PCR for incomaptible amplicons in a sperate reaction.",
+            log_file
+        )
+        reporting.write_dimers(dir, dimers_not_solved)
+    percent_coverage = round(coverage/len(ambiguous_consensus)*100, 2)
     logging.varvamp_progress(
         log_file,
         progress=0.9,
@@ -251,8 +241,17 @@ def main(sysargs=sys.argv[1:]):
             "\t - relax primer settings (not recommended)\n",
             log_file
         )
-
-    # plotting
+    # write files
+    reporting.write_alignment(data_dir, alignment_cleaned)
+    reporting.write_fasta(data_dir, "majority_consensus", majority_consensus)
+    reporting.write_fasta(results_dir, "ambiguous_consensus", ambiguous_consensus)
+    reporting.write_conserved_to_bed(conserved_regions, data_dir)
+    reporting.write_all_primers(data_dir, all_primers)
+    reporting.write_scheme_to_files(
+        results_dir,
+        amplicon_scheme,
+        ambiguous_consensus
+    )
     reporting.varvamp_plot(
         results_dir,
         args.threshold,
@@ -261,6 +260,4 @@ def main(sysargs=sys.argv[1:]):
         all_primers,
         amplicon_scheme,
     )
-
-    # all done
     logging.varvamp_progress(log_file, progress=1, start_time=start_time)
