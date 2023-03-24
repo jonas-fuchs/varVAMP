@@ -68,7 +68,7 @@ def write_primers_to_bed(outfile, primer_name, primer_properties, direction):
             primer_properties[1],  # start
             primer_properties[2],  # stop
             primer_name,
-            primer_properties[3],  # score
+            round(primer_properties[3],1),  # score
             direction,
             sep="\t",
             file=o
