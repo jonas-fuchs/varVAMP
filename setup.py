@@ -1,12 +1,19 @@
 from setuptools import setup, find_packages
 from varvamp import __version__, _program
 
+# read the contents of your README file
+from pathlib import Path
+this_directory = Path(__file__).parent
+long_description = (this_directory / "README.md").read_text()
+
 setup(
     name='varvamp',
+    long_description=long_description,
+    long_description_content_type='text/markdown',
     version=__version__,
     python_requires=">=3.9",
-    license_files = ('licence.txt'),
-    packages = find_packages(),
+    license_files=('licence.txt'),
+    packages=find_packages(),
     install_requires=[
         "biopython>=1.79",
         "matplotlib>=3.5.1",
@@ -25,7 +32,7 @@ setup(
     entry_points="""
     [console_scripts]
     {program} = varvamp.command:main
-    """.format(program = _program),
+    """.format(program=_program),
     include_package_data=True,
     keywords=[],
     zip_safe=False

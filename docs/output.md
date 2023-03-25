@@ -11,7 +11,8 @@ varVAMP produces multiple main output files:
 | per_base_mismatches.pdf | Barplot of the percent mismatches at each nucleotide position of the primer. |
 | primer_to_amplicon_assignments.tabular | Simple tab separated file, which primers belong together. Useful for bioinformatic workflows that include primer trimming |
 | primers.bed | A bed file with the primer locations. Includes the primer score. The lower, the better. |
-| primer.tsv | A tab separated file with important parameters for the primers including the sequence. |
+| primer.tsv | A tab separated file with important parameters for the primers including the sequence with ambiguous nucleotides (already in the right strand) and the gc and temperature of the best fitting primer as well as for the mean for all permutations of the primer. |
+| unsolvable_primer_dimers.tsv | Only produced if there are primer dimers without replacements. Tells which primers form dimers and at which temperature.
 | varvamp_log.txt | Log file. |
 
 

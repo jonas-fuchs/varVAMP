@@ -83,9 +83,10 @@ def find_internal_gaps(unique_gaps, gap):
             unique_set = set(range(unique_gap[0], unique_gap[1]))
             current_range = range(gap[0], gap[1])
             intersection = unique_set.intersection(current_range)
-            if intersection:
-                if min(intersection) == unique_gap[0] and max(intersection)+1 == unique_gap[1]:
-                    overlapping_gaps.append(unique_gap)
+            if not intersection:
+                continue
+            if min(intersection) == unique_gap[0] and max(intersection)+1 == unique_gap[1]:
+                overlapping_gaps.append(unique_gap)
 
     return overlapping_gaps
 
@@ -184,20 +185,6 @@ def clean_gaps(alignment, gaps_to_mask):
     return cleaned_alignment
 
 
-def calculate_total_masked_gaps(gaps_to_mask):
-    """
-    calculates the cummulative length of gaps
-    that were masked.
-    """
-    if gaps_to_mask:
-        sum_gaps = 0
-        for region in gaps_to_mask:
-            sum_gaps += region[1] - region[0] + 1
-        return sum_gaps
-    else:
-        return 0
-
-
 def process_alignment(alignment_path, threshold):
     """
     proprocesses alignment and cleans gaps
@@ -220,3 +207,17 @@ def process_alignment(alignment_path, threshold):
         alignment_cleaned = alignment_preprocessed
 
     return alignment_cleaned, gaps_to_mask
+
+
+def calculate_total_masked_gaps(gaps_to_mask):
+    """
+    calculates the cummulative length of gaps
+    that were masked.
+    """
+    if gaps_to_mask:
+        sum_gaps = 0
+        for region in gaps_to_mask:
+            sum_gaps += region[1] - region[0] + 1
+        return sum_gaps
+    else:
+        return 0
