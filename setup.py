@@ -12,7 +12,7 @@ setup(
     long_description_content_type='text/markdown',
     version=__version__,
     python_requires=">=3.9",
-    license_files=('licence.txt'),
+    license_files=('LICENSE'),
     packages=find_packages(),
     install_requires=[
         "biopython>=1.79",
@@ -21,7 +21,7 @@ setup(
         "pandas>=1.4.4",
         "numpy>=1.23.3"
     ],
-    description='varvamp',
+    description='Variable VirusAMPlicons (varVAMP) is a tool to design primers for highly diverse viruses',
     url='https://github.com/jonas-fuchs/varVAMP',
     author='Dr. Jonas Fuchs',
     author_email='jonas.fuchs@uniklinik-freiburg.de',
