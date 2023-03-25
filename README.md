@@ -1,8 +1,8 @@
+**var**iable **V**irus**AMP**licons (varVAMP) is a tool to design primers for highly diverse viruses. The input is an alignment of your viral (full-genome) sequences.
+
 # varVAMP
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
-
-**var**iable **V**irus**AMP**licons is a tool to design primers for highly diverse viruses. The input is an alignment of your viral (full-genome) sequences.
 
 For a lot of virus genera it is difficult to design pan-specific primers. varVAMP solves this, by introducing ambiguous characters into primers and minimizes mismatches at the 3' end. Primers might not work for some sequences of your input alignment but should recognize the large majority.
 
