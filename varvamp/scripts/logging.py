@@ -318,3 +318,4 @@ def confirm_config(args, log_file):
         )
         for var in all_vars[5:]:
             print(f"{var} = {var_dic[var]}", file=f)
+        print("\nprogress\n", file=f)
