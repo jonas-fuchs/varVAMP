@@ -21,7 +21,7 @@ setup(
         "pandas>=1.4.4",
         "numpy>=1.23.3"
     ],
-    description='varvamp',
+    description='Variable VirusAMPlicons (varVAMP) is a tool to design primers for highly diverse viruses',
     url='https://github.com/jonas-fuchs/varVAMP',
     author='Dr. Jonas Fuchs',
     author_email='jonas.fuchs@uniklinik-freiburg.de',
