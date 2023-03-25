@@ -1,8 +1,15 @@
 from setuptools import setup, find_packages
 from varvamp import __version__, _program
 
+# read the contents of your README file
+from pathlib import Path
+this_directory = Path(__file__).parent
+long_description = (this_directory / "README.md").read_text()
+
 setup(
     name='varvamp',
+    long_description=long_description,
+    long_description_content_type='text/markdown',
     version=__version__,
     python_requires=">=3.9",
     license_files=('licence.txt'),
