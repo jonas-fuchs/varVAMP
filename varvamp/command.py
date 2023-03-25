@@ -29,7 +29,7 @@ def get_args(sysargs):
     parser = argparse.ArgumentParser(
         prog=_program,
         description='varvamp: variable virus amplicon design',
-        usage='''varvamp <alignment> <output> [options]''')
+        usage='''varvamp <alignment> <output dir> [options]''')
 
     parser.add_argument(
         "input",

@@ -1,8 +1,11 @@
 """
-This contains all varVAMP parameters.
+This contains all varVAMP parameters. Options that can be adjusted by arguments
+are FREQUENCY_THRESHOLD, PRIMER_ALLOWED_N_AMB, AMPLICON_MIN_OVERLAP, AMPLICON_OPT_LENGTH,
+AMPLICON_MAX_LENGTH.
 """
 
 # CAN BE CHANGED
+
 # alignment and consensus creation threshold
 FREQUENCY_THRESHOLD = 0.9  # freq at which a nucleotide is considered conserved
 PRIMER_ALLOWED_N_AMB = 4  # allowed number of ambiguous chars in primer
@@ -19,7 +22,7 @@ PRIMER_GC_CLAMP = 1  # min number of GC nucleotides at the very 3' end
 PRIMER_MIN_3_WITHOUT_AMB = 2  # min len of 3' without ambiguous charaters
 PRIMER_MAX_DIMER_TMP = 47  # max melting temp for dimers (homo- or heterodimers)
 
-# PCR parameters - adjust to your PCR
+# PCR parameters
 PCR_MV_CONC = 50  # monovalent cations mM
 PCR_DV_CONC = 2  # divalent cations mM
 PCR_DNTP_CONC = 0.8  # dntp concentration mM

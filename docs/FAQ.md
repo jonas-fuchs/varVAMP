@@ -8,7 +8,8 @@ Start with setting your optimal length of your amplicon, the max length that you
 
 It all depends on how many conserved regions varVAMP is able to find! There are two main parameters that influence this. The number of ambiguous bases allowed within a primer and the threshold for consensus nucleotides. Setting the threshold higher or the number of ambiguous bases lower will result in less conserved regions. If you have set the parameters below and get a decent output, increase the threshold until the output gets worse. This will increase the specificity of your primers. Likewise, if you do not have a good output, consider increasing the number of ambiguous bases before you lower the threshold. The console output varVAMP will also give you some suggestions.
 
-3. **varVAMP reported primer dimers. What know?**
+3. **varVAMP reported primer dimers. What now?**
+
 In your case varVAMP could not find suitable replacement primers. You can either rerun varVAMP and try different settings or you can perform a third pool that contains a amplicon that has one of the conflicting dimers. Notably, varVAMP also reports the dimer melting temperature. If it is still reasonable low, using a hot start polymerase might still lead to successful PCR amplification.
 
 

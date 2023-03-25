@@ -32,7 +32,7 @@ class Graph(object):
 
         for node, neighbors in graph.items():
             for neighbor in neighbors.keys():
-                if graph[neighbor].get(node, False) == False:
+                if graph[neighbor].get(node, False) is False:
                     graph[neighbor][node] = float("infinity")
 
         return graph
@@ -49,7 +49,7 @@ class Graph(object):
         """
         neighbors = []
         for out_node in self.nodes:
-            if self.graph[node].get(out_node, False) != False:
+            if self.graph[node].get(out_node, False) is not False:
                 neighbors.append(out_node)
         return neighbors
 
@@ -318,7 +318,7 @@ def get_overlapping_primers(dimer, left_primer_candidates, right_primer_candidat
         overlap_range = range(primer[3][1], primer[3][2]+1)
         if "RIGHT" in primer[2]:
             primers_to_test = right_primer_candidates
-        elif "LEFT" in primer[2]:
+        else:
             primers_to_test = left_primer_candidates
         # and check this list for all primers that overlap
         for potential_new in primers_to_test:
@@ -337,8 +337,8 @@ def test_overlaps_for_dimers(overlapping_primers):
     """
     for first_overlap in overlapping_primers[0]:
         for second_overlap in overlapping_primers[1]:
-            # break the loop. primers are sorted by score. first pair that
-            # makes it has the lowest score
+            # return the first match. primers are sorted by score.
+            # first pair that makes it has the lowest score
             if primers.calc_dimer(first_overlap[3][0], second_overlap[3][0]).tm <= config.PRIMER_MAX_DIMER_TMP:
                 return [first_overlap, second_overlap]
 
