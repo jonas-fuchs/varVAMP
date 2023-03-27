@@ -6,10 +6,6 @@ AMPLICON_MAX_LENGTH.
 
 # CAN BE CHANGED
 
-# alignment and consensus creation threshold
-FREQUENCY_THRESHOLD = 0.9  # freq at which a nucleotide is considered conserved
-PRIMER_ALLOWED_N_AMB = 4  # allowed number of ambiguous chars in primer
-
 # basic primer parameters
 PRIMER_TMP = (57, 63, 60)  # temperatur (min, max, opt)
 PRIMER_GC_RANGE = (40, 60, 50)  # gc (min, max, opt)
@@ -36,10 +32,6 @@ PRIMER_MAX_BASE_PENALTY = 8  # max base penalty for a primer
 PRIMER_3_PENALTY = (10, 10, 10)  # penalties for 3' mismatches
 PRIMER_PERMUTATION_PENALTY = 0.1  # penalty for the number of permutations
 
-# amplicon settings
-AMPLICON_MIN_OVERLAP = 100
-AMPLICON_OPT_LENGTH = 1000
-AMPLICON_MAX_LENGTH = 2000
 
 # DO NOT CHANGE
 # nucleotide definitions

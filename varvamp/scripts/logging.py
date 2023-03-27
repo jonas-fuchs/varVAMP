@@ -91,13 +91,13 @@ def raise_arg_errors(args, log_file):
             log_file,
             exit=True
         )
-    if args.allowed_ambiguous < 0:
+    if args.n_ambig < 0:
         raise_error(
             "number of ambiguous chars can not be negative",
             log_file,
             exit=True
         )
-    if args.allowed_ambiguous > 4:
+    if args.n_ambig > 4:
         raise_error(
             "high number of ambiguous nucleotides in primer leads to a high "
             "degeneracy. Consider reducing.",
@@ -121,8 +121,20 @@ def raise_arg_errors(args, log_file):
             log_file,
             exit=True
         )
+    if args.mode == "SANGER":
+        if args.report_n < 1:
+            raise_error(
+                "number of reported amplicons cannot be below 1.",
+                log_file,
+                exit=True
+            )
     # TILED specific warnings
     if args.mode == "TILED":
+        if args.report_n != float("inf"):
+            raise_error(
+                "n-report is for SANGER and ignored for TILED",
+                log_file
+            )
         if args.opt_length < 200 or args.max_length < 200:
             raise_error(
                 "your amplicon lengths might be to small. Consider increasing",
@@ -167,12 +179,6 @@ def confirm_config(args, log_file):
 
     # check if all variables exists
     all_vars = [
-        # arg dependent
-        "FREQUENCY_THRESHOLD",
-        "PRIMER_ALLOWED_N_AMB",
-        "AMPLICON_OPT_LENGTH",
-        "AMPLICON_MAX_LENGTH",
-        "AMPLICON_MIN_OVERLAP",
         # arg independent
         "PRIMER_TMP",
         "PRIMER_GC_RANGE",
@@ -314,16 +320,36 @@ def confirm_config(args, log_file):
     var_dic = vars(config)
     with open(log_file, 'a') as f:
         print(
-            "settings that can be adjusted via arguments\n",
-            f"PRIMER_OPT_LENGTH = {args.opt_length}",
-            f"PRIMER_MAX_LENGTH = {args.max_length}",
-            f"PRIMER_MIN_OVERLAP = {args.overlap}",
-            f"PRIMER_THRESHOLD = {args.threshold}",
-            f"PRIMER_ALLOWED_N_AMB = {args.allowed_ambiguous}",
-            "\nconfig settings\n",
+            f"MODE = {args.mode}",
             sep="\n",
             file=f
         )
+        print(
+            "\nsettings that can be adjusted via arguments\n",
+            f"OPT_LENGTH = {args.opt_length}",
+            f"MAX_LENGTH = {args.max_length}",
+            f"THRESHOLD = {args.threshold}",
+            f"ALLOWED_N_AMB = {args.n_ambig}",
+            sep="\n",
+            file=f
+        )
+        if args.mode == "TILED":
+            print(
+                f"MIN_OVERLAP = {args.overlap}",
+                sep="\n",
+                file=f
+            )
+        if args.mode == "SANGER":
+            print(
+                f"REPORT_N_AMPLICONS = {args.report_n}",
+                sep="\n",
+                file=f
+            )
+        print(
+            "\nconfig settings\n",
+            sep="\n",
+            file = f
+        )
         for var in all_vars[5:]:
             print(f"{var} = {var_dic[var]}", file=f)
-        print("\nprogress\n", file=f)
+        print("\nprogress", file=f)

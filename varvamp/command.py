@@ -21,7 +21,6 @@ from varvamp.scripts import reporting
 from varvamp.scripts import scheme
 
 
-# DEFs^
 def get_args(sysargs):
     """
     arg parsing for varvamp
@@ -29,7 +28,7 @@ def get_args(sysargs):
     parser = argparse.ArgumentParser(
         prog=_program,
         description='varvamp: variable virus amplicon design',
-        usage='''varvamp <alignment> <output dir> [options]''')
+        usage='''varvamp <alignment> <output dir> <mode> [options]''')
 
     parser.add_argument(
         "input",
@@ -37,51 +36,65 @@ def get_args(sysargs):
         help="alignment file and dir to write results"
     )
     parser.add_argument(
+        "mode",
+        type=str,
+        nargs='?',
+        default="TILED",
+        help="varvamp modes: TILED, SANGER",
+    )
+    parser.add_argument(
         "-ol",
         "--opt-length",
         help="optimal length of the amplicons",
+        metavar="",
         type=int,
-        default=config.AMPLICON_OPT_LENGTH
+        default=1000
     )
     parser.add_argument(
         "-ml",
         "--max-length",
         help="max length of the amplicons",
+        metavar="",
         type=int,
-        default=config.AMPLICON_MAX_LENGTH
-    )
-    parser.add_argument(
-        "-o",
-        "--overlap",
-        type=float,
-        default=config.AMPLICON_MIN_OVERLAP,
-        help="min overlap of the amplicons. Only for TILED mode."
+        default=2000
     )
     parser.add_argument(
         "-t",
         "--threshold",
+        metavar="",
         type=float,
-        default=config.FREQUENCY_THRESHOLD,
-        help="threshold for nucleotides in alignment to be considered conserved"
+        default=0.9,
+        help="threshold for conserved nucleotides"
     )
     parser.add_argument(
         "-a",
-        "--allowed-ambiguous",
+        "--n-ambig",
+        metavar="",
         type=int,
-        default=config.PRIMER_ALLOWED_N_AMB,
-        help="number of ambiguous characters that are allowed within a primer"
+        default=2,
+        help="max number of ambiguous characters in a primer"
     )
     parser.add_argument(
-        "--console",
+        "-o",
+        "--overlap",
+        type=int,
+        metavar="",
+        default=100,
+        help="TILED: min overlap of the amplicons"
+    )
+    parser.add_argument(
+        "-n",
+        "--report-n",
+        type=int,
+        metavar="",
+        default= float("inf"),
+        help="SANGER: report the top n best hits"
+    )
+    parser.add_argument(
+        "--verb",
         action=argparse.BooleanOptionalAction,
         default=True,
         help="show varvamp console output"
-    )
-    parser.add_argument(
-        "--mode",
-        type = str,
-        default= "TILED",
-        help="varvamp modes: TILED, SANGER"
     )
     parser.add_argument(
         "-v",
@@ -103,7 +116,7 @@ def main(sysargs=sys.argv[1:]):
     """
     # start varVAMP
     args = get_args(sysargs)
-    if not args.console:
+    if not args.verb:
         sys.stdout = open(os.devnull, 'w')
     args.mode = args.mode.upper()
     start_time = time.process_time()
@@ -143,7 +156,7 @@ def main(sysargs=sys.argv[1:]):
     # generate conserved region list
     conserved_regions = conserved.find_regions(
         ambiguous_consensus,
-        args.allowed_ambiguous
+        args.n_ambig
     )
     if not conserved_regions:
         logging.raise_error(
@@ -251,7 +264,7 @@ def main(sysargs=sys.argv[1:]):
                 log_file
             )
     elif args.mode == "SANGER":
-        amplicon_scheme = scheme.find_best_amplicons(amplicons, all_primers)
+        amplicon_scheme = scheme.find_best_amplicons(amplicons, all_primers, args.report_n)
         logging.varvamp_progress(
             log_file,
             progress=0.9,

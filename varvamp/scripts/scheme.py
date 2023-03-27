@@ -390,7 +390,7 @@ def check_and_solve_heterodimers(amplicon_scheme, left_primer_candidates, right_
     return not_solvable
 
 
-def find_best_amplicons(amplicons, all_primers):
+def find_best_amplicons(amplicons, all_primers, n):
     """
     find the best scoring non-overlapping amplicons from all found amplicons
     """
@@ -407,9 +407,14 @@ def find_best_amplicons(amplicons, all_primers):
             to_retain.append(amp)
     # build the final dictionary
     scheme_dictionary = {0: {}}
+    counter = 1
     for amp in to_retain:
         scheme_dictionary[0][amp[0]] = {}
         scheme_dictionary[0][amp[0]][amp[1][2]] = all_primers["+"][amp[1][2]]
         scheme_dictionary[0][amp[0]][amp[1][3]] = all_primers["-"][amp[1][3]]
+        if n != float("inf"):
+            if counter == n:
+                break
+            counter += 1
 
     return scheme_dictionary
