@@ -399,6 +399,7 @@ def find_best_amplicons(amplicons, all_primers):
     to_retain = [sorted_amplicons[0]]
     amplicon_range = list(range(sorted_amplicons[0][1][0], sorted_amplicons[0][1][1]))
     amplicon_set = set(amplicon_range)
+    # find lowest non-overlapping
     for amp in sorted_amplicons:
         amp_positions = list(range(amp[1][0], amp[1][1]+1))
         if not any(x in amp_positions for x in amplicon_set):
