@@ -388,3 +388,27 @@ def check_and_solve_heterodimers(amplicon_scheme, left_primer_candidates, right_
             primer_dimers = test_scheme_for_dimers(amplicon_scheme)
 
     return not_solvable
+
+
+def find_best_amplicons(amplicons, all_primers):
+    """
+    find the best scoring non-overlapping amplicons from all found amplicons
+    """
+    # sort amplicons
+    sorted_amplicons = sorted(amplicons.items(), key=lambda x: x[1][5])
+    to_retain = [sorted_amplicons[0]]
+    amplicon_range = list(range(sorted_amplicons[0][1][0], sorted_amplicons[0][1][1]))
+    amplicon_set = set(amplicon_range)
+    for amp in sorted_amplicons:
+        amp_positions = list(range(amp[1][0], amp[1][1]+1))
+        if not any(x in amp_positions for x in amplicon_set):
+            amplicon_set.update(amp_positions)
+            to_retain.append(amp)
+    # build the final dictionary
+    scheme_dictionary = {0: {}}
+    for amp in to_retain:
+        scheme_dictionary[0][amp[0]] = {}
+        scheme_dictionary[0][amp[0]][amp[1][2]] = all_primers["+"][amp[1][2]]
+        scheme_dictionary[0][amp[0]][amp[1][3]] = all_primers["-"][amp[1][3]]
+
+    return scheme_dictionary

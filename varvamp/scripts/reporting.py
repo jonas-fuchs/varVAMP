@@ -102,7 +102,7 @@ def get_permutations(seq):
     return[''.join(p) for p in itertools.product(*splits)]
 
 
-def write_scheme_to_files(dir, amplicon_scheme, ambiguous_consensus):
+def write_scheme_to_files(dir, amplicon_scheme, ambiguous_consensus, mode):
     """
     write all relevant bed files and a tsv file with all primer stats
     """
@@ -134,7 +134,11 @@ def write_scheme_to_files(dir, amplicon_scheme, ambiguous_consensus):
                 right = (primer_names[1], amplicon_scheme[pool][amp][primer_names[1]])
 
                 # write amplicon bed
-                print("ambiguous_consensus", left[1][1], right[1][2], new_name, pool, sep="\t", file=bed)
+                if mode == "TILED":
+                    print("ambiguous_consensus", left[1][1], right[1][2], new_name, pool, sep="\t", file=bed)
+                elif mode == "SANGER":
+                    print("ambiguous_consensus", left[1][1], right[1][2], new_name, round(left[1][3] + right[1][3], 1), sep="\t", file=bed)
+
                 # write primer assignments tabular file
                 print(left[0], right[0], sep="\t", file=tabular)
 
@@ -346,7 +350,7 @@ def varvamp_plot(dir, threshold, alignment_cleaned, conserved_regions, all_prime
                 ax[idx].set_title(primer[0], loc="left")
                 ax[idx].xaxis.set_ticks(np.arange(primer[1][1], primer[1][1]+len(x), 1))
                 ax[idx].xaxis.set_ticklabels(x, rotation=45)
-                ax[idx].set_ylabel(ylabel="% of sequences")
+                ax[idx].set_ylabel(ylabel="freq of sequences")
                 ax[idx].set_xlabel("position")
                 ax[idx].set_ylim(0, 1-threshold)
             # - to pdf

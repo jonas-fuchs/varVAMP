@@ -50,7 +50,7 @@ def varvamp_progress(log_file, start_time=None, progress=0, job="", progress_tex
     else:
         if progress == 1:
             stop_time = str(round(time.process_time() - start_time, 2))
-            progress_text = f"all done \n\n\rvarVAMP created an amplicon scheme in {stop_time} sec!\n{datetime.datetime.now()}"
+            progress_text = f"all done \n\n\rvarVAMP finished in {stop_time} sec!\n{datetime.datetime.now()}"
             job = "Finalizing output."
         print(
             "\rJob:\t\t " + job + "\nProgress: \t [{0}] {1}%".format("█"*block + "-"*(barLength-block), progress*100) + "\t" + progress_text,
@@ -115,39 +115,47 @@ def raise_arg_errors(args, log_file):
             log_file,
             exit=True
         )
-    if args.opt_length < 200 or args.max_length < 200:
+    if args.mode != "TILED" and args.mode != "SANGER":
         raise_error(
-            "your amplicon lengths might be to small. Consider increasing",
-            log_file
-        )
-    if args.overlap < 0:
-        raise_error(
-            "overlap size can not be negative.",
+            "non valid varvamp mode. Use TILED or SANGER.",
             log_file,
             exit=True
         )
-    if args.overlap < 50:
-        raise_error(
-            "small overlaps might hinder downstream analyses. Consider increasing.",
-            log_file
-        )
-    if args.overlap > args.max_length/2 - config.PRIMER_SIZES[1]:
-        raise_error(
-            "min overlap must be lower than half of your maximum length - maximum primer length. To achieve optimal results reduce it to at least half of your optimal length",
-            log_file,
-            exit=True
-        )
-    if args.overlap > args.opt_length:
-        raise_error(
-            "overlap can not be higher than your optimal length.",
-            log_file,
-            exit=True
-        )
-    if args.overlap > args.opt_length/2:
-        raise_error(
-            "your intended overlap is higher than half of your optimal length. This reduces how well varvamps will find overlapping amplicons. Consider decreasing.",
-            log_file
-        )
+    # TILED specific warnings
+    if args.mode == "TILED":
+        if args.opt_length < 200 or args.max_length < 200:
+            raise_error(
+                "your amplicon lengths might be to small. Consider increasing",
+                log_file
+            )
+        if args.overlap < 0:
+            raise_error(
+                "overlap size can not be negative.",
+                log_file,
+                exit=True
+            )
+        if args.overlap < 50:
+            raise_error(
+                "small overlaps might hinder downstream analyses. Consider increasing.",
+                log_file
+            )
+        if args.overlap > args.max_length/2 - config.PRIMER_SIZES[1]:
+            raise_error(
+                "min overlap must be lower than half of your maximum length - maximum primer length. To achieve optimal results reduce it to at least half of your optimal length",
+                log_file,
+                exit=True
+            )
+        if args.overlap > args.opt_length:
+            raise_error(
+                "overlap can not be higher than your optimal length.",
+                log_file,
+                exit=True
+            )
+        if args.overlap > args.opt_length/2:
+            raise_error(
+                "your intended overlap is higher than half of your optimal length. This reduces how well varvamps will find overlapping amplicons. Consider decreasing.",
+                log_file
+            )
 
 
 def confirm_config(args, log_file):

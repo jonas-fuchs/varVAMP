@@ -8,24 +8,24 @@ For a lot of virus genera it is difficult to design pan-specific primers. varVAM
 
 **varVAMP comes in three different flavors:**
 
-<img src="./docs/varvamp.png" alt="varVAMP logo" />
+<img src="https://github.com/jonas-fuchs/varVAMP/blob/master/docs/varvamp.png" alt="varVAMP logo" />
 
-**SANGER** *(coming soon)*: varVAMP searches for the very best primers and reports back an amplicon which can be used for PCR-based screening approaches.
+**SANGER**: varVAMP searches for the very best primers and reports back non-overlapping amplicons which can be used for PCR-based screening approaches.
 
 **TILED**: varVAMP uses a graph based approach to design overlapping amplicons that tile the entire viral genome. This designs amplicons that are suitable for Oxford Nanopore or Illumina based full-genome sequencing.
 
 **QPCR** *(coming soon)*: varVAMP searches for small amplicons with an internal primer for the probe. It minimizes temperature differences between the primers.
 
-This program is currently being developed and in an alpha state. You are welcome to use this software. If you successfully design primers, drop me a mail. It might be possible to collaborate!
+This program is currently being developed and in an alpha state. You are welcome to use this software. If you successfully design primers, drop me a mail. It might be possible to collaborate! Ideas and suggestions are highly welcome.
 
 # Documentation
 
-* [Installation](docs/installation.md)
-* [Preparing the data](docs/preparing_the_data.md)
-* [Usage](docs/usage.md)
-* [Output](docs/output.md)
-* [How it works](docs/how_varvamp_works.md)
-* [FAQ](docs/FAQ.md)
+* [Installation](https://github.com/jonas-fuchs/varVAMP/blob/master/docs/installation.md)
+* [Preparing the data](https://github.com/jonas-fuchs/varVAMP/blob/master/docs/preparing_the_data.md)
+* [Usage](https://github.com/jonas-fuchs/varVAMP/blob/master/docs/usage.md)
+* [Output](https://github.com/jonas-fuchs/varVAMP/blob/master/docs/output.md)
+* [How it works](https://github.com/jonas-fuchs/varVAMP/blob/master/docs/how_varvamp_works.md)
+* [FAQ](https://github.com/jonas-fuchs/varVAMP/blob/master/docs/FAQ.md)
 
 ---
 

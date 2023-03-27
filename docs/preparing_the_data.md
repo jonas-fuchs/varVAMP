@@ -12,7 +12,7 @@ mafft my_sequences.fasta > my_alignment.fasta
 
 
 ### BUT...
-If your sequences are two diverse, also varVAMP will not perform well. Therefore, it is important that, phylogenically, the input alignment  makes sense. To analyze this you can calculate a tree  with tools like [iqtree](http://www.iqtree.org/) and then use [TreeCluster](https://github.com/niemasd/TreeCluster) to get phylogenically related sequence clusters. However, this can be also computationally intensive.
+If your sequences are too diverse, also varVAMP will not perform well. Therefore, it is important that, phylogenically, the input alignment  makes sense. To analyze this you can calculate a tree  with tools like [iqtree](http://www.iqtree.org/) and then use [TreeCluster](https://github.com/niemasd/TreeCluster) to get phylogenically related sequence clusters. However, this can be also computationally intensive.
 
 We have had good experience in using varVAMP with the sequence identity based clustering algorithm [vsearch](https://github.com/torognes/vsearch). A good starting point is a sequence identity between 0.8 and 0.85. For such clusters varVAMP should perform reasonably well.
 
