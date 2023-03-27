@@ -9,8 +9,6 @@ import time
 import argparse
 
 # varVAMP
-from . import _program
-from varvamp import __version__
 from varvamp.scripts import logging
 from varvamp.scripts import alignment
 from varvamp.scripts import consensus
@@ -18,6 +16,8 @@ from varvamp.scripts import conserved
 from varvamp.scripts import primers
 from varvamp.scripts import reporting
 from varvamp.scripts import scheme
+from varvamp import __version__
+from . import _program
 
 
 def get_args(sysargs):
