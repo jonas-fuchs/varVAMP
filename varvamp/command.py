@@ -13,7 +13,6 @@ from . import _program
 from varvamp import __version__
 from varvamp.scripts import logging
 from varvamp.scripts import alignment
-from varvamp.scripts import config
 from varvamp.scripts import consensus
 from varvamp.scripts import conserved
 from varvamp.scripts import primers
@@ -87,7 +86,7 @@ def get_args(sysargs):
         "--report-n",
         type=int,
         metavar="",
-        default= float("inf"),
+        default=float("inf"),
         help="SANGER: report the top n best hits"
     )
     parser.add_argument(
@@ -225,7 +224,7 @@ def main(sysargs=sys.argv[1:]):
         log_file,
         progress=0.8,
         job="Finding potential amplicons.",
-        progress_text= f"{len(amplicons)} potential amplicons"
+        progress_text=f"{len(amplicons)} potential amplicons"
     )
 
     if args.mode == "TILED":

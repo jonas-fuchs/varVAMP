@@ -22,12 +22,10 @@ These settings are quite relaxed and can produce decent results for diverse viru
 
 **Full usage:**
 ```shell
-varvamp <alignment> <output dir> [OPTIONS]
-```
-
-```
 usage: varvamp <alignment> <output dir> <mode> [options]
+```
 
+```
 varvamp: variable virus amplicon design
 
 positional arguments:
