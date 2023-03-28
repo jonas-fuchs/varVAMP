@@ -1,7 +1,7 @@
 ## How varVAMP works
 
 ### Overview
-varVAMP primer design for viruses with highly variable genomes. varVAMP first preprocesses the alignment and then creates consensus sequences that can contain ambiguous characters. Then it searches for conserved regions as defined by a user defined amount of ambiguous charaters within
+varVAMP designs primers for viruses with highly variable genomes. varVAMP first preprocesses the alignment and then creates consensus sequences that can contain ambiguous characters. Then it searches for conserved regions as defined by a user defined amount of ambiguous charaters within
 the min length of a primer. The conserved regions of a consensus sequence containing the most prevalent nucleotide is then digested into kmers which are considered potential primers if they pass all primer requirements. These primers are further filtered for high scoring primers for each region. Then it constructs all possible amplicons and determines which amplicons are overlapping. A graph based approach is used to find the best amplicon scheme.
 
 ---
