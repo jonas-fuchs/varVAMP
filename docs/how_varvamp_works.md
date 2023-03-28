@@ -37,7 +37,7 @@ To search for the best scoring amplicon, varVAMP uses a graph based approach.
 7. Lastly, the best scoring scheme is evaluated for primer dimers in their respective pools. If a primer dimer pair is found, varVAMP evaluates for each primer their overlapping previously not considered primers (primer search step 2) and again minimizes the score. The scheme and all primers are updated. If no alternative primers can be found, varVAMP issues a warning and reports the unsolvable primer dimers.
 
 #### Sanger sequencing
-coming soon
+varVAMP sorts all amplicons by their score and takes the non-overlapping amplicon with the lowest score! As varVAMP gives a size penalty to amplicons, varVAMP automatically finds amplicons with low primer scores close to your optimal length (if possible).
 
 #### qPCR
 coming soon

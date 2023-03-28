@@ -3,10 +3,14 @@ varVAMP runs on UNIX Systems, MacOSX and Windows with Python3 >=3.9 installed.
 
 ## Installation
 
+From PyPI:
+
 ```shell
 pip install varvamp
 ```
+
 That was already it. To check if it worked:
+
 ```shell
 varvamp -v
 ```

@@ -50,7 +50,7 @@ def varvamp_progress(log_file, start_time=None, progress=0, job="", progress_tex
     else:
         if progress == 1:
             stop_time = str(round(time.process_time() - start_time, 2))
-            progress_text = f"all done \n\n\rvarVAMP created an amplicon scheme in {stop_time} sec!\n{datetime.datetime.now()}"
+            progress_text = f"all done \n\n\rvarVAMP finished in {stop_time} sec!\n{datetime.datetime.now()}"
             job = "Finalizing output."
         print(
             "\rJob:\t\t " + job + "\nProgress: \t [{0}] {1}%".format("█"*block + "-"*(barLength-block), progress*100) + "\t" + progress_text,
@@ -91,13 +91,13 @@ def raise_arg_errors(args, log_file):
             log_file,
             exit=True
         )
-    if args.allowed_ambiguous < 0:
+    if args.n_ambig < 0:
         raise_error(
             "number of ambiguous chars can not be negative",
             log_file,
             exit=True
         )
-    if args.allowed_ambiguous > 4:
+    if args.n_ambig > 4:
         raise_error(
             "high number of ambiguous nucleotides in primer leads to a high "
             "degeneracy. Consider reducing.",
@@ -115,39 +115,59 @@ def raise_arg_errors(args, log_file):
             log_file,
             exit=True
         )
-    if args.opt_length < 200 or args.max_length < 200:
+    if args.mode != "TILED" and args.mode != "SANGER":
         raise_error(
-            "your amplicon lengths might be to small. Consider increasing",
-            log_file
-        )
-    if args.overlap < 0:
-        raise_error(
-            "overlap size can not be negative.",
+            "non valid varvamp mode. Use TILED or SANGER.",
             log_file,
             exit=True
         )
-    if args.overlap < 50:
-        raise_error(
-            "small overlaps might hinder downstream analyses. Consider increasing.",
-            log_file
-        )
-    if args.overlap > args.max_length/2 - config.PRIMER_SIZES[1]:
-        raise_error(
-            "min overlap must be lower than half of your maximum length - maximum primer length. To achieve optimal results reduce it to at least half of your optimal length",
-            log_file,
-            exit=True
-        )
-    if args.overlap > args.opt_length:
-        raise_error(
-            "overlap can not be higher than your optimal length.",
-            log_file,
-            exit=True
-        )
-    if args.overlap > args.opt_length/2:
-        raise_error(
-            "your intended overlap is higher than half of your optimal length. This reduces how well varvamps will find overlapping amplicons. Consider decreasing.",
-            log_file
-        )
+    if args.mode == "SANGER":
+        if args.report_n < 1:
+            raise_error(
+                "number of reported amplicons cannot be below 1.",
+                log_file,
+                exit=True
+            )
+    # TILED specific warnings
+    if args.mode == "TILED":
+        if args.report_n != float("inf"):
+            raise_error(
+                "n-report is for SANGER and ignored for TILED",
+                log_file
+            )
+        if args.opt_length < 200 or args.max_length < 200:
+            raise_error(
+                "your amplicon lengths might be to small. Consider increasing",
+                log_file
+            )
+        if args.overlap < 0:
+            raise_error(
+                "overlap size can not be negative.",
+                log_file,
+                exit=True
+            )
+        if args.overlap < 50:
+            raise_error(
+                "small overlaps might hinder downstream analyses. Consider increasing.",
+                log_file
+            )
+        if args.overlap > args.max_length/2 - config.PRIMER_SIZES[1]:
+            raise_error(
+                "min overlap must be lower than half of your maximum length - maximum primer length. To achieve optimal results reduce it to at least half of your optimal length",
+                log_file,
+                exit=True
+            )
+        if args.overlap > args.opt_length:
+            raise_error(
+                "overlap can not be higher than your optimal length.",
+                log_file,
+                exit=True
+            )
+        if args.overlap > args.opt_length/2:
+            raise_error(
+                "your intended overlap is higher than half of your optimal length. This reduces how well varvamps will find overlapping amplicons. Consider decreasing.",
+                log_file
+            )
 
 
 def confirm_config(args, log_file):
@@ -159,12 +179,6 @@ def confirm_config(args, log_file):
 
     # check if all variables exists
     all_vars = [
-        # arg dependent
-        "FREQUENCY_THRESHOLD",
-        "PRIMER_ALLOWED_N_AMB",
-        "AMPLICON_OPT_LENGTH",
-        "AMPLICON_MAX_LENGTH",
-        "AMPLICON_MIN_OVERLAP",
         # arg independent
         "PRIMER_TMP",
         "PRIMER_GC_RANGE",
@@ -306,16 +320,36 @@ def confirm_config(args, log_file):
     var_dic = vars(config)
     with open(log_file, 'a') as f:
         print(
-            "settings that can be adjusted via arguments\n",
-            f"PRIMER_OPT_LENGTH = {args.opt_length}",
-            f"PRIMER_MAX_LENGTH = {args.max_length}",
-            f"PRIMER_MIN_OVERLAP = {args.overlap}",
-            f"PRIMER_THRESHOLD = {args.threshold}",
-            f"PRIMER_ALLOWED_N_AMB = {args.allowed_ambiguous}",
-            "\nconfig settings\n",
+            f"MODE = {args.mode}",
             sep="\n",
             file=f
         )
+        print(
+            "\nsettings that can be adjusted via arguments\n",
+            f"OPT_LENGTH = {args.opt_length}",
+            f"MAX_LENGTH = {args.max_length}",
+            f"THRESHOLD = {args.threshold}",
+            f"ALLOWED_N_AMB = {args.n_ambig}",
+            sep="\n",
+            file=f
+        )
+        if args.mode == "TILED":
+            print(
+                f"MIN_OVERLAP = {args.overlap}",
+                sep="\n",
+                file=f
+            )
+        if args.mode == "SANGER":
+            print(
+                f"REPORT_N_AMPLICONS = {args.report_n}",
+                sep="\n",
+                file=f
+            )
+        print(
+            "\nconfig settings\n",
+            sep="\n",
+            file = f
+        )
         for var in all_vars[5:]:
             print(f"{var} = {var_dic[var]}", file=f)
-        print("\nprogress\n", file=f)
+        print("\nprogress", file=f)

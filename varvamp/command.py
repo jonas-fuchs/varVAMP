@@ -9,19 +9,17 @@ import time
 import argparse
 
 # varVAMP
-from . import _program
-from varvamp import __version__
 from varvamp.scripts import logging
 from varvamp.scripts import alignment
-from varvamp.scripts import config
 from varvamp.scripts import consensus
 from varvamp.scripts import conserved
 from varvamp.scripts import primers
 from varvamp.scripts import reporting
 from varvamp.scripts import scheme
+from varvamp import __version__
+from . import _program
 
 
-# DEFs
 def get_args(sysargs):
     """
     arg parsing for varvamp
@@ -29,7 +27,7 @@ def get_args(sysargs):
     parser = argparse.ArgumentParser(
         prog=_program,
         description='varvamp: variable virus amplicon design',
-        usage='''varvamp <alignment> <output dir> [options]''')
+        usage='''varvamp <alignment> <output dir> <mode> [options]''')
 
     parser.add_argument(
         "input",
@@ -37,42 +35,62 @@ def get_args(sysargs):
         help="alignment file and dir to write results"
     )
     parser.add_argument(
+        "mode",
+        type=str,
+        nargs='?',
+        default="TILED",
+        help="varvamp modes: TILED, SANGER",
+    )
+    parser.add_argument(
         "-ol",
         "--opt-length",
         help="optimal length of the amplicons",
+        metavar="",
         type=int,
-        default=config.AMPLICON_OPT_LENGTH
+        default=1000
     )
     parser.add_argument(
         "-ml",
         "--max-length",
         help="max length of the amplicons",
+        metavar="",
         type=int,
-        default=config.AMPLICON_MAX_LENGTH
-    )
-    parser.add_argument(
-        "-o",
-        "--overlap",
-        type=float,
-        default=config.AMPLICON_MIN_OVERLAP,
-        help="min overlap of the amplicons"
+        default=2000
     )
     parser.add_argument(
         "-t",
         "--threshold",
+        metavar="",
         type=float,
-        default=config.FREQUENCY_THRESHOLD,
-        help="threshold for nucleotides in alignment to be considered conserved"
+        default=0.9,
+        help="threshold for conserved nucleotides"
     )
     parser.add_argument(
         "-a",
-        "--allowed-ambiguous",
+        "--n-ambig",
+        metavar="",
         type=int,
-        default=config.PRIMER_ALLOWED_N_AMB,
-        help="number of ambiguous characters that are allowed within a primer"
+        default=2,
+        help="max number of ambiguous characters in a primer"
     )
     parser.add_argument(
-        "--console",
+        "-o",
+        "--overlap",
+        type=int,
+        metavar="",
+        default=100,
+        help="TILED: min overlap of the amplicons"
+    )
+    parser.add_argument(
+        "-n",
+        "--report-n",
+        type=int,
+        metavar="",
+        default=float("inf"),
+        help="SANGER: report the top n best hits"
+    )
+    parser.add_argument(
+        "--verb",
         action=argparse.BooleanOptionalAction,
         default=True,
         help="show varvamp console output"
@@ -97,8 +115,9 @@ def main(sysargs=sys.argv[1:]):
     """
     # start varVAMP
     args = get_args(sysargs)
-    if not args.console:
+    if not args.verb:
         sys.stdout = open(os.devnull, 'w')
+    args.mode = args.mode.upper()
     start_time = time.process_time()
     results_dir, data_dir, log_file = logging.create_dir_structure(args.input[1])
     logging.raise_arg_errors(args, log_file)
@@ -136,7 +155,7 @@ def main(sysargs=sys.argv[1:]):
     # generate conserved region list
     conserved_regions = conserved.find_regions(
         ambiguous_consensus,
-        args.allowed_ambiguous
+        args.n_ambig
     )
     if not conserved_regions:
         logging.raise_error(
@@ -201,46 +220,57 @@ def main(sysargs=sys.argv[1:]):
             log_file,
             exit=True
         )
-    amplicon_graph = scheme.create_amplicon_graph(amplicons, args.overlap)
     logging.varvamp_progress(
         log_file,
         progress=0.8,
         job="Finding potential amplicons.",
-        progress_text=str(len(amplicons)) + " potential amplicons"
+        progress_text=f"{len(amplicons)} potential amplicons"
     )
-    # search for amplicon scheme
-    coverage, amplicon_scheme = scheme.find_best_covering_scheme(
-        amplicons,
-        amplicon_graph,
-        all_primers
-    )
-    dimers_not_solved = scheme.check_and_solve_heterodimers(
-        amplicon_scheme,
-        left_primer_candidates,
-        right_primer_candidates,
-        all_primers)
-    if dimers_not_solved:
-        logging.raise_error(
-            f"varVAMP found {len(dimers_not_solved)} primer dimers without replacements. Check the dimer file and perform the PCR for incomaptible amplicons in a sperate reaction.",
-            log_file
+
+    if args.mode == "TILED":
+        amplicon_graph = scheme.create_amplicon_graph(amplicons, args.overlap)
+        # search for amplicon scheme
+        coverage, amplicon_scheme = scheme.find_best_covering_scheme(
+            amplicons,
+            amplicon_graph,
+            all_primers
         )
-        reporting.write_dimers(dir, dimers_not_solved)
-    percent_coverage = round(coverage/len(ambiguous_consensus)*100, 2)
-    logging.varvamp_progress(
-        log_file,
-        progress=0.9,
-        job="Creating amplicon scheme.",
-        progress_text=f"{percent_coverage} % total coverage with {len(amplicon_scheme[0]) + len(amplicon_scheme[1])} amplicons"
-    )
-    if percent_coverage < 70:
-        logging.raise_error(
-            "coverage < 70 %. Possible solutions:\n"
-            "\t - lower threshold\n"
-            "\t - increase amplicons lengths\n"
-            "\t - increase number of ambiguous nucleotides\n"
-            "\t - relax primer settings (not recommended)\n",
-            log_file
+        dimers_not_solved = scheme.check_and_solve_heterodimers(
+            amplicon_scheme,
+            left_primer_candidates,
+            right_primer_candidates,
+            all_primers)
+        if dimers_not_solved:
+            logging.raise_error(
+                f"varVAMP found {len(dimers_not_solved)} primer dimers without replacements. Check the dimer file and perform the PCR for incomaptible amplicons in a sperate reaction.",
+                log_file
+            )
+            reporting.write_dimers(dir, dimers_not_solved)
+        percent_coverage = round(coverage/len(ambiguous_consensus)*100, 2)
+        logging.varvamp_progress(
+            log_file,
+            progress=0.9,
+            job="Creating amplicon scheme.",
+            progress_text=f"{percent_coverage} % total coverage with {len(amplicon_scheme[0]) + len(amplicon_scheme[1])} amplicons"
         )
+        if percent_coverage < 70:
+            logging.raise_error(
+                "coverage < 70 %. Possible solutions:\n"
+                "\t - lower threshold\n"
+                "\t - increase amplicons lengths\n"
+                "\t - increase number of ambiguous nucleotides\n"
+                "\t - relax primer settings (not recommended)\n",
+                log_file
+            )
+    elif args.mode == "SANGER":
+        amplicon_scheme = scheme.find_best_amplicons(amplicons, all_primers, args.report_n)
+        logging.varvamp_progress(
+            log_file,
+            progress=0.9,
+            job="Finding low scoring amplicons.",
+            progress_text="The lowest scoring amplicon is amplicon_0."
+        )
+
     # write files
     reporting.write_alignment(data_dir, alignment_cleaned)
     reporting.write_fasta(data_dir, "majority_consensus", majority_consensus)
@@ -250,7 +280,8 @@ def main(sysargs=sys.argv[1:]):
     reporting.write_scheme_to_files(
         results_dir,
         amplicon_scheme,
-        ambiguous_consensus
+        ambiguous_consensus,
+        args.mode
     )
     reporting.varvamp_plot(
         results_dir,

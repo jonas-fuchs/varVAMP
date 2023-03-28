@@ -15,34 +15,33 @@ In this case varVAMP uses as standard settings:
 * ```MAX_LENGTH``` = 2000 (maximum amplicon length)
 * ```OVERLAP``` = 100 (minimum overlap length)
 * ```THRESHOLD``` = 0.9 (nucleotide consensus threshold)
-* ```ALLOWED_AMBIGUOUS``` = 4 (number of allowed ambiguous characters in a primer)
+* ```N_AMBIG``` = 4 (number of allowed ambiguous characters in a primer)
+* ```MODE``` = TILED
 
 These settings are quite relaxed and can produce decent results for diverse viruses (80-90 % sequence identity). However, you can likely optimize the result.
 
 **Full usage:**
 ```shell
-varvamp <alignment> <output dir> [OPTIONS]
+usage: varvamp <alignment> <output dir> <mode> [options]
 ```
+
 ```
+varvamp: variable virus amplicon design
+
 positional arguments:
-  input                 alignment file and dir to write results
+  input                alignment file and dir to write results
+  mode                 varvamp modes: TILED, SANGER
 
 optional arguments:
-  -h, --help            show this help message and exit
-  -ol OPT_LENGTH, --opt-length OPT_LENGTH
-                        optimal length of the amplicons
-  -ml MAX_LENGTH, --max-length MAX_LENGTH
-                        max length of the amplicons
-  -o OVERLAP, --overlap OVERLAP
-                        min overlap of the amplicons
-  -t THRESHOLD, --threshold THRESHOLD
-                        threshold for nucleotides in alignment to be considered conserved
-  -a ALLOWED_AMBIGUOUS, --allowed-ambiguous ALLOWED_AMBIGUOUS
-                        number of ambiguous characters that are allowed within a primer
-  --console, --no-console
-                        show varvamp console output (default: True)
-  -v, --version         show program's version number and exit
-
+  -h, --help           show this help message and exit
+  -ol , --opt-length   optimal length of the amplicons
+  -ml , --max-length   max length of the amplicons
+  -t , --threshold     threshold for conserved nucleotides
+  -a , --n-ambig       max number of ambiguous characters in a primer
+  -o , --overlap       TILED: min overlap of the amplicons
+  -n , --report-n      SANGER: report the top n best hits
+  --verb, --no-verb    show varvamp console output (default: True)
+  -v, --version        show program's version number and exit
 ```
 
 ## Further customization (advanced)
