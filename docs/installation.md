@@ -9,14 +9,6 @@ From PyPI:
 pip install varvamp
 ```
 
-From CONDA (optionally with a new env):
-
-```shell
-conda create --name varvamp
-conda activate varvamp
-conda install varvamp
-```
-
 That was already it. To check if it worked:
 
 ```shell
