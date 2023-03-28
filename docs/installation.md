@@ -18,7 +18,7 @@ You should see the current varVAMP version.
 
 ## Installation for advanced customization or development
 
-All varVAMP options (such as temperature, size, penalties) can be customized in the config.py. However, to do this you will have to install varvamp not from the PyPI repository, but directly from this github repository.
+All varVAMP options (such as temperature, size, penalties) can be customized in the `config.py`. However, to do this you will have to install varVAMP not from the PyPI repository, but directly from this GitHub repository.
 
 ### - via pip (recommended)
 
