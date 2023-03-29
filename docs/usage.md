@@ -1,7 +1,7 @@
 ## Usage
 
 
-In the most simple case varvamp will take an alignment and a output directory to store the results in.
+In the most simple case, varVAMP will take an alignment and an output directory to store the results.
 
 **Minimal usage:**
 
@@ -18,7 +18,7 @@ In this case varVAMP uses as standard settings:
 * ```N_AMBIG``` = 4 (number of allowed ambiguous characters in a primer)
 * ```MODE``` = TILED
 
-These settings are quite relaxed and can produce decent results for diverse viruses (80-90 % sequence identity). However, you can likely optimize the result.
+These settings are quite relaxed and can produce decent results for diverse viruses (80-90 % sequence identity). However, you can probably optimize the result.
 
 **Full usage:**
 ```shell
@@ -46,13 +46,13 @@ optional arguments:
 
 ## Further customization (advanced)
 
-Although, we believe that this will be in the most cases not necessary, you can customize all settings for varVAMP that are not specified via commands in the config.py. Here are also all default parameters stored if no optional arguments are given. [To fully customize varvamp install it directly from this github repository](./installation.md)
+Although we believe that this will be in the most cases not necessary, you can customize all settings for varVAMP that are not specified via commands in the `config.py`. Here are also all default parameters stored if no optional arguments are given for your data. [To fully customize varVAMP, install it directly from this GitHub repository](./installation.md)
 
 Go to the configs location:
 ```shell
 cd varVAMP/varvamp/scripts/
 ```
-And open the config.py with an text editor, e.g.:
+And open the `config.py` with a text editor, e.g.:
 ```shell
 gedit config.py
 ```
@@ -89,6 +89,6 @@ To apply these new settings just repeat the installation procedure in the varVAM
 ```shell
 pip install .
 ```
-If you did everything right, varVAMP's config check passes. Otherwise it will produce an error. If that happens you can simply perform a git pull or adjust the settings that produced a warning.
+If you did everything right, varVAMP's config check passes. Otherwise it will produce an error. If that happens you can simply perform a git pull or adjust the settings that produced a warning. Please use the [GitHub issues](https://github.com/jonas-fuchs/varVAMP/issues) to report any problems and bugs.
 
 #### [Previous: Data preparation](./preparing_the_data.md)&emsp;&emsp;[Next: Output](./output.md)
