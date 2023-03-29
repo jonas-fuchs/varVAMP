@@ -1,7 +1,7 @@
 ## How varVAMP works
 
 ### Overview
-varVAMP designs primers for viruses with highly variable genomes. varVAMP first preprocesses the alignment and then creates consensus sequences that can contain ambiguous characters. Then it searches for conserved regions as defined by a user defined amount of ambiguous charaters within
+varVAMP designs primers for viruses with highly variable genomes. varVAMP first preprocesses the alignment and then creates consensus sequences that can contain [ambiguous characters](https://www.bioinformatics.org/sms/iupac.html). Then it searches for conserved regions as defined by a user defined amount of ambiguous charaters within
 the min length of a primer. The conserved regions of a consensus sequence containing the most prevalent nucleotide are then digested into kmers which are considered potential primers if they pass all primer requirements. These primers are further filtered for high scoring primers for each region. Then varVAMP constructs all possible amplicons and determines which amplicons are overlapping. Finally, a graph based approach is used to find the best amplicon scheme.
 
 ---
@@ -30,7 +30,7 @@ varVAMP uses `primer3-py` to search for potential primers. Some of the evaluatio
 To search for the best scoring amplicon, varVAMP uses a graph based approach.
 1. Create all possible amplicons with the given length constraints and ensure that primer pairs are not forming dimers.
 2. Create a graph containing all amplicons and their potential neighboring amplicons. To design a good scheme, the next primer has to lie within the second half of the current primer and satisfy the overlap constraint. The cost to go to a neighboring amplicon is determined by the amplicon score.
-3. Use the [Dijkstra algorithm](https://www.bioinformatics.org/sms/iupac.html) to find the path with the lowest costs from a given start node.
+3. Use the [Dijkstra algorithm](https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm) to find the path with the lowest costs from a given start node.
 4. Determine potential stop nodes as amplicons with the furthest stop in the alignment.
 5. Determine shortest paths between the start and all potential stop nodes. Get the lowest scoring.
 6. Repeat steps 3-5 for each start node until the best coverage is reached. Voila! We have the best scoring amplicon scheme!
