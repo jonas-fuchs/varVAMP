@@ -9,6 +9,12 @@ From PyPI:
 pip install varvamp
 ```
 
+From CONDA:
+
+```shell
+ conda install -c bioconda varvamp
+```
+
 That was already it. To check if it worked:
 
 ```shell
