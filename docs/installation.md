@@ -3,16 +3,22 @@ varVAMP runs on UNIX Systems, MacOSX and Windows with Python3 >=3.9 installed.
 
 ## Installation
 
-From PyPI:
+PyPI:
 
 ```shell
 pip install varvamp
 ```
 
-From CONDA:
+CONDA:
 
 ```shell
  conda install -c bioconda varvamp
+```
+
+DOCKER
+
+```shell
+docker pull quay.io/biocontainers/varvamp
 ```
 
 That was already it. To check if it worked:
