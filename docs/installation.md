@@ -15,7 +15,7 @@ CONDA:
  conda install -c bioconda varvamp
 ```
 
-DOCKER
+DOCKER:
 
 ```shell
 docker pull quay.io/biocontainers/varvamp

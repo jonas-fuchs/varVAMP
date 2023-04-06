@@ -105,23 +105,6 @@ def calc_end_gc(seq):
     return seq[-5:].count('g') + seq[-5:].count('c')
 
 
-def gc_clamp_present(seq):
-    """
-    checks if a gc clamp is present
-    """
-    if config.PRIMER_GC_CLAMP > 0:
-        for nuc in seq[-config.PRIMER_GC_CLAMP:]:
-            if nuc in "cg":
-                clamp_present = True
-            else:
-                clamp_present = False
-                break
-    else:
-        clamp_present = True
-
-    return clamp_present
-
-
 def is_three_prime_ambiguous(amb_seq):
     """
     determine if a sequence contains an ambiguous char at the 3'prime
@@ -305,8 +288,7 @@ def filter_kmer_direction_dependend(direction, kmer, ambiguous_consensus):
     # filter kmer
     return(
         (calc_hairpin(kmer_seq).tm <= config.PRIMER_HAIRPIN)
-        and (calc_end_gc(kmer_seq) <= config.PRIMER_MAX_GC_END)
-        and gc_clamp_present(kmer_seq)
+        and (config.PRIMER_GC_CLAMP <= calc_end_gc(kmer_seq) <= config.PRIMER_MAX_GC_END)
         and not is_three_prime_ambiguous(amb_kmer_seq)
     )
 

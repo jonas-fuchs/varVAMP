@@ -70,7 +70,7 @@ def get_args(sysargs):
         "--n-ambig",
         metavar="",
         type=int,
-        default=2,
+        default=4,
         help="max number of ambiguous characters in a primer"
     )
     parser.add_argument(
