@@ -26,71 +26,78 @@ def get_args(sysargs):
     """
     parser = argparse.ArgumentParser(
         prog=_program,
-        description='varvamp: variable virus amplicon design',
-        usage='''varvamp <alignment> <output dir> <mode> [options]''')
+        usage='''\tvarvamp <mode> [mode optional arguments] <alignment> <output dir>\n\tvarvamp <mode> --help''')
 
+    mode_parser = parser.add_subparsers(
+        title="varvamp mode",
+        dest="mode",
+    )
+    SANGER_parser = mode_parser.add_parser(
+        "SANGER",
+        help="design primers for sanger sequencing",
+        usage="varvamp SANGER [optional arguments] <alignment> <output dir>"
+    )
+    TILED_parser = mode_parser.add_parser(
+        "TILED",
+        help="design primers for whole genome sequencing",
+        usage="varvamp TILED [optional arguments] <alignment> <output dir>"
+    )
     parser.add_argument(
         "input",
         nargs=2,
         help="alignment file and dir to write results"
     )
-    parser.add_argument(
-        "mode",
-        type=str,
-        nargs='?',
-        default="TILED",
-        help="varvamp modes: TILED, SANGER",
-    )
-    parser.add_argument(
-        "-ol",
-        "--opt-length",
-        help="optimal length of the amplicons",
-        metavar="",
-        type=int,
-        default=1000
-    )
-    parser.add_argument(
-        "-ml",
-        "--max-length",
-        help="max length of the amplicons",
-        metavar="",
-        type=int,
-        default=2000
-    )
-    parser.add_argument(
-        "-t",
-        "--threshold",
-        metavar="",
-        type=float,
-        default=0.9,
-        help="threshold for conserved nucleotides"
-    )
-    parser.add_argument(
-        "-a",
-        "--n-ambig",
-        metavar="",
-        type=int,
-        default=4,
-        help="max number of ambiguous characters in a primer"
-    )
-    parser.add_argument(
+    for par in (SANGER_parser, TILED_parser):
+        par.add_argument(
+            "-t",
+            "--threshold",
+            metavar="",
+            type=float,
+            default=0.9,
+            help="threshold for conserved nucleotides"
+        )
+        par.add_argument(
+            "-a",
+            "--n-ambig",
+            metavar="",
+            type=int,
+            default=4,
+            help="max number of ambiguous characters in a primer"
+        )
+        par.add_argument(
+            "-ol",
+            "--opt-length",
+            help="optimal length of the amplicons",
+            metavar="",
+            type=int,
+            default=1000
+        )
+        par.add_argument(
+            "-ml",
+            "--max-length",
+            help="max length of the amplicons",
+            metavar="",
+            type=int,
+            default=1500
+        )
+    TILED_parser.add_argument(
         "-o",
         "--overlap",
         type=int,
         metavar="",
         default=100,
-        help="TILED: min overlap of the amplicons"
+        help="min overlap of the amplicons"
     )
-    parser.add_argument(
+    SANGER_parser.add_argument(
         "-n",
         "--report-n",
         type=int,
         metavar="",
         default=float("inf"),
-        help="SANGER: report the top n best hits"
+        help="report the top n best hits"
     )
     parser.add_argument(
-        "--verb",
+        "--verbose",
         action=argparse.BooleanOptionalAction,
         default=True,
         help="show varvamp console output"
@@ -101,7 +108,6 @@ def get_args(sysargs):
         action='version',
         version=f"varvamp {__version__}"
     )
-
     if len(sysargs) < 1:
         parser.print_help()
         sys.exit(-1)
@@ -115,9 +121,8 @@ def main(sysargs=sys.argv[1:]):
     """
     # start varVAMP
     args = get_args(sysargs)
-    if not args.verb:
+    if not args.verbose:
         sys.stdout = open(os.devnull, 'w')
-    args.mode = args.mode.upper()
     start_time = time.process_time()
     results_dir, data_dir, log_file = logging.create_dir_structure(args.input[1])
     logging.raise_arg_errors(args, log_file)
@@ -215,8 +220,8 @@ def main(sysargs=sys.argv[1:]):
     )
     if not amplicons:
         logging.raise_error(
-            "no amplicons found. Increase the max "
-            "amplicon length or lower threshold!\n",
+            "no amplicons found. Increase the max amplicon length or \
+            number of ambiguous bases or lower threshold!\n",
             log_file,
             exit=True
         )
