@@ -115,12 +115,6 @@ def raise_arg_errors(args, log_file):
             log_file,
             exit=True
         )
-    if args.mode != "TILED" and args.mode != "SANGER":
-        raise_error(
-            "non valid varvamp mode. Use TILED or SANGER.",
-            log_file,
-            exit=True
-        )
     if args.mode == "SANGER":
         if args.report_n < 1:
             raise_error(
@@ -130,11 +124,6 @@ def raise_arg_errors(args, log_file):
             )
     # TILED specific warnings
     if args.mode == "TILED":
-        if args.report_n != float("inf"):
-            raise_error(
-                "n-report is for SANGER and ignored for TILED",
-                log_file
-            )
         if args.opt_length < 200 or args.max_length < 200:
             raise_error(
                 "your amplicon lengths might be to small. Consider increasing",

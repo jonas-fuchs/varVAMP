@@ -392,7 +392,8 @@ def check_and_solve_heterodimers(amplicon_scheme, left_primer_candidates, right_
 
 def find_best_amplicons(amplicons, all_primers, n):
     """
-    find the best scoring non-overlapping amplicons from all found amplicons
+    find the best scoring non-overlapping amplicons
+    from all found amplicons. only for the SANGER mode.
     """
     # sort amplicons
     sorted_amplicons = sorted(amplicons.items(), key=lambda x: x[1][5])
