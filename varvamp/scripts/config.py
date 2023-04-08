@@ -17,11 +17,12 @@ PRIMER_GC_CLAMP = 1  # min number of GCs in the last 5 bases of the primer
 PRIMER_MIN_3_WITHOUT_AMB = 3  # min len of 3' without ambiguous charaters
 PRIMER_MAX_DIMER_TMP = 47  # max melting temp for dimers (homo- or heterodimers)
 
-# QPCR probe parameters
-QPROBE_TMP = (63, 69, 66) # melting temperatures
-QPROBE_SIZES = (20, 30, 25) # size range
-QPROBE_GC_RANGE = (30, 70, 50) # GC content
-QPROBE_AMB = 1  # n of ambig nucs
+# QPCR probe parameters - see primer parameters
+QPROBE_TMP = (63, 69, 66)  # mean 6°C higher than the primer temp
+QPROBE_SIZES = (20, 30, 25)
+QPROBE_GC_RANGE = (40, 70, 55)
+QPROBE_MAX_GC_END = 4
+QPROBE_GC_CLAMP = 0
 
 # PCR parameters
 PCR_MV_CONC = 100  # monovalent cations mM
@@ -29,7 +30,7 @@ PCR_DV_CONC = 2  # divalent cations mM
 PCR_DNTP_CONC = 0.8  # dntp concentration mM
 PCR_DNA_CONC = 15  # primer concentration nM
 
-# multipliers for primer base penalties
+# multipliers for primer and qpcr probe penalties
 PRIMER_TM_PENALTY = 2  # temperature penalty
 PRIMER_GC_PENALTY = 0.2  # gc penalty
 PRIMER_SIZE_PENALTY = 0.5  # size penalty
@@ -40,8 +41,8 @@ PRIMER_PERMUTATION_PENALTY = 0.1  # penalty for the number of permutations
 
 # DO NOT CHANGE
 # nucleotide definitions
-nucs = set("atcg")
-ambig_nucs = {
+NUCS = set("atcg")
+AMBIG_NUCS = {
     "r": ["a", "g"],
     "y": ["c", "t"],
     "s": ["g", "c"],

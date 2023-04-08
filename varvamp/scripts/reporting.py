@@ -91,14 +91,14 @@ def get_permutations(seq):
     get all permutations of an ambiguous sequence. needed to
     correctly report the gc and the temperature.
     """
-    groups = itertools.groupby(seq, lambda char: char not in config.ambig_nucs)
+    groups = itertools.groupby(seq, lambda char: char not in config.AMBIG_NUCS)
     splits = []
     for b, group in groups:
         if b:
             splits.extend([[g] for g in group])
         else:
             for nuc in group:
-                splits.append(config.ambig_nucs[nuc])
+                splits.append(config.AMBIG_NUCS[nuc])
     return[''.join(p) for p in itertools.product(*splits)]
 
 

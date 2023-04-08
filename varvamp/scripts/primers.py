@@ -113,7 +113,7 @@ def is_three_prime_ambiguous(amb_seq):
 
     if len_3_prime != 0:
         for nuc in amb_seq[len(amb_seq)-len_3_prime:]:
-            if nuc not in config.nucs:
+            if nuc not in config.NUCS:
                 is_amb = True
                 break
             else:
@@ -139,8 +139,8 @@ def calc_permutation_penalty(amb_seq):
     permutations = 0
 
     for nuc in amb_seq:
-        if nuc in config.ambig_nucs:
-            n = len(config.ambig_nucs[nuc])
+        if nuc in config.AMBIG_NUCS:
+            n = len(config.AMBIG_NUCS[nuc])
             if permutations != 0:
                 permutations = permutations*n
             else:
@@ -212,23 +212,23 @@ def calc_per_base_mismatches(kmer, alignment, ambiguous_consensus):
             if slice_nuc == current_kmer_pos:
                 continue
             # check if the slice nucleotide is an amb pos
-            if slice_nuc in config.ambig_nucs:
+            if slice_nuc in config.AMBIG_NUCS:
                 # check if the kmer has an amb pos
-                if current_kmer_pos in config.ambig_nucs:
-                    slice_nuc_set = set(config.ambig_nucs[slice_nuc])
-                    pri_set = set(config.ambig_nucs[current_kmer_pos])
+                if current_kmer_pos in config.AMBIG_NUCS:
+                    slice_nuc_set = set(config.AMBIG_NUCS[slice_nuc])
+                    pri_set = set(config.AMBIG_NUCS[current_kmer_pos])
                     # check if these sets have no overlap
                     # -> mismatch
                     if len(slice_nuc_set.intersection(pri_set)) == 0:
                         mismatches[idx] += 1
                 # if no amb pos is in kmer then check if kmer nuc
                 # is part of the amb slice nuc
-                elif current_kmer_pos not in config.ambig_nucs[slice_nuc]:
+                elif current_kmer_pos not in config.AMBIG_NUCS[slice_nuc]:
                     mismatches[idx] += 1
             # check if kmer has an amb pos but the current
             # slice_nuc is not part of this amb nucleotide
-            elif current_kmer_pos in config.ambig_nucs:
-                if slice_nuc not in config.ambig_nucs[current_kmer_pos]:
+            elif current_kmer_pos in config.AMBIG_NUCS:
+                if slice_nuc not in config.AMBIG_NUCS[current_kmer_pos]:
                     mismatches[idx] += 1
             # mismatch
             else:
@@ -351,10 +351,10 @@ def create_primer_dictionary(primer_candidates, direction):
 
     for primer in primer_candidates:
         if direction == "+":
-            direction_name = "LEFT"
+            direction_name = "FW"
         elif direction == "-":
-            direction_name = "RIGHT"
-        primer_name = direction_name + "_" + str(primer_idx)
+            direction_name = "RW"
+        primer_name = f"{direction_name}_{primer_idx}"
         primer_dict[primer_name] = primer
         primer_idx += 1
 

@@ -26,21 +26,20 @@ def get_args(sysargs):
     """
     parser = argparse.ArgumentParser(
         prog=_program,
-        usage='''\tvarvamp <mode> [mode optional arguments] <alignment> <output dir>\n\tvarvamp <mode> --help''')
-
+        usage='''\tvarvamp <mode> --help\n\tvarvamp <mode> [mode optional arguments] <alignment> <output dir>''')
     mode_parser = parser.add_subparsers(
         title="varvamp mode",
         dest="mode",
     )
     SANGER_parser = mode_parser.add_parser(
-        "SANGER",
+        "sanger",
         help="design primers for sanger sequencing",
-        usage="varvamp SANGER [optional arguments] <alignment> <output dir>"
+        usage="varvamp sanger [optional arguments] <alignment> <output dir>"
     )
     TILED_parser = mode_parser.add_parser(
-        "TILED",
+        "tiled",
         help="design primers for whole genome sequencing",
-        usage="varvamp TILED [optional arguments] <alignment> <output dir>"
+        usage="varvamp tiled [optional arguments] <alignment> <output dir>"
     )
     parser.add_argument(
         "input",
@@ -53,7 +52,7 @@ def get_args(sysargs):
             "--threshold",
             metavar="",
             type=float,
-            default=0.9,
+            default=0.89,
             help="threshold for conserved nucleotides"
         )
         par.add_argument(
@@ -232,7 +231,7 @@ def main(sysargs=sys.argv[1:]):
         progress_text=f"{len(amplicons)} potential amplicons"
     )
 
-    if args.mode == "TILED":
+    if args.mode == "tiled":
         amplicon_graph = scheme.create_amplicon_graph(amplicons, args.overlap)
         # search for amplicon scheme
         coverage, amplicon_scheme = scheme.find_best_covering_scheme(
@@ -267,8 +266,8 @@ def main(sysargs=sys.argv[1:]):
                 "\t - relax primer settings (not recommended)\n",
                 log_file
             )
-    elif args.mode == "SANGER":
-        amplicon_scheme = scheme.find_best_amplicons(amplicons, all_primers, args.report_n)
+    elif args.mode == "sanger":
+        amplicon_scheme = scheme.find_sanger_amplicons(amplicons, all_primers, args.report_n)
         logging.varvamp_progress(
             log_file,
             progress=0.9,

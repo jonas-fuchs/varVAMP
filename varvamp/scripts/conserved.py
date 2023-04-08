@@ -21,7 +21,7 @@ def find_regions(consensus_amb, allowed_ambiguous):
 
     seq = str(consensus_amb) + 2*'N'
     for idx, nuc in enumerate(seq):
-        if in_ambiguous_region and nuc in config.nucs:
+        if in_ambiguous_region and nuc in config.NUCS:
             in_ambiguous_region = False
             # just entered a new stretch of non-ambiguous bases
             # may be time to open a new window
@@ -34,7 +34,7 @@ def find_regions(consensus_amb, allowed_ambiguous):
                 # than specified apart and last one counts all ambiguous
                 # chars. also track all amb chars after a window has opened
             continue
-        if nuc not in config.nucs:
+        if nuc not in config.NUCS:
             if current_window:
                 in_ambiguous_region = True
                 amb_to_amb_len = idx - last_amb

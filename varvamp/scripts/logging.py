@@ -115,7 +115,8 @@ def raise_arg_errors(args, log_file):
             log_file,
             exit=True
         )
-    if args.mode == "SANGER":
+    # SANGER specific warnings
+    if args.mode == "sanger":
         if args.report_n < 1:
             raise_error(
                 "number of reported amplicons cannot be below 1.",
@@ -123,7 +124,7 @@ def raise_arg_errors(args, log_file):
                 exit=True
             )
     # TILED specific warnings
-    if args.mode == "TILED":
+    if args.mode == "tiled":
         if args.opt_length < 200 or args.max_length < 200:
             raise_error(
                 "your amplicon lengths might be to small. Consider increasing",
@@ -322,13 +323,13 @@ def confirm_config(args, log_file):
             sep="\n",
             file=f
         )
-        if args.mode == "TILED":
+        if args.mode == "tiled":
             print(
                 f"MIN_OVERLAP = {args.overlap}",
                 sep="\n",
                 file=f
             )
-        if args.mode == "SANGER":
+        if args.mode == "sanger":
             print(
                 f"REPORT_N_AMPLICONS = {args.report_n}",
                 sep="\n",

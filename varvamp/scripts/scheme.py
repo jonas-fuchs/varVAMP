@@ -390,7 +390,7 @@ def check_and_solve_heterodimers(amplicon_scheme, left_primer_candidates, right_
     return not_solvable
 
 
-def find_best_amplicons(amplicons, all_primers, n):
+def find_sanger_amplicons(amplicons, all_primers, n):
     """
     find the best scoring non-overlapping amplicons
     from all found amplicons. only for the SANGER mode.
