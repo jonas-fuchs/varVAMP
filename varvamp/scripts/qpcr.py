@@ -12,6 +12,7 @@ config.PRIMER_SIZES = config.QPROBE_SIZES
 config.PRIMER_GC_CLAMP = config.QPROBE_GC_CLAMP
 config.PRIMER_MAX_GC_END = config.QPROBE_MAX_GC_END
 
+
 def choose_probe_direction(seq):
     """
     choose the direction of the probe so
@@ -84,8 +85,36 @@ def get_qpcr_probes(kmers, ambiguous_consensus, alignment_cleaned):
         if "-" in direction:
             if filter_probe_direction_dependent(primers.rev_complement(kmer[0])):
                 probe_name = f"PROBE_{probe_idx}_RW"
-                three_prime_penalty = primers.calc_3_prime_penalty("+", per_base_mismatches)
+                three_prime_penalty = primers.calc_3_prime_penalty("-", per_base_mismatches)
                 probe_candidates[probe_name] = [primers.rev_complement(kmer[0]), kmer[1], kmer[2], base_penalty + permutation_penalty + three_prime_penalty, per_base_mismatches]
                 probe_idx += 1
 
     return probe_candidates
+
+
+def find_best_compatible_probe(qpcr_probes, left_primer, right_primer, primer_temps):
+    """
+    find the lowest internal probe for a given amplicon
+    """
+
+    best_probe = ("none", float("inf"))
+
+    for probe in qpcr_probes:
+        # determine if it is in the amplicon and not overlapping with amplicon primers
+        if not all((qpcr_probes[probe][1] > left_primer[2], qpcr_probes[probe][2] < right_primer[1])):
+            continue
+        # check if the probe is at least 5-10°C higher in temperature than the primers
+        probe_temp = primers.calc_temp(qpcr_probes[probe][0])
+        if all([5<=probe_temp-x<=10 for x in primer_temps]):
+            continue
+        # check if the probe forms dimers with the primers
+        if any(
+            (primers.calc_dimer(right_primer[0], qpcr_probes[probe][0]).tm > config.PRIMER_MAX_DIMER_TMP,
+            primers.calc_dimer(left_primer[0], qpcr_probes[probe][0]).tm > config.PRIMER_MAX_DIMER_TMP)
+        ):
+            continue
+        # determine for each amplicon the lowest scoring probe
+        if qpcr_probes[probe][1] < best_probe[1]:
+            best_probe = (probe, qpcr_probes[probe][1])
+
+    return best_probe
