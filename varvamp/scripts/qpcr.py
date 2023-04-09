@@ -105,12 +105,14 @@ def find_best_compatible_probe(qpcr_probes, left_primer, right_primer, primer_te
             continue
         # check if the probe is at least 5-10°C higher in temperature than the primers
         probe_temp = primers.calc_temp(qpcr_probes[probe][0])
-        if all([5<=probe_temp-x<=10 for x in primer_temps]):
+        if all([5 <= probe_temp-x <= 10 for x in primer_temps]):
             continue
         # check if the probe forms dimers with the primers
         if any(
-            (primers.calc_dimer(right_primer[0], qpcr_probes[probe][0]).tm > config.PRIMER_MAX_DIMER_TMP,
-            primers.calc_dimer(left_primer[0], qpcr_probes[probe][0]).tm > config.PRIMER_MAX_DIMER_TMP)
+            (
+                primers.calc_dimer(right_primer[0], qpcr_probes[probe][0]).tm > config.PRIMER_MAX_DIMER_TMP,
+                primers.calc_dimer(left_primer[0], qpcr_probes[probe][0]).tm > config.PRIMER_MAX_DIMER_TMP
+            )
         ):
             continue
         # determine for each amplicon the lowest scoring probe

@@ -134,9 +134,9 @@ def write_scheme_to_files(dir, amplicon_scheme, ambiguous_consensus, mode):
                 right = (primer_names[1], amplicon_scheme[pool][amp][primer_names[1]])
 
                 # write amplicon bed
-                if mode == "TILED":
+                if mode == "tiled":
                     print("ambiguous_consensus", left[1][1], right[1][2], new_name, pool, sep="\t", file=bed)
-                elif mode == "SANGER":
+                elif mode == "sanger":
                     print("ambiguous_consensus", left[1][1], right[1][2], new_name, round(left[1][3] + right[1][3], 1), sep="\t", file=bed)
 
                 # write primer assignments tabular file
