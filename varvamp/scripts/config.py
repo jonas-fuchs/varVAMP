@@ -17,12 +17,14 @@ PRIMER_GC_CLAMP = 1  # min number of GCs in the last 5 bases of the primer
 PRIMER_MIN_3_WITHOUT_AMB = 3  # min len of 3' without ambiguous charaters
 PRIMER_MAX_DIMER_TMP = 47  # max melting temp for dimers (homo- or heterodimers)
 
-# QPCR probe parameters - see primer parameters
-QPROBE_TMP = (63, 69, 66)  # mean 6°C higher than the primer temp
+# QPCR parameters
+QPROBE_TMP = (64, 70, 67)  # mean 7°C higher than the primer temp
 QPROBE_SIZES = (20, 30, 25)
 QPROBE_GC_RANGE = (40, 70, 55)
 QPROBE_MAX_GC_END = 4
 QPROBE_GC_CLAMP = 0
+QPROBE_DISTANCE = (4, 15) # min/max distance to the primer on the same strand
+QAMPLICON_LENGTH = (70, 150)  # min/max length of the qPCR amplicon
 
 # PCR parameters
 PCR_MV_CONC = 100  # monovalent cations mM
