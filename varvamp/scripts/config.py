@@ -1,7 +1,5 @@
 """
-This contains all varVAMP parameters. Options that can be adjusted by arguments
-are FREQUENCY_THRESHOLD, PRIMER_ALLOWED_N_AMB, AMPLICON_MIN_OVERLAP, AMPLICON_OPT_LENGTH,
-AMPLICON_MAX_LENGTH.
+This contains all varVAMP parameters.
 """
 
 # CAN BE CHANGED
@@ -18,13 +16,19 @@ PRIMER_MIN_3_WITHOUT_AMB = 3  # min len of 3' without ambiguous charaters
 PRIMER_MAX_DIMER_TMP = 47  # max melting temp for dimers (homo- or heterodimers)
 
 # QPCR parameters
+# base probe parameters to consider
 QPROBE_TMP = (64, 70, 67)  # mean 7°C higher than the primer temp
 QPROBE_SIZES = (20, 30, 25)
-QPROBE_GC_RANGE = (40, 70, 55)
+QPROBE_GC_RANGE = (40, 80, 60)
 QPROBE_MAX_GC_END = 4
 QPROBE_GC_CLAMP = 0
+# constraints for amplicon design
+QPRIMER_DIFF = 2  # maximal temperature diff of qPCR primers
+QPROBE_TEMP_DIFF = (5, 10)  # min/max temp diff between probe and primers
 QPROBE_DISTANCE = (4, 15) # min/max distance to the primer on the same strand
-QAMPLICON_LENGTH = (70, 150)  # min/max length of the qPCR amplicon
+QAMPLICON_LENGTH = (70, 200)  # min/max length of the qPCR amplicon
+QAMPLICON_GC = (40, 60)  # GC min/max of the qPCR amplicon
+QAMPLICON_DELTAG_CUTOFF = -1  # minimum free energy (kcal/mol) at the lowest primer temperature - filter for higher deltaGs
 
 # PCR parameters
 PCR_MV_CONC = 100  # monovalent cations mM

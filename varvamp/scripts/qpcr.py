@@ -21,12 +21,13 @@ def choose_probe_direction(seq):
     c_count = seq.count("c")
     g_count = seq.count("g")
     if c_count < g_count:
-        return "-"
-    elif c_count == g_count:
-        return "-+"
-    elif c_count > g_count:
-        return "+"
+        direction = "-"
+    if c_count == g_count:
+        direction = "-+"
+    if c_count > g_count:
+        direction = "+"
 
+    return direction
 
 def ambiguous_ends(amb_seq):
     """
@@ -92,114 +93,100 @@ def get_qpcr_probes(kmers, ambiguous_consensus, alignment_cleaned):
     return probe_candidates
 
 
-def find_best_compatible_probe(qpcr_probes, left_primer, right_primer, primer_temps):
+def flanking_primer_subset(primer_list, primer_direction, probe):
     """
-    find the lowest internal probe for a given amplicon
+    subset for primers flanking the probe and sort by score
+    """
+    subset = []
+
+    if primer_direction == "+":
+        window_start = probe[1] - config.QAMPLICON_LENGTH[1] + len(probe[0])
+        window_stop = probe[1]
+    elif primer_direction == "-":
+        window_start = probe[2]
+        window_stop = probe[2] + config.QAMPLICON_LENGTH[1] - len(probe[0])
+    for primer in primer_list:
+        if window_start < primer[1] and primer[2] < window_stop:
+            subset.append(primer)
+
+    # sort by score
+    subset.sort(key=lambda x: x[3])
+
+    return subset
+
+
+def hardfilter_amplicon(majority_consensus, left_primer, right_primer):
+    """
+    hardfilter possible amplicon for length and gc
+    """
+    amplicon_length = right_primer[2] - left_primer[1]
+    amplicon_seq = majority_consensus[left_primer[1]:right_primer[2]]
+    # check for the right amplicon length
+    return (
+        (config.QAMPLICON_LENGTH[0] <= amplicon_length <= config.QAMPLICON_LENGTH[1])
+        and (config.QAMPLICON_GC[0] <= primers.calc_gc(amplicon_seq) <= config.QAMPLICON_GC[1])
+    )
+
+
+def forms_dimer(right_primer, left_primer, probe):
+    """
+    checks if combinations of primers/probe form dimers
     """
 
-    best_probe = ("none", float("inf"))
+    forms_dimer = False
 
-    for probe in qpcr_probes:
-        probe_temp = primers.calc_temp(qpcr_probes[probe][0])
-        # check if probe is close enough to the primer on the same strand
-        # and does not overlap with the primer on the other strand
-        if "FW" in probe:
-            if not all(
-                (
-                    qpcr_probes[probe][1] in range(
-                        left_primer[2] + config.QPROBE_DISTANCE[0],
-                        left_primer[2] + config.QPROBE_DISTANCE[1] + 1
-                    ),
-                    qpcr_probes[probe][2] < right_primer[1]
-                )
-            ):
+    for combination in [(right_primer[0], left_primer[0]), (right_primer[0], probe[0]), (left_primer[0], probe[0])]:
+        if primers.calc_dimer(combination[0], combination[1]).tm > config.PRIMER_MAX_DIMER_TMP:
+            forms_dimer = True
+            break
+
+    return forms_dimer
+
+
+def assess_amplicons(left_subset, right_subset, qpcr_probes, probe, majority_consensus):
+    """
+    assess if a potential amplicon is a qPCR scheme for a specific probe
+    """
+
+    primer_combinations = []
+
+    # consider a combination of flanking primers if ...
+    for left_primer in left_subset:
+        for right_primer in right_subset:
+            # ... the amplicon is large enough and is in gc range, ...
+            if not hardfilter_amplicon(majority_consensus, left_primer, right_primer):
                 continue
-        elif "RW" in probe:
-            if not all(
-                (
-                    right_primer[1] in range(
-                        qpcr_probes[probe][2] + config.QPROBE_DISTANCE[0],
-                        qpcr_probes[probe][2] + config.QPROBE_DISTANCE[1] + 1
-                    ),
-                    left_primer[2] < qpcr_probes[probe][1]
-                )
-            ):
-                continue
-        # check if the probe is at least 5-10°C higher in temperature than the primers
-        if all([5 <= probe_temp-x <= 10 for x in primer_temps]):
-            continue
-        # check if the probe forms dimers with the primers
-        if any(
-            (
-                primers.calc_dimer(right_primer[0], qpcr_probes[probe][0]).tm > config.PRIMER_MAX_DIMER_TMP,
-                primers.calc_dimer(left_primer[0], qpcr_probes[probe][0]).tm > config.PRIMER_MAX_DIMER_TMP
-            )
-        ):
-            continue
-        # determine for each amplicon the lowest scoring probe
-        if qpcr_probes[probe][1] < best_probe[1]:
-            best_probe = (probe, qpcr_probes[probe][1])
+            # ... the probe is close enough to the primer on the same strand
+            if "FW" in probe:
+                if not qpcr_probes[probe][1] in range(
+                            left_primer[2] + config.QPROBE_DISTANCE[0],
+                            left_primer[2] + config.QPROBE_DISTANCE[1] + 1
+                ):
+                    continue
+            elif "RW" in probe:
+                if not right_primer[1] in range(
+                            qpcr_probes[probe][2] + config.QPROBE_DISTANCE[0],
+                            qpcr_probes[probe][2] + config.QPROBE_DISTANCE[1] + 1
 
-    return best_probe
-
-
-def populate_qPCR_dictionary(qpcr_amplicons, qpcr_probes, best_probe, left_primer, right_primer):
-    """
-    populate qPCR dictionary and update if a amplicon with a better score is found
-    """
-    if not best_probe[0] in qpcr_amplicons:
-        qpcr_amplicons[best_probe[0]] = {
-            "score": qpcr_probes[best_probe[0]][3] + left_primer[3] + right_primer[3],
-            "probe": qpcr_probes[best_probe[0]],
-            "left": left_primer,
-            "right": right_primer
-        }
-    else:
-        if qpcr_amplicons[best_probe[0]]["score"] > qpcr_probes[best_probe[0]][3] + left_primer[3] + right_primer[3]:
-            qpcr_amplicons[best_probe[0]] = {
-                "score": qpcr_probes[best_probe[0]][3] + left_primer[3] + right_primer[3],
-                "probe": qpcr_probes[best_probe[0]],
-                "left": left_primer,
-                "right": right_primer
-            }
-
-
-def sort_qPCR_dictionary(qpcr_amplicons):
-    """
-    sort dictionary by cummulative score
-    """
-    sorted_qpcr_amplicons = {}
-    for key in sorted(qpcr_amplicons, key=lambda x: qpcr_amplicons[x]["score"]):
-        sorted_qpcr_amplicons[key] = qpcr_amplicons[key]
-
-    return sorted_qpcr_amplicons
-
-
-def find_qPCR_schemes(qpcr_probes, left_primer_candidates, right_primer_candidates):
-    """
-    for each qPCR probe find the best possible amplicon primers
-    """
-
-    qpcr_amplicons = {}
-
-    for left_primer in left_primer_candidates:
-        for right_primer in right_primer_candidates:
-            amplicon_length = right_primer[2] - left_primer[1]
-            # check for the right amplicon length
-            if not config.QAMPLICON_LENGTH[0] <= amplicon_length <= config.QAMPLICON_LENGTH[1]:
-                continue
+                ):
+                    continue
+            # ... the primer temps do not differ too much, ...
             primer_temps = (primers.calc_temp(right_primer[0]), primers.calc_temp(left_primer[0]))
-            # check if temperature diff is lower than 2°C
-            if abs(primer_temps[0] - primer_temps[1]) > 2:
+            if abs(primer_temps[0] - primer_temps[1]) > config.QPRIMER_DIFF:
                 continue
-            # check if primers form dimer
-            if primers.calc_dimer(left_primer[0], right_primer[0]).tm > config.PRIMER_MAX_DIMER_TMP:
+            # ... the probe has a higher temp than the primers and ...
+            probe_temp = primers.calc_temp(qpcr_probes[probe][0])
+            if all([config.QPROBE_TEMP_DIFF[0] <= probe_temp-x <= config.QPROBE_TEMP_DIFF[1] for x in primer_temps]):
                 continue
-            # check for internal oligos and choose the one with the lowest score
-            best_probe = find_best_compatible_probe(qpcr_probes, left_primer, right_primer, primer_temps)
-            if best_probe[1] == float("inf"):
+            # .... all combination of oligos do not form dimers.
+            if forms_dimer(right_primer, left_primer, qpcr_probes[probe]):
                 continue
-            # create dic for probe and the best amplicon
-            populate_qPCR_dictionary(qpcr_amplicons, qpcr_probes, best_probe, left_primer, right_primer)
 
-    return sort_qPCR_dictionary(qpcr_amplicons)
+            # apend to list and break as this is the lowest scoring primer combi for this left primer
+            primer_combinations.append((left_primer[3]+right_primer[3], left_primer, right_primer))
+            break
+
+    # sort by score
+    primer_combinations.sort(key=lambda x: x[0])
+
+    return primer_combinations
