@@ -29,6 +29,7 @@ def choose_probe_direction(seq):
 
     return direction
 
+
 def ambiguous_ends(amb_seq):
     """
     determine if kmers have ambiguous ends
@@ -89,6 +90,8 @@ def get_qpcr_probes(kmers, ambiguous_consensus, alignment_cleaned):
                 three_prime_penalty = primers.calc_3_prime_penalty("-", per_base_mismatches)
                 probe_candidates[probe_name] = [primers.rev_complement(kmer[0]), kmer[1], kmer[2], base_penalty + permutation_penalty + three_prime_penalty, per_base_mismatches]
                 probe_idx += 1
+    # sort by score
+    probe_candidates = dict(sorted(probe_candidates.items(), key=lambda x: x[1][3]))
 
     return probe_candidates
 
@@ -145,10 +148,11 @@ def forms_dimer(right_primer, left_primer, probe):
 
 def assess_amplicons(left_subset, right_subset, qpcr_probes, probe, majority_consensus):
     """
-    assess if a potential amplicon is a qPCR scheme for a specific probe
+    assess if a potential amplicon is a qPCR scheme for a specific probe and return the best scoring
     """
 
-    primer_combinations = []
+    primer_combinations = ()
+    amplicon_found = False
 
     # consider a combination of flanking primers if ...
     for left_primer in left_subset:
@@ -181,12 +185,83 @@ def assess_amplicons(left_subset, right_subset, qpcr_probes, probe, majority_con
             # .... all combination of oligos do not form dimers.
             if forms_dimer(right_primer, left_primer, qpcr_probes[probe]):
                 continue
-
-            # apend to list and break as this is the lowest scoring primer combi for this left primer
-            primer_combinations.append((left_primer[3]+right_primer[3], left_primer, right_primer))
+            # append to list and break as this is the lowest scoring primer combi (primers are sorted by score)
+            amplicon_found = True
+            break
+        # break also the outer loop
+        if amplicon_found:
+            primer_combinations = (left_primer, right_primer)
             break
 
-    # sort by score
-    primer_combinations.sort(key=lambda x: x[0])
-
     return primer_combinations
+
+
+def find_qcr_schemes(qpcr_probes, left_primer_candidates, right_primer_candidates, majority_consensus):
+    """
+    this finds the final qPCR schemes. it slices for primers flanking a probe and
+    test all left/right combinations whether they are potential amplicons. as primers
+    are sorted by score, only the very first match is considered as this has the
+    lowest score. however, probes are overlapping and there is a high chance that
+    left and right primers are found multiple times. to consider only one primer-
+    probe combination the probes are also sorted by score. therefore, if a primer
+    combination has been found already the optimal probe was already selected and
+    there is no need to consider this primer probe combination.
+    """
+
+    qpcr_scheme_candidates = {}
+    found_amplicons = []
+    amplicon_nr = -1
+
+    for probe in qpcr_probes:
+        left_subset = flanking_primer_subset(left_primer_candidates, "+", qpcr_probes[probe])
+        right_subset = flanking_primer_subset(right_primer_candidates, "-", qpcr_probes[probe])
+        # consider if there are primers flanking the probe ...
+        if not left_subset or not right_subset:
+            continue
+        primer_combination = assess_amplicons(left_subset, right_subset, qpcr_probes, probe, majority_consensus)
+        # ... a combi has been found, ...
+        if not primer_combination:
+            continue
+        # ...and this combi is not already present for a probe with a better score.
+        if primer_combination in found_amplicons:
+            continue
+        # populate the primer dictionary:
+        amplicon_nr += 1
+        found_amplicons.append(primer_combination)
+        qpcr_scheme_candidates[f"AMPLICON_{amplicon_nr}"] = {
+            "score": qpcr_probes[probe][3]+primer_combination[0][3]+primer_combination[1][3],
+            "probe": qpcr_probes[probe],
+            "left": primer_combination[0],
+            "right": primer_combination[1]
+        }
+    # and again sort by total score (left + right + probe)
+    qpcr_scheme_candidates = dict(sorted(qpcr_schemes.items(), key=lambda x: x[1]["score"]))
+
+    return qpcr_scheme_candidates
+
+
+def test_amplicon_deltaG(qpcr_schemes_candiadates, majority_consensus, n_to_test):
+    """
+    test for the top n hits all amplicon deltaGs at the lowest primer temperature
+    and filters if they fall below the cutoff. relies in seqfold.
+
+    NOTE: this is computationally intensive. Therefore, it is not advisable to
+    test all hits for their deltaG.
+    """
+
+    final_schemes = {}
+    n = 0
+
+    for amp in qpcr_schemes:
+        if n < n_to_test:
+            seq = majority_consensus[qpcr_schemes[amp]["left"][1]:qpcr_schemes[amp]["right"][2]]
+            min_temp = min((primers.calc_temp(qpcr_schemes[amp]["left"][0]), primers.calc_temp(qpcr_schemes[amp]["right"][0])))
+            deltaG = seqfold.dg(seq, min_temp)
+            if deltaG > config.QAMPLICON_DELTAG_CUTOFF:
+                final_schemes[amp] = qpcr_schemes[amp]
+                final_schemes[amp]["deltaG"] = deltaG
+            n += 1
+        else:
+            break
+
+    return final_schemes

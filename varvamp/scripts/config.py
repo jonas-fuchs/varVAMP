@@ -28,7 +28,7 @@ QPROBE_TEMP_DIFF = (5, 10)  # min/max temp diff between probe and primers
 QPROBE_DISTANCE = (4, 15) # min/max distance to the primer on the same strand
 QAMPLICON_LENGTH = (70, 200)  # min/max length of the qPCR amplicon
 QAMPLICON_GC = (40, 60)  # GC min/max of the qPCR amplicon
-QAMPLICON_DELTAG_CUTOFF = -1  # minimum free energy (kcal/mol) at the lowest primer temperature - filter for higher deltaGs
+QAMPLICON_DELTAG_CUTOFF = -1  # minimum free energy (kcal/mol/K) at the lowest primer temp
 
 # PCR parameters
 PCR_MV_CONC = 100  # monovalent cations mM
