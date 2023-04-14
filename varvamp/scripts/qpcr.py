@@ -120,7 +120,8 @@ def flanking_primer_subset(primer_list, primer_direction, probe):
 
 def hardfilter_amplicon(majority_consensus, left_primer, right_primer):
     """
-    hardfilter possible amplicon for length and gc
+    hardfilter possible amplicon for length, gc and if there are Ns
+    (indicating deletions in amp) or n (no folding analysis possible)
     """
     amplicon_length = right_primer[2] - left_primer[1]
     amplicon_seq = majority_consensus[left_primer[1]:right_primer[2]]
@@ -128,6 +129,7 @@ def hardfilter_amplicon(majority_consensus, left_primer, right_primer):
     return (
         (config.QAMPLICON_LENGTH[0] <= amplicon_length <= config.QAMPLICON_LENGTH[1])
         and (config.QAMPLICON_GC[0] <= primers.calc_gc(amplicon_seq) <= config.QAMPLICON_GC[1])
+        and not any(char in amplicon_seq for char in "Nn")
     )
 
 
@@ -252,6 +254,7 @@ def test_amplicon_deltaG(qpcr_schemes_candiadates, majority_consensus, n_to_test
 
     final_schemes = {}
     n = 0
+    passed_counter = 0
     amplicon_set = set()
 
     for amp in qpcr_schemes_candiadates:
@@ -264,16 +267,18 @@ def test_amplicon_deltaG(qpcr_schemes_candiadates, majority_consensus, n_to_test
         if any(x in amp_positions for x in amplicon_set):
             continue
         # did we check enough amplicons?
-        if n <= n_to_test:
+        if n < n_to_test:
             min_temp = min((primers.calc_temp(qpcr_schemes_candiadates[amp]["left"][0]), primers.calc_temp(qpcr_schemes_candiadates[amp]["right"][0])))
             # calculate deltaG at the minimal primer temp
             deltaG = seqfold.dg(seq, min_temp)
             # and if this passes cutoff make a dict entry and do not allow further
             # amplicons in that region (they will have a lower score)
             if deltaG > config.QAMPLICON_DELTAG_CUTOFF:
-                final_schemes[amp] = qpcr_schemes_candiadates[amp]
-                final_schemes[amp]["deltaG"] = deltaG
+                new_name = f"QPCR_SCHEME_{passed_counter}"
+                final_schemes[new_name] = qpcr_schemes_candiadates[amp]
+                final_schemes[new_name]["deltaG"] = deltaG
                 amplicon_set.update(amp_positions)
+                passed_counter += 1
             n += 1
         # break if enough amplicons were checked
         else:

@@ -180,9 +180,9 @@ def raise_arg_errors(args, log_file):
                     exit=True
                 )
 
-            if args.test_n > 50:
+            if args.test_n > 200:
                 raise_error(
-                    "checking the deltaG of amplicons is computationally intensive. setting this higher than 50 will likely take a few minutes to compute.",
+                    "checking the deltaG of amplicons is computationally intensive. setting this higher than 200 will likely take a bit to compute.",
                     log_file
                 )
             if args.pn_ambig > 2:
