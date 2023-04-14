@@ -2,7 +2,7 @@
 
 # varVAMP
 
-[![License: GPL v3](https://img.shields.io/github/license/jonas-fuchs/varvamp)](https://www.gnu.org/licenses/gpl-3.0) <img src=https://img.shields.io/github/v/release/jonas-fuchs/varvamp /> <img src=https://img.shields.io/badge/language-%3Epython3.9-red /> [![Downloads](https://static.pepy.tech/badge/varvamp)](https://pepy.tech/project/varvamp)
+[![License: GPL v3](https://img.shields.io/github/license/jonas-fuchs/varvamp)](https://www.gnu.org/licenses/gpl-3.0) <img src=https://img.shields.io/badge/language-%3Epython3.9-red /> <img src=https://img.shields.io/github/v/release/jonas-fuchs/varvamp /> [![Downloads](https://static.pepy.tech/badge/varvamp)](https://pepy.tech/project/varvamp)
 
 For a lot of virus genera it is difficult to design pan-specific primers. varVAMP solves this, by introducing ambiguous characters into primers and minimizes mismatches at the 3' end. Primers might not work for some sequences of your input alignment but should recognize the large majority.
 
