@@ -103,18 +103,19 @@ def raise_arg_errors(args, log_file):
             "degeneracy. Consider reducing.",
             log_file
         )
-    if args.opt_length > args.max_length:
-        raise_error(
-            "optimal length can not be higher than the maximum amplicon length.",
-            log_file,
-            exit=True
-        )
-    if args.opt_length < 0 or args.max_length < 0:
-        raise_error(
-            "amplicon lengths can not be negative.",
-            log_file,
-            exit=True
-        )
+    if args.mode in ("tiled", "sanger"):
+        if args.opt_length > args.max_length:
+            raise_error(
+                "optimal length can not be higher than the maximum amplicon length.",
+                log_file,
+                exit=True
+            )
+        if args.opt_length < 0 or args.max_length < 0:
+            raise_error(
+                "amplicon lengths can not be negative.",
+                log_file,
+                exit=True
+            )
     # SANGER specific warnings
     if args.mode == "sanger":
         if args.report_n < 1:
@@ -158,6 +159,37 @@ def raise_arg_errors(args, log_file):
                 "your intended overlap is higher than half of your optimal length. This reduces how well varvamps will find overlapping amplicons. Consider decreasing.",
                 log_file
             )
+        # QPCR specific warnings
+        if args.mode == "qpcr":
+            if args.pn_ambig < 0:
+                raise_error(
+                    "number of ambiguous characters in the qPCR probe cannot be 0.",
+                    log_file,
+                    exit=True
+                )
+            if args.pn_ambig > args.n_ambig:
+                raise_error(
+                    "the degeneracy of qPCR probes should not be higher than that of qPCR primers to retain specificity",
+                    log_file,
+                    exit=True
+                )
+            if args.test_n <= 0:
+                raise_error(
+                    "if the number of tested qPCR amplicons is 0 or lower, no amplicons will be reported.",
+                    log_file,
+                    exit=True
+                )
+
+            if args.test_n > 50:
+                raise_error(
+                    "checking the deltaG of amplicons is computationally intensive. setting this higher than 50 will likely take a few minutes to compute.",
+                    log_file
+                )
+            if args.pn_ambig > 2:
+                raise_error(
+                    "setting the degeneracy of probes higher than 2 can result in variable probe design. Consider reducing!",
+                    log_file
+                )
 
 
 def confirm_config(args, log_file):
@@ -169,34 +201,51 @@ def confirm_config(args, log_file):
 
     # check if all variables exists
     all_vars = [
-        # arg independent
-        "PRIMER_TMP",
-        "PRIMER_GC_RANGE",
-        "PRIMER_SIZES",
-        "PRIMER_HAIRPIN",
-        "PRIMER_MAX_POLYX",
-        "PRIMER_MAX_DINUC_REPEATS",
-        "PRIMER_MAX_DIMER_TMP",
-        "PRIMER_MIN_3_WITHOUT_AMB",
-        "PCR_MV_CONC",
-        "PCR_DV_CONC",
-        "PCR_DNTP_CONC",
-        "PCR_DNA_CONC",
-        "PRIMER_TM_PENALTY",
-        "PRIMER_GC_PENALTY",
-        "PRIMER_SIZE_PENALTY",
-        "PRIMER_MAX_BASE_PENALTY",
-        "PRIMER_3_PENALTY",
-        "PRIMER_PERMUTATION_PENALTY",
+        # arg independent TILED, SANGER mode
+        (
+            "PRIMER_TMP",
+            "PRIMER_GC_RANGE",
+            "PRIMER_SIZES",
+            "PRIMER_HAIRPIN",
+            "PRIMER_MAX_POLYX",
+            "PRIMER_MAX_DINUC_REPEATS",
+            "PRIMER_MAX_DIMER_TMP",
+            "PRIMER_MIN_3_WITHOUT_AMB",
+            "PCR_MV_CONC",
+            "PCR_DV_CONC",
+            "PCR_DNTP_CONC",
+            "PCR_DNA_CONC",
+            "PRIMER_TM_PENALTY",
+            "PRIMER_GC_PENALTY",
+            "PRIMER_SIZE_PENALTY",
+            "PRIMER_MAX_BASE_PENALTY",
+            "PRIMER_3_PENALTY",
+            "PRIMER_PERMUTATION_PENALTY"
+        ),
+        # arg independent QPCR mode
+        (
+            "QPROBE_TMP",
+            "QPROBE_SIZES",
+            "QPROBE_GC_RANGE",
+            "QPROBE_MAX_GC_END",
+            "QPROBE_GC_CLAMP",
+            "QPRIMER_DIFF",
+            "QPROBE_TEMP_DIFF",
+            "QPROBE_DISTANCE",
+            "QAMPLICON_LENGTH",
+            "QAMPLICON_GC",
+            "QAMPLICON_DELTAG_CUTOFF"
+        )
     ]
 
-    for var in all_vars:
-        if var not in vars(config):
-            raise_error(
-                f"{var} does not exist in config!",
-                log_file
-            )
-            error = True
+    for tup in all_vars:
+        for var in tup:
+            if var not in vars(config):
+                raise_error(
+                    f"{var} does not exist in config!",
+                    log_file
+                )
+                error = True
     # exit if variables are not defined
     if error:
         raise_error(
@@ -204,8 +253,8 @@ def confirm_config(args, log_file):
             log_file,
             exit=True
         )
-    # confirm tuples
-    for type, tup in [("temp", config.PRIMER_TMP), ("gc", config.PRIMER_GC_RANGE), ("size", config.PRIMER_SIZES)]:
+    # confirm tuples with 3 elements
+    for type, tup in [("primer temp", config.PRIMER_TMP), ("primer gc", config.PRIMER_GC_RANGE), ("primer size", config.PRIMER_SIZES), ("probe temp", config.QPROBE_TMP), ("probe size", config.QPROBE_SIZES), ("probe gc", config.QPROBE_GC_RANGE)]:
         if len(tup) != 3:
             raise_error(
                 f"{type} tuple has to have the form (min, max, opt)!",
@@ -236,13 +285,32 @@ def confirm_config(args, log_file):
                 log_file
             )
             error = True
-
-    # check values that cannot be zero
+    # confirm tuples with two elements
+    for type, tup in [("probe and primer temp diff", config.QPROBE_TEMP_DIFF), ("distance probe to primer", config.QPROBE_DISTANCE), ("qpcr amplicon length", config.QAMPLICON_LENGTH), ("qpcr amplicon gc", config.QAMPLICON_GC)]:
+        if len(tup) != 2:
+            raise_error(
+                f"{type} tuple has to have the form (min, max)!",
+                log_file
+            )
+            error = True
+        if tup[0] > tup[1]:
+            raise_error(
+                f"min {type} should not exeed max {type}!",
+                log_file
+            )
+            error = True
+        if any(map(lambda var: var < 0, tup)):
+            raise_error(
+                f"{type} can not contain negative values!",
+                log_file
+            )
+            error = True
+    # check single values that cannot be negative
     non_negative_var = [
         ("max polyx repeats", config.PRIMER_MAX_POLYX),
         ("max dinucleotide repeats", config.PRIMER_MAX_DINUC_REPEATS),
-        ("max GCs at the 3' end", config.PRIMER_MAX_GC_END),
-        ("GC clamp", config.PRIMER_GC_CLAMP),
+        ("primer max GCs at the 3' end", config.PRIMER_MAX_GC_END),
+        ("primer GC clamp", config.PRIMER_GC_CLAMP),
         ("min number of 3 prime nucleotides without ambiguous nucleotides", config.PRIMER_MIN_3_WITHOUT_AMB),
         ("monovalent cation concentration", config.PCR_MV_CONC),
         ("divalent cation concentration", config.PCR_DV_CONC),
@@ -251,7 +319,11 @@ def confirm_config(args, log_file):
         ("primer gc penalty", config.PRIMER_GC_PENALTY),
         ("primer size penalty", config.PRIMER_SIZE_PENALTY),
         ("max base penalty", config.PRIMER_MAX_BASE_PENALTY),
-        ("primer permutation penalty", config.PRIMER_PERMUTATION_PENALTY)
+        ("primer permutation penalty", config.PRIMER_PERMUTATION_PENALTY),
+        ("qpcr flanking primer difference", config.QPRIMER_DIFF),
+        ("qpcr probe 3' gc content", config.QPROBE_MAX_GC_END),
+        ("qpcr probe gc clamp", config.QPROBE_GC_CLAMP),
+
     ]
     for type, var in non_negative_var:
         if var < 0:
@@ -290,19 +362,29 @@ def confirm_config(args, log_file):
             "decreasing the base penalty will filter out more primers.",
             log_file
         )
-    if config.PRIMER_GC_CLAMP > 3:
+    if config.PRIMER_GC_CLAMP > 3 or config.QPROBE_GC_CLAMP > 3:
         raise_error(
             "large GC clamps will results in too high 3'end stability",
             log_file
         )
     if config.PRIMER_MAX_GC_END < 5 and config.PRIMER_MAX_GC_END < config.PRIMER_GC_CLAMP:
         raise_error(
-            f"GC clamp of {config.PRIMER_GC_CLAMP} length will not be enforced as there are only {config.PRIMER_MAX_GC_END} gc characters allowed at the 3' end",
+            f"primer GC clamp of {config.PRIMER_GC_CLAMP} length will not be enforced as there are only {config.PRIMER_MAX_GC_END} gc characters allowed at the 3' end",
             log_file
         )
-    if config.PRIMER_MAX_GC_END > 5:
+    if config.QPROBE_MAX_GC_END < 5 and config.QPROBE_MAX_GC_END < config.QPROBE_GC_CLAMP:
+        raise_error(
+            f"probe GC clamp of {config.QPROBE_GC_CLAMP} length will not be enforced as there are only {config.QPROBE_MAX_GC_END} gc characters allowed at the 3' end",
+            log_file
+        )
+    if config.PRIMER_MAX_GC_END > 5 or config.QPROBE_MAX_GC_END > 5:
         raise_error(
             "only the last 5 nucleotides of the 3' end are considered for GC 3'end calculation.",
+            log_file
+        )
+    if config.QAMPLICON_DELTAG_CUTOFF > 0:
+        raise_error(
+            "there is no need to set the deltaG cutoff higher than 0 (0 will already avoid any secondary structures at the primer melting temp).",
             log_file
         )
 
@@ -316,13 +398,18 @@ def confirm_config(args, log_file):
         )
         print(
             "\nsettings that can be adjusted via arguments\n",
-            f"OPT_LENGTH = {args.opt_length}",
-            f"MAX_LENGTH = {args.max_length}",
             f"THRESHOLD = {args.threshold}",
-            f"ALLOWED_N_AMB = {args.n_ambig}",
+            f"PRIMER_ALLOWED_N_AMB = {args.n_ambig}",
             sep="\n",
             file=f
         )
+        if args.mode in ("tiled", "sanger"):
+            print(
+                f"AMPLICON_OPT_LENGTH = {args.opt_length}",
+                f"AMPLICON_MAX_LENGTH = {args.max_length}",
+                sep="\n",
+                file=f
+            )
         if args.mode == "tiled":
             print(
                 f"MIN_OVERLAP = {args.overlap}",
@@ -335,11 +422,21 @@ def confirm_config(args, log_file):
                 sep="\n",
                 file=f
             )
+        if args.mode == "qpcr":
+            print(
+                f"PROBE_ALLOWED_N_AMB = {args.pn_ambig}",
+                f"TEST_DELTAG_N_AMPLICONS = {args.test_n}",
+                sep="\n",
+                file=f
+            )
         print(
             "\nconfig settings\n",
             sep="\n",
-            file = f
+            file=f
         )
-        for var in all_vars[5:]:
+        for var in all_vars[0]:
             print(f"{var} = {var_dic[var]}", file=f)
+        if args.mode == "qpcr":
+            for var in all_vars[1]:
+                print(f"{var} = {var_dic[var]}", file=f)
         print("\nprogress", file=f)
