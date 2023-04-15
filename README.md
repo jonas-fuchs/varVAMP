@@ -2,7 +2,14 @@
 
 # varVAMP
 
-[![License: GPL v3](https://img.shields.io/github/license/jonas-fuchs/varvamp)](https://www.gnu.org/licenses/gpl-3.0) <img src=https://img.shields.io/badge/language-%3Epython3.9-red /> <img src=https://img.shields.io/github/v/release/jonas-fuchs/varvamp /> [![Downloads](https://static.pepy.tech/badge/varvamp)](https://pepy.tech/project/varvamp) <img https://anaconda.org/conda-forge/r-clv/badges/platforms.svg />
+[![License: GPL v3](https://img.shields.io/github/license/jonas-fuchs/varvamp)](https://www.gnu.org/licenses/gpl-3.0) <img src=https://img.shields.io/badge/language-%3Epython3.9-red />
+[![PiPy]([https://anaconda.org/bioconda/varvamp)](https://pypi.org/project/varvamp/)](https://img.shields.io/pypi/v/varvamp?label=pypi%20version) 
+<img src= https://pepy.tech/project/varvamp?label=pypi%20downloads />
+[![CONDA](https://anaconda.org/bioconda/varvamp)](https://img.shields.io/conda/v/bioconda/varvamp?label=conda%20version)
+<img src= https://img.shields.io/conda/dn/bioconda/varvamp?label=conda%20downloads />
+<img src= https://anaconda.org/conda-forge/r-clv/badges/platforms.svg /> 
+
+
 
 For a lot of virus genera it is difficult to design pan-specific primers. varVAMP solves this, by introducing ambiguous characters into primers and minimizes mismatches at the 3' end. Primers might not work for some sequences of your input alignment but should recognize the large majority.
 
