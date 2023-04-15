@@ -6,42 +6,69 @@ In the most simple case, varVAMP will take an alignment and an output directory 
 **Minimal usage:**
 
 ```shell
-varvamp <alignment> <output dir>
+varvamp <mode> <alignment> <output dir>
 ```
-
-In this case varVAMP uses as standard settings:
-
-* ```OPT_LENGTH``` = 1000 (optimal amplicon length)
-* ```MAX_LENGTH``` = 2000 (maximum amplicon length)
-* ```OVERLAP``` = 100 (minimum overlap length)
-* ```THRESHOLD``` = 0.9 (nucleotide consensus threshold)
-* ```N_AMBIG``` = 4 (number of allowed ambiguous characters in a primer)
-* ```MODE``` = TILED
-
-These settings are quite relaxed and can produce decent results for diverse viruses (80-90 % sequence identity). However, you can probably optimize the result.
 
 **Full usage:**
 ```shell
-usage: varvamp <alignment> <output dir> <mode> [options]
+usage: 	varvamp <mode> --help
+	varvamp <mode> [mode optional arguments] <alignment> <output dir>
 ```
 
 ```
-varvamp: variable virus amplicon design
-
 positional arguments:
-  input                alignment file and dir to write results
-  mode                 varvamp modes: TILED, SANGER
+  input                 alignment file and dir to write results
 
 optional arguments:
+  -h, --help            show this help message and exit
+  --verbose, --no-verbose
+                        show varvamp console output (default: True)
+  -v, --version         show program's version number and exit
+
+varvamp mode:
+  {sanger,tiled,qpcr}
+    sanger              design primers for sanger sequencing
+    tiled               design primers for whole genome sequencing
+    qpcr                design qPCR primers
+
+```
+**sanger** mode:
+```shell
+usage: varvamp sanger [optional arguments] <alignment> <output dir>
+```
+```
+optional arguments:
   -h, --help           show this help message and exit
-  -ol , --opt-length   optimal length of the amplicons
-  -ml , --max-length   max length of the amplicons
   -t , --threshold     threshold for conserved nucleotides
   -a , --n-ambig       max number of ambiguous characters in a primer
-  -o , --overlap       TILED: min overlap of the amplicons
-  -n , --report-n      SANGER: report the top n best hits
-  --verb, --no-verb    show varvamp console output (default: True)
-  -v, --version        show program's version number and exit
+  -ol , --opt-length   optimal length of the amplicons
+  -ml , --max-length   max length of the amplicons
+  -n , --report-n      report the top n best hits
+```
+**tiled** mode:
+```shell
+usage: varvamp tiled [optional arguments] <alignment> <output dir>
+```
+```
+optional arguments:
+  -h, --help           show this help message and exit
+  -t , --threshold     threshold for conserved nucleotides
+  -a , --n-ambig       max number of ambiguous characters in a primer
+  -ol , --opt-length   optimal length of the amplicons
+  -ml , --max-length   max length of the amplicons
+  -o , --overlap       min overlap of the amplicons
+```
+**qpcr** mode:
+```shell
+usage: varvamp qpcr [optional arguments] <alignment> <output dir>
+```
+```
+optional arguments:
+  -h, --help         show this help message and exit
+  -t , --threshold   threshold for conserved nucleotides
+  -a , --n-ambig     max number of ambiguous characters in a primer
+  -pa , --pn-ambig   max number of ambiguous characters in a probe
+  -n , --test-n      test the top n qPCR amplicons for secondary structures at the minimal primer temperature
 ```
 
 ## Further customization (advanced)
@@ -59,31 +86,48 @@ gedit config.py
 Here you can adjust various settings including primer parameters and penalties.
 
 ```python
+# CAN BE CHANGED, DO NOT DELETE
 # basic primer parameters
-PRIMER_TMP = (57, 63, 60)  # temperatur (min, max, opt)
-PRIMER_GC_RANGE = (40, 60, 50)  # gc (min, max, opt)
-PRIMER_SIZES = (17, 27, 20)  # size (min, max, opt)
-PRIMER_MAX_POLYX = 4  # max number of polyx repeats
-PRIMER_MAX_DINUC_REPEATS = 4  # max number of dinucleotide repeats
+PRIMER_TMP = (57, 63, 60)  # melting temperatur (min, max, opt)
+PRIMER_GC_RANGE = (35, 65, 50)  # gc (min, max, opt)
+PRIMER_SIZES = (18, 24, 21)  # size (min, max, opt)
+PRIMER_MAX_POLYX = 3  # max number of polyx repeats
+PRIMER_MAX_DINUC_REPEATS = 3  # max number of dinucleotide repeats
 PRIMER_HAIRPIN = 47  # max melting temp for secondary structures
 PRIMER_MAX_GC_END = 3  # max GCs in the last 5 bases of the primer
-PRIMER_GC_CLAMP = 1  # min number of GC nucleotides at the very 3' end
-PRIMER_MIN_3_WITHOUT_AMB = 2  # min len of 3' without ambiguous charaters
+PRIMER_GC_CLAMP = 1  # min number of GCs in the last 5 bases of the primer
+PRIMER_MIN_3_WITHOUT_AMB = 3  # min len of 3' without ambiguous charaters
 PRIMER_MAX_DIMER_TMP = 47  # max melting temp for dimers (homo- or heterodimers)
 
+# QPCR parameters
+# base probe parameters to consider
+QPROBE_TMP = (64, 70, 67)  # mean 7°C higher than the primer temp
+QPROBE_SIZES = (20, 30, 25)
+QPROBE_GC_RANGE = (40, 80, 60)
+QPROBE_MAX_GC_END = 4
+QPROBE_GC_CLAMP = 0
+# constraints for amplicon design
+QPRIMER_DIFF = 2  # maximal temperature diff of qPCR primers
+QPROBE_TEMP_DIFF = (5, 10)  # min/max temp diff between probe and primers
+QPROBE_DISTANCE = (4, 15)  # min/max distance to the primer on the same strand
+QAMPLICON_LENGTH = (70, 200)  # min/max length of the qPCR amplicon
+QAMPLICON_GC = (40, 60)  # GC min/max of the qPCR amplicon
+QAMPLICON_DELTAG_CUTOFF = -1  # minimum free energy (kcal/mol/K) at the lowest primer temp
+
 # PCR parameters
-PCR_MV_CONC = 50  # monovalent cations mM
+PCR_MV_CONC = 100  # monovalent cations mM
 PCR_DV_CONC = 2  # divalent cations mM
 PCR_DNTP_CONC = 0.8  # dntp concentration mM
-PCR_DNA_CONC = 50  # primer concentration nM
+PCR_DNA_CONC = 15  # primer concentration nM
 
-# multipliers for primer base penalties
+# multipliers for primer and qpcr probe penalties
 PRIMER_TM_PENALTY = 2  # temperature penalty
 PRIMER_GC_PENALTY = 0.2  # gc penalty
 PRIMER_SIZE_PENALTY = 0.5  # size penalty
 PRIMER_MAX_BASE_PENALTY = 8  # max base penalty for a primer
-PRIMER_3_PENALTY = (10, 10, 10)  # penalties for 3' mismatches
+PRIMER_3_PENALTY = (32, 16, 8, 4, 2)  # penalties for 3' mismatches
 PRIMER_PERMUTATION_PENALTY = 0.1  # penalty for the number of permutations
+
 ```
 To apply these new settings just repeat the installation procedure in the varVAMP dir:
 ```shell

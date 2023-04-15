@@ -38,6 +38,7 @@ All varVAMP options (such as temperature, size, penalties) can be customized in 
 git clone https://github.com/jonas-fuchs/varVAMP
 cd varVAMP
 pip install .
+varvamp -v
 ```
 
 ### - via requirements.txt

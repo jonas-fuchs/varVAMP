@@ -4,9 +4,6 @@
 
 <img src="./workflow.png" alt="varVAMP logo" />
 
-varVAMP designs primers for viruses with highly variable genomes. varVAMP first preprocesses the alignment and then creates consensus sequences that can contain [ambiguous characters](https://www.bioinformatics.org/sms/iupac.html). Then it searches for conserved regions as defined by a user defined amount of ambiguous charaters within
-the min length of a primer. The conserved regions of a consensus sequence containing the most prevalent nucleotide are then digested into kmers which are considered potential primers if they pass all primer requirements. These primers are further filtered for high scoring primers for each region. Then varVAMP constructs all possible amplicons and determines which amplicons are overlapping. Finally, a graph based approach is used to find the best amplicon scheme.
-
 ---
 
 ### Alignment preprocessing
@@ -22,10 +19,10 @@ varVAMP creates a consensus sequence based on a given threshold. If a nucleotide
 varVAMP searches for conserved regions as defined by a user-defined number of ambiguous bases that is allowed within the minimal length of a primer. The algorithm opens windows over the ambiguous consensus sequence and determines if a window satisfies these constraints.
 
 ### Primer search
-varVAMP uses `primer3-py` to search for potential primers. Some of the evaluation process, determining if primers match certain criteria, was adapted from [primalscheme](www.github.com/aresti/primalscheme). The primer search contains multiple steps:
+varVAMP uses [`primer3-py`](https://pypi.org/project/primer3-py/) to search for potential primers. Some of the evaluation process, determining if primers match certain criteria, was adapted from [`primalscheme`](www.github.com/aresti/primalscheme). The primer search contains multiple steps:
 1. Digest the conserved regions into kmers with the min and max length of primers. This is performed on a consensus sequence that does not contain ambiguous characters but is just the majority consensus of the alignment. Therefore, primer parameters will be later calculated for the best fitting primer.
 2. Evaluate if these kmers are potential primers independent of their orientation (temperature, GC, size, poly-x repeats and poly dinucleotide repeats) and dependent on their orientation (secondary structure, GC clamp, number of GCs in the last 5 bases of the 3' end and min 3' nucleotides without an ambiguous base). Filter for kmers that satisfy all constraints and calculate their penalties (explained in the last section).
-3. Find lowest scoring primer. varVAMP sorts the primers by their score and always takes the best scoring if the primer positions have not been covered by a better primer. This greatly reduces the complexity of the later amplicon search while only retaining the best scoring primer of a set of overlapping primers.
+3. Sanger and tiled mode: Find lowest scoring primer. varVAMP sorts the primers by their score and always takes the best scoring if the primer positions have not been covered by a better primer. This greatly reduces the complexity of the later amplicon search while only retaining the best scoring primer of a set of overlapping primers.
 
 ### Amplicon search
 
@@ -40,10 +37,18 @@ To search for the best scoring amplicon, varVAMP uses a graph based approach.
 7. Lastly, the best scoring scheme is evaluated for primer dimers in their respective pools. If a primer dimer pair is found, varVAMP evaluates for each primer their overlapping and previously not considered primers (primer search step 2) and again minimizes the score. The scheme and all primers are updated. If no alternative primers can be found, varVAMP issues a warning and reports the unsolvable primer dimers.
 
 #### Sanger sequencing
-varVAMP sorts all amplicons by their score and takes the non-overlapping amplicon with the lowest score! As varVAMP gives a size penalty to amplicons, varVAMP automatically finds amplicons with low primer scores close to your optimal length (if possible).
+1. varVAMP sorts all amplicons by their score and takes the non-overlapping amplicon with the lowest score! 
+2. As varVAMP gives a size penalty to amplicons, varVAMP automatically finds amplicons with low primer scores close to your optimal length (if possible).
 
 #### qPCR
-Coming soon
+1. Find conserved regions with lesser number of ambigouous characters.
+2. Digest and search for probes (with their own base parameter)
+3. Find primers flanking a probe
+4. Evaluate amplicon parameters
+5. Decide for the best primer/probe combination
+6. For amplicons with the same primer sets but different probes, decide for the lowest probe
+7. Test amplicons for their [minimal free energy](https://en.wikipedia.org/wiki/Gibbs_free_energy) at their lowest primer temperature with [seqfold](https://github.com/Lattice-Automation/seqfold) and filter to avoid secondary structures.
+8. Take the best qPCR schemes of overlapping schemes.
 
 ### Penalty calculation
 

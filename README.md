@@ -14,7 +14,7 @@ For a lot of virus genera it is difficult to design pan-specific primers. varVAM
 
 **TILED**: varVAMP uses a graph based approach to design overlapping amplicons that tile the entire viral genome. This designs amplicons that are suitable for Oxford Nanopore or Illumina based full-genome sequencing.
 
-**QPCR** *(coming soon)*: varVAMP searches for small amplicons with an internal primer for the probe. It minimizes temperature differences between the primers.
+**QPCR**: varVAMP searches for small amplicons with an optimized internal probe (TaqMan). It minimizes temperature differences between the primers and checks for amplicon secondary structures.
 
 This program is currently being developed and in an alpha state. You are welcome to use this software. If you successfully design primers, drop me a mail. It might be possible to collaborate! Ideas and suggestions are highly welcome.
 
