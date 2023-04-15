@@ -2,7 +2,7 @@
 
 # varVAMP
 
-[![License: GPL v3](https://img.shields.io/github/license/jonas-fuchs/varvamp)](https://www.gnu.org/licenses/gpl-3.0) <img src=https://img.shields.io/badge/language-%3Epython3.9-red />
+[![License: GPL v3](https://img.shields.io/github/license/jonas-fuchs/varvamp)](https://www.gnu.org/licenses/gpl-3.0)
 [![PiPy](https://pypi.org/project/varvamp/)](https://img.shields.io/pypi/v/varvamp?label=pypi%20version)
 <img src= https://pepy.tech/project/varvamp?label=pypi%20downloads />
 [![CONDA](https://anaconda.org/bioconda/varvamp)](https://img.shields.io/conda/v/bioconda/varvamp?label=conda%20version)
