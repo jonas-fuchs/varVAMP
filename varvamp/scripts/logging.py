@@ -323,7 +323,6 @@ def confirm_config(args, log_file):
         ("qpcr flanking primer difference", config.QPRIMER_DIFF),
         ("qpcr probe 3' gc content", config.QPROBE_MAX_GC_END),
         ("qpcr probe gc clamp", config.QPROBE_GC_CLAMP),
-
     ]
     for type, var in non_negative_var:
         if var < 0:

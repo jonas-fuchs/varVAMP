@@ -1,3 +1,7 @@
+"""
+qPCR probe and amplicon design
+"""
+
 # LIBS
 import seqfold
 
