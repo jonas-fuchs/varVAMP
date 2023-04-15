@@ -1,10 +1,8 @@
 ## How varVAMP works
 
-### Overview
 
 <img src="./workflow.png" alt="varVAMP logo" />
 
----
 
 ### Alignment preprocessing
 The alignment preprocessing contains three steps.
@@ -50,7 +48,7 @@ To search for the best scoring amplicon, varVAMP uses a graph based approach.
 7. Test amplicons for their [minimal free energy](https://en.wikipedia.org/wiki/Gibbs_free_energy) at their lowest primer temperature with [seqfold](https://github.com/Lattice-Automation/seqfold) and filter to avoid secondary structures.
 8. Take the best qPCR schemes of overlapping schemes.
 
-### Penalty calculation
+#### Penalty calculation
 
 ```python
 PRIMER_MAX_BASE_PENALTY
