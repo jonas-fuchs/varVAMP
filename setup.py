@@ -19,7 +19,8 @@ setup(
         "matplotlib>=3.5.1",
         "primer3-py>=1.1.0",
         "pandas>=1.4.4",
-        "numpy>=1.23.3"
+        "numpy>=1.23.3",
+        "seqfold>=0.7.15"
     ],
     description='Variable VirusAMPlicons (varVAMP) is a tool to design primers for highly diverse viruses',
     url='https://github.com/jonas-fuchs/varVAMP',

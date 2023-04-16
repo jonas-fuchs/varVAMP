@@ -3,10 +3,22 @@ varVAMP runs on UNIX Systems, MacOSX and Windows with Python3 >=3.9 installed.
 
 ## Installation
 
-From PyPI:
+PyPI:
 
 ```shell
 pip install varvamp
+```
+
+CONDA:
+
+```shell
+ conda install -c bioconda varvamp
+```
+
+DOCKER:
+
+```shell
+docker pull quay.io/biocontainers/varvamp
 ```
 
 That was already it. To check if it worked:
@@ -26,6 +38,7 @@ All varVAMP options (such as temperature, size, penalties) can be customized in 
 git clone https://github.com/jonas-fuchs/varVAMP
 cd varVAMP
 pip install .
+varvamp -v
 ```
 
 ### - via requirements.txt

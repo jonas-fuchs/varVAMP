@@ -21,7 +21,7 @@ def find_regions(consensus_amb, allowed_ambiguous):
 
     seq = str(consensus_amb) + 2*'N'
     for idx, nuc in enumerate(seq):
-        if in_ambiguous_region and nuc in config.nucs:
+        if in_ambiguous_region and nuc in config.NUCS:
             in_ambiguous_region = False
             # just entered a new stretch of non-ambiguous bases
             # may be time to open a new window
@@ -34,7 +34,7 @@ def find_regions(consensus_amb, allowed_ambiguous):
                 # than specified apart and last one counts all ambiguous
                 # chars. also track all amb chars after a window has opened
             continue
-        if nuc not in config.nucs:
+        if nuc not in config.NUCS:
             if current_window:
                 in_ambiguous_region = True
                 amb_to_amb_len = idx - last_amb
@@ -99,7 +99,7 @@ def digest_seq(seq, kmer_size):
     return[[seq[i:i+kmer_size], i, i+len(seq[i:i+kmer_size])] for i in range(len(seq)-kmer_size+1)]
 
 
-def produce_kmers(conserved_regions, consensus):
+def produce_kmers(conserved_regions, consensus, sizes=config.PRIMER_SIZES):
     """
     produce kmers for all conserved regions
     """
@@ -107,7 +107,7 @@ def produce_kmers(conserved_regions, consensus):
 
     for region in conserved_regions:
         sliced_seq = consensus[region[0]:region[1]]
-        for kmer_size in range(config.PRIMER_SIZES[0], config.PRIMER_SIZES[1]+1):
+        for kmer_size in range(sizes[0], sizes[1]+1):
             kmers_temp = digest_seq(sliced_seq, kmer_size)
             # adjust the start and stop position of the kmers
             for kmer_temp in kmers_temp:

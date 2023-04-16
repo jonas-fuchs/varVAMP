@@ -105,23 +105,6 @@ def calc_end_gc(seq):
     return seq[-5:].count('g') + seq[-5:].count('c')
 
 
-def gc_clamp_present(seq):
-    """
-    checks if a gc clamp is present
-    """
-    if config.PRIMER_GC_CLAMP > 0:
-        for nuc in seq[-config.PRIMER_GC_CLAMP:]:
-            if nuc in "cg":
-                clamp_present = True
-            else:
-                clamp_present = False
-                break
-    else:
-        clamp_present = True
-
-    return clamp_present
-
-
 def is_three_prime_ambiguous(amb_seq):
     """
     determine if a sequence contains an ambiguous char at the 3'prime
@@ -130,7 +113,7 @@ def is_three_prime_ambiguous(amb_seq):
 
     if len_3_prime != 0:
         for nuc in amb_seq[len(amb_seq)-len_3_prime:]:
-            if nuc not in config.nucs:
+            if nuc not in config.NUCS:
                 is_amb = True
                 break
             else:
@@ -156,8 +139,8 @@ def calc_permutation_penalty(amb_seq):
     permutations = 0
 
     for nuc in amb_seq:
-        if nuc in config.ambig_nucs:
-            n = len(config.ambig_nucs[nuc])
+        if nuc in config.AMBIG_NUCS:
+            n = len(config.AMBIG_NUCS[nuc])
             if permutations != 0:
                 permutations = permutations*n
             else:
@@ -166,7 +149,7 @@ def calc_permutation_penalty(amb_seq):
     return permutations*config.PRIMER_PERMUTATION_PENALTY
 
 
-def calc_base_penalty(seq):
+def calc_base_penalty(seq, primer_temps, gc_range, primer_sizes):
     """
     Calculate intrinsic primer penalty.
     """
@@ -177,31 +160,31 @@ def calc_base_penalty(seq):
     size = len(seq)
 
     # TEMP penalty
-    if tm > config.PRIMER_TMP[2]:
+    if tm > primer_temps[2]:
         penalty += config.PRIMER_TM_PENALTY*(
-            tm - config.PRIMER_TMP[2]
+            tm - primer_temps[2]
             )
-    if tm < config.PRIMER_TMP[2]:
+    if tm < primer_temps[2]:
         penalty += config.PRIMER_TM_PENALTY*(
-            config.PRIMER_TMP[2] - tm
+            primer_temps[2] - tm
             )
     # GC penalty
-    if gc > config.PRIMER_GC_RANGE[2]:
+    if gc > gc_range[2]:
         penalty += config.PRIMER_GC_PENALTY*(
-            gc - config.PRIMER_GC_RANGE[2]
+            gc - gc_range[2]
             )
-    if gc < config.PRIMER_GC_RANGE[2]:
+    if gc < gc_range[2]:
         penalty += config.PRIMER_GC_PENALTY*(
-            config.PRIMER_GC_RANGE[2] - gc
+            gc_range[2] - gc
         )
     # SIZE penalty
-    if size > config.PRIMER_SIZES[2]:
+    if size > primer_sizes[2]:
         penalty += config.PRIMER_SIZE_PENALTY*(
-            size - config.PRIMER_SIZES[2]
+            size - primer_sizes[2]
         )
-    if size < config.PRIMER_SIZES[2]:
+    if size < primer_sizes[2]:
         penalty += config.PRIMER_SIZE_PENALTY * (
-            config.PRIMER_SIZES[2] - size
+            primer_sizes[2] - size
         )
 
     return penalty
@@ -229,23 +212,23 @@ def calc_per_base_mismatches(kmer, alignment, ambiguous_consensus):
             if slice_nuc == current_kmer_pos:
                 continue
             # check if the slice nucleotide is an amb pos
-            if slice_nuc in config.ambig_nucs:
+            if slice_nuc in config.AMBIG_NUCS:
                 # check if the kmer has an amb pos
-                if current_kmer_pos in config.ambig_nucs:
-                    slice_nuc_set = set(config.ambig_nucs[slice_nuc])
-                    pri_set = set(config.ambig_nucs[current_kmer_pos])
+                if current_kmer_pos in config.AMBIG_NUCS:
+                    slice_nuc_set = set(config.AMBIG_NUCS[slice_nuc])
+                    pri_set = set(config.AMBIG_NUCS[current_kmer_pos])
                     # check if these sets have no overlap
                     # -> mismatch
                     if len(slice_nuc_set.intersection(pri_set)) == 0:
                         mismatches[idx] += 1
                 # if no amb pos is in kmer then check if kmer nuc
                 # is part of the amb slice nuc
-                elif current_kmer_pos not in config.ambig_nucs[slice_nuc]:
+                elif current_kmer_pos not in config.AMBIG_NUCS[slice_nuc]:
                     mismatches[idx] += 1
             # check if kmer has an amb pos but the current
             # slice_nuc is not part of this amb nucleotide
-            elif current_kmer_pos in config.ambig_nucs:
-                if slice_nuc not in config.ambig_nucs[current_kmer_pos]:
+            elif current_kmer_pos in config.AMBIG_NUCS:
+                if slice_nuc not in config.AMBIG_NUCS[current_kmer_pos]:
                     mismatches[idx] += 1
             # mismatch
             else:
@@ -275,17 +258,17 @@ def calc_3_prime_penalty(direction, mismatches):
     return(penalty)
 
 
-def filter_kmer_direction_independent(seq):
+def filter_kmer_direction_independent(seq, primer_temps=config.PRIMER_TMP, gc_range=config.PRIMER_GC_RANGE, primer_sizes=config.PRIMER_SIZES):
     """
     filter kmer for temperature, gc content,
     poly x, dinucleotide repeats and homodimerization
     """
     return(
-        (config.PRIMER_TMP[0] <= calc_temp(seq) <= config.PRIMER_TMP[1])
-        and (config.PRIMER_GC_RANGE[0] <= calc_gc(seq) <= config.PRIMER_GC_RANGE[1])
+        (primer_temps[0] <= calc_temp(seq) <= primer_temps[1])
+        and (gc_range[0] <= calc_gc(seq) <= gc_range[1])
         and (calc_max_polyx(seq) <= config.PRIMER_MAX_POLYX)
         and (calc_max_dinuc_repeats(seq) <= config.PRIMER_MAX_DINUC_REPEATS)
-        and (calc_base_penalty(seq) <= config.PRIMER_MAX_BASE_PENALTY)
+        and (calc_base_penalty(seq, primer_temps, gc_range, primer_sizes) <= config.PRIMER_MAX_BASE_PENALTY)
         and (calc_dimer(seq, seq).tm <= config.PRIMER_MAX_DIMER_TMP)
     )
 
@@ -305,8 +288,7 @@ def filter_kmer_direction_dependend(direction, kmer, ambiguous_consensus):
     # filter kmer
     return(
         (calc_hairpin(kmer_seq).tm <= config.PRIMER_HAIRPIN)
-        and (calc_end_gc(kmer_seq) <= config.PRIMER_MAX_GC_END)
-        and gc_clamp_present(kmer_seq)
+        and (config.PRIMER_GC_END[0] <= calc_end_gc(kmer_seq) <= config.PRIMER_GC_END[1])
         and not is_three_prime_ambiguous(amb_kmer_seq)
     )
 
@@ -324,7 +306,7 @@ def find_primers(kmers, ambiguous_consensus, alignment):
         if not filter_kmer_direction_independent(kmer[0]):
             continue
         # calc base penalty
-        base_penalty = calc_base_penalty(kmer[0])
+        base_penalty = calc_base_penalty(kmer[0],config.PRIMER_TMP, config.PRIMER_GC_RANGE, config.PRIMER_SIZES)
         # calcualte per base mismatches
         per_base_mismatches = calc_per_base_mismatches(
                                 kmer,
@@ -369,10 +351,10 @@ def create_primer_dictionary(primer_candidates, direction):
 
     for primer in primer_candidates:
         if direction == "+":
-            direction_name = "LEFT"
+            direction_name = "FW"
         elif direction == "-":
-            direction_name = "RIGHT"
-        primer_name = direction_name + "_" + str(primer_idx)
+            direction_name = "RW"
+        primer_name = f"{direction_name}_{primer_idx}"
         primer_dict[primer_name] = primer
         primer_idx += 1
 

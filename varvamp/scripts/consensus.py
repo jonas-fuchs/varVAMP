@@ -27,9 +27,9 @@ def determine_nucleotide_counts(alignment, idx):
     to_delete = []
     temp_dict = {}
     for nucleotide in counter:
-        if nucleotide in config.ambig_nucs:
+        if nucleotide in config.AMBIG_NUCS:
             to_delete.append(nucleotide)
-            permutations = config.ambig_nucs[nucleotide]
+            permutations = config.AMBIG_NUCS[nucleotide]
             adjusted_freq = 1/len(permutations)
             for permutation in permutations:
                 if permutation in temp_dict:
@@ -72,7 +72,7 @@ def get_ambiguous_char(nucleotides):
     """
     get ambiguous char from a list of nucleotides
     """
-    for ambiguous, permutations in config.ambig_nucs.items():
+    for ambiguous, permutations in config.AMBIG_NUCS.items():
         if set(permutations) == set(nucleotides):
             return ambiguous
 

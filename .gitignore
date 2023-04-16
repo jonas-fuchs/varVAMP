@@ -4,3 +4,4 @@ varvamp/__pycache__/**
 varvamp/scripts/__pycache__/**
 varvamp/varVAMP_dev.py
 varvamp.egg-info/**
+.vscode/**
