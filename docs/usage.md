@@ -64,7 +64,6 @@ usage: varvamp qpcr [optional arguments] <alignment> <output dir>
 ```
 ```
 optional arguments:
-optional arguments:
   -h, --help            	show this help message and exit
   -t 0.89, --threshold 0.89	threshold for conserved nucleotides
   -a 4, --n-ambig 4     	max number of ambiguous characters in a primer
