@@ -9,14 +9,6 @@ import seqfold
 from varvamp.scripts import config
 from varvamp.scripts import primers
 
-# overwrite config variables to use primer functions
-config.PRIMER_TMP = config.QPROBE_TMP
-config.PRIMER_GC_RANGE = config.QPROBE_GC_RANGE
-config.PRIMER_SIZES = config.QPROBE_SIZES
-config.PRIMER_GC_CLAMP = config.QPROBE_GC_CLAMP
-config.PRIMER_MAX_GC_END = config.QPROBE_MAX_GC_END
-
-
 def choose_probe_direction(seq):
     """
     choose the direction of the probe so
@@ -51,7 +43,7 @@ def filter_probe_direction_dependent(seq):
     return(
         (seq[:1] != "g")  # no 5' g as this leads to quenching
         and (primers.calc_hairpin(seq).tm <= config.PRIMER_HAIRPIN)
-        and (config.PRIMER_GC_CLAMP <= primers.calc_end_gc(seq) <= config.PRIMER_MAX_GC_END)
+        and (config.QPROBE_GC_END[0] <= primers.calc_end_gc(seq) <= config.QPROBE_GC_END[1])
     )
 
 
@@ -64,13 +56,13 @@ def get_qpcr_probes(kmers, ambiguous_consensus, alignment_cleaned):
 
     for kmer in kmers:
         # filter probe for base params
-        if not primers.filter_kmer_direction_independent(kmer[0]):
+        if not primers.filter_kmer_direction_independent(kmer[0], config.QPROBE_TMP, config.QPROBE_GC_RANGE, config.QPROBE_SIZES):
             continue
         # do not allow ambiguous chars at both ends
         if ambiguous_ends(ambiguous_consensus[kmer[1]:kmer[2]]):
             continue
         # calc penalties analogous to primer search
-        base_penalty = primers.calc_base_penalty(kmer[0])
+        base_penalty = primers.calc_base_penalty(kmer[0], config.QPROBE_TMP, config.QPROBE_GC_RANGE, config.QPROBE_SIZES)
         per_base_mismatches = primers.calc_per_base_mismatches(
                                 kmer,
                                 alignment_cleaned,
@@ -86,13 +78,13 @@ def get_qpcr_probes(kmers, ambiguous_consensus, alignment_cleaned):
             if filter_probe_direction_dependent(kmer[0]):
                 probe_name = f"PROBE_{probe_idx}_FW"
                 three_prime_penalty = primers.calc_3_prime_penalty("+", per_base_mismatches)
-                probe_candidates[probe_name] = [kmer[0], kmer[1], kmer[2], base_penalty + permutation_penalty + three_prime_penalty, per_base_mismatches]
+                probe_candidates[probe_name] = [kmer[0], kmer[1], kmer[2], base_penalty + permutation_penalty + three_prime_penalty, per_base_mismatches, direction]
                 probe_idx += 1
         if "-" in direction:
             if filter_probe_direction_dependent(primers.rev_complement(kmer[0])):
                 probe_name = f"PROBE_{probe_idx}_RW"
                 three_prime_penalty = primers.calc_3_prime_penalty("-", per_base_mismatches)
-                probe_candidates[probe_name] = [primers.rev_complement(kmer[0]), kmer[1], kmer[2], base_penalty + permutation_penalty + three_prime_penalty, per_base_mismatches]
+                probe_candidates[probe_name] = [primers.rev_complement(kmer[0]), kmer[1], kmer[2], base_penalty + permutation_penalty + three_prime_penalty, per_base_mismatches, direction]
                 probe_idx += 1
     # sort by score
     probe_candidates = dict(sorted(probe_candidates.items(), key=lambda x: x[1][3]))
@@ -186,7 +178,7 @@ def assess_amplicons(left_subset, right_subset, qpcr_probes, probe, majority_con
                 continue
             # ... the probe has a higher temp than the primers and ...
             probe_temp = primers.calc_temp(qpcr_probes[probe][0])
-            if all([config.QPROBE_TEMP_DIFF[0] <= probe_temp-x <= config.QPROBE_TEMP_DIFF[1] for x in primer_temps]):
+            if not all([config.QPROBE_TEMP_DIFF[0] <= probe_temp-x <= config.QPROBE_TEMP_DIFF[1] for x in primer_temps]):
                 continue
             # .... all combination of oligos do not form dimers.
             if forms_dimer(right_primer, left_primer, qpcr_probes[probe]):

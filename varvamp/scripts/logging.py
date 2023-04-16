@@ -209,6 +209,7 @@ def confirm_config(args, log_file):
             "PRIMER_HAIRPIN",
             "PRIMER_MAX_POLYX",
             "PRIMER_MAX_DINUC_REPEATS",
+            "PRIMER_GC_END",
             "PRIMER_MAX_DIMER_TMP",
             "PRIMER_MIN_3_WITHOUT_AMB",
             "PCR_MV_CONC",
@@ -227,8 +228,7 @@ def confirm_config(args, log_file):
             "QPROBE_TMP",
             "QPROBE_SIZES",
             "QPROBE_GC_RANGE",
-            "QPROBE_MAX_GC_END",
-            "QPROBE_GC_CLAMP",
+            "QPROBE_GC_END",
             "QPRIMER_DIFF",
             "QPROBE_TEMP_DIFF",
             "QPROBE_DISTANCE",
@@ -286,7 +286,7 @@ def confirm_config(args, log_file):
             )
             error = True
     # confirm tuples with two elements
-    for type, tup in [("probe and primer temp diff", config.QPROBE_TEMP_DIFF), ("distance probe to primer", config.QPROBE_DISTANCE), ("qpcr amplicon length", config.QAMPLICON_LENGTH), ("qpcr amplicon gc", config.QAMPLICON_GC)]:
+    for type, tup in [("primer gc at the 3'", config.PRIMER_GC_END), ("probe and primer temp diff", config.QPROBE_TEMP_DIFF), ("distance probe to primer", config.QPROBE_DISTANCE), ("qpcr amplicon length", config.QAMPLICON_LENGTH), ("qpcr amplicon gc", config.QAMPLICON_GC), ("probe gc at the 3'", config.PRIMER_GC_END)]:
         if len(tup) != 2:
             raise_error(
                 f"{type} tuple has to have the form (min, max)!",
@@ -309,8 +309,6 @@ def confirm_config(args, log_file):
     non_negative_var = [
         ("max polyx repeats", config.PRIMER_MAX_POLYX),
         ("max dinucleotide repeats", config.PRIMER_MAX_DINUC_REPEATS),
-        ("primer max GCs at the 3' end", config.PRIMER_MAX_GC_END),
-        ("primer GC clamp", config.PRIMER_GC_CLAMP),
         ("min number of 3 prime nucleotides without ambiguous nucleotides", config.PRIMER_MIN_3_WITHOUT_AMB),
         ("monovalent cation concentration", config.PCR_MV_CONC),
         ("divalent cation concentration", config.PCR_DV_CONC),
@@ -321,8 +319,6 @@ def confirm_config(args, log_file):
         ("max base penalty", config.PRIMER_MAX_BASE_PENALTY),
         ("primer permutation penalty", config.PRIMER_PERMUTATION_PENALTY),
         ("qpcr flanking primer difference", config.QPRIMER_DIFF),
-        ("qpcr probe 3' gc content", config.QPROBE_MAX_GC_END),
-        ("qpcr probe gc clamp", config.QPROBE_GC_CLAMP),
     ]
     for type, var in non_negative_var:
         if var < 0:
@@ -361,22 +357,12 @@ def confirm_config(args, log_file):
             "decreasing the base penalty will filter out more primers.",
             log_file
         )
-    if config.PRIMER_GC_CLAMP > 3 or config.QPROBE_GC_CLAMP > 3:
+    if config.PRIMER_GC_END[0] > 3 or config.QPROBE_GC_END[0] > 3:
         raise_error(
             "large GC clamps will results in too high 3'end stability",
             log_file
         )
-    if config.PRIMER_MAX_GC_END < 5 and config.PRIMER_MAX_GC_END < config.PRIMER_GC_CLAMP:
-        raise_error(
-            f"primer GC clamp of {config.PRIMER_GC_CLAMP} length will not be enforced as there are only {config.PRIMER_MAX_GC_END} gc characters allowed at the 3' end",
-            log_file
-        )
-    if config.QPROBE_MAX_GC_END < 5 and config.QPROBE_MAX_GC_END < config.QPROBE_GC_CLAMP:
-        raise_error(
-            f"probe GC clamp of {config.QPROBE_GC_CLAMP} length will not be enforced as there are only {config.QPROBE_MAX_GC_END} gc characters allowed at the 3' end",
-            log_file
-        )
-    if config.PRIMER_MAX_GC_END > 5 or config.QPROBE_MAX_GC_END > 5:
+    if config.PRIMER_GC_END[1] > 5 or config.QPROBE_GC_END[1] > 5:
         raise_error(
             "only the last 5 nucleotides of the 3' end are considered for GC 3'end calculation.",
             log_file

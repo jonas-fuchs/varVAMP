@@ -22,7 +22,7 @@ def write_fasta(dir, seq_id, seq):
     """
     write fasta files
     """
-    name = seq_id + ".fasta"
+    name = f"{seq_id}.fasta"
     out = os.path.join(dir, name)
     with open(out, 'w') as o:
         print(f">{seq_id}\n{seq}", file=o)
@@ -39,12 +39,17 @@ def write_alignment(dir, alignment):
             print(f">{seq[0]}\n{seq[1]}", file=o)
 
 
-def write_conserved_to_bed(conserved_regions, dir):
+def write_conserved_to_bed(conserved_regions, dir, mode=None):
     """
     write conserved regions as bed file
     """
+
+    if mode == "probe":
+        outfile = f"{dir}probe_conserved_regions.bed"
+    else:
+        outfile = f"{dir}primer_conserved_regions.bed"
     counter = 0
-    outfile = dir+"conserved_regions.bed"
+
     with open(outfile, 'w') as o:
         for region in conserved_regions:
             print(
@@ -79,7 +84,7 @@ def write_all_primers(dir, all_primers):
     """
     write all primers that varVAMP designed as bed file
     """
-    outfile = dir + "all_primers.bed"
+    outfile = f"{dir}all_primers.bed"
 
     for direction in all_primers:
         for primer in all_primers[direction]:
@@ -102,11 +107,74 @@ def get_permutations(seq):
     return[''.join(p) for p in itertools.product(*splits)]
 
 
+def calc_mean_stats(permutations):
+    """
+    calculate mean gc and temp over all permutations
+    """
+    gc = 0
+    temp = 0
+
+    for permutation in permutations:
+        gc += primers.calc_gc(permutation)
+        temp += primers.calc_temp(permutation)
+
+    return round(gc/len(permutations), 1), round(temp/len(permutations), 1)
+
+
+def write_qpcr_to_files(dir, final_schemes, ambiguous_consensus):
+    """
+    write all relevant bed files and tsv file for the qPCR design
+    """
+
+    tsv_file = os.path.join(dir, "qpcr_design.tsv")
+    primer_bed_file = os.path.join(dir, "primers.bed")
+    amplicon_bed_file = os.path.join(dir, "amplicons.bed")
+
+    with open(tsv_file, "w") as tsv, open(amplicon_bed_file, "w") as bed:
+        print(
+            "qpcr_scheme\toligo_type\tstart\tstop\tseq\tsize\tgc_best\ttemp_best\tmean_gc\tmean_temp\tscore",
+            file=tsv
+        )
+        for scheme in final_schemes:
+            # write bed amplicon file
+            print("ambiguous_consensus", final_schemes[scheme]["left"][1], final_schemes[scheme]["right"][2], scheme, round(final_schemes[scheme]["score"], 1), sep="\t", file=bed)
+            # write tsv
+            for type in final_schemes[scheme]:
+                if type == "score" or type == "deltaG":
+                    continue
+                seq = ambiguous_consensus[final_schemes[scheme][type][1]:final_schemes[scheme][type][2]]
+                if type == "right" or all([type == "probe", final_schemes[scheme]["probe"][5] == "-"]):
+                    seq = primers.rev_complement(seq)
+                    direction = "-"
+                else:
+                    direction = "+"
+
+                permutations = get_permutations(seq)
+                gc, temp = calc_mean_stats(permutations)
+
+                print(
+                    scheme,
+                    type,
+                    final_schemes[scheme][type][1],
+                    final_schemes[scheme][type][2],
+                    seq,
+                    len(seq),
+                    round(primers.calc_gc(final_schemes[scheme][type][0]), 1),
+                    round(primers.calc_temp(final_schemes[scheme][type][0]), 1),
+                    gc,
+                    temp,
+                    round(final_schemes[scheme][type][3], 1),
+                    sep="\t",
+                    file=tsv
+                )
+                # write primer bed file
+                write_primers_to_bed(primer_bed_file, f"{scheme}_{type}", final_schemes[scheme][type], direction)
+
+
 def write_scheme_to_files(dir, amplicon_scheme, ambiguous_consensus, mode):
     """
     write all relevant bed files and a tsv file with all primer stats
     """
-    # ini
     tsv_file = os.path.join(dir, "primers.tsv")
     primer_bed_file = os.path.join(dir, "primers.bed")
     amplicon_bed_file = os.path.join(dir, "amplicons.bed")
@@ -148,12 +216,8 @@ def write_scheme_to_files(dir, amplicon_scheme, ambiguous_consensus, mode):
                     if direction == "-":
                         seq = primers.rev_complement(seq)
                     # calc primer parameters for all permutations
-                    gc = 0
-                    temp = 0
                     permutations = get_permutations(seq)
-                    for permutation in permutations:
-                        gc += primers.calc_gc(permutation)
-                        temp += primers.calc_temp(permutation)
+                    gc, temp = calc_mean_stats(permutations)
                     # write tsv file
                     print(
                         new_name,
@@ -165,8 +229,8 @@ def write_scheme_to_files(dir, amplicon_scheme, ambiguous_consensus, mode):
                         len(primer[1][0]),
                         round(primers.calc_gc(primer[1][0]), 1),
                         round(primers.calc_temp(primer[1][0]), 1),
-                        round(gc/len(permutations), 1),
-                        round(temp/len(permutations), 1),
+                        gc,
+                        temp,
                         round(primer[1][3], 1),
                         sep="\t",
                         file=tsv

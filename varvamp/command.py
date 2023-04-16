@@ -10,6 +10,7 @@ import argparse
 
 # varVAMP
 from varvamp.scripts import alignment
+from varvamp.scripts import config
 from varvamp.scripts import consensus
 from varvamp.scripts import conserved
 from varvamp.scripts import logging
@@ -255,8 +256,15 @@ def main(sysargs=sys.argv[1:]):
             job="Finding potential amplicons.",
             progress_text=f"{len(amplicons)} potential amplicons"
         )
-
-        if args.mode == "tiled":
+        if args.mode == "sanger":
+            amplicon_scheme = scheme.find_sanger_amplicons(amplicons, all_primers, args.report_n)
+            logging.varvamp_progress(
+                log_file,
+                progress=0.9,
+                job="Finding low scoring amplicons.",
+                progress_text="The lowest scoring amplicon is amplicon_0."
+            )
+        elif args.mode == "tiled":
             amplicon_graph = scheme.create_amplicon_graph(amplicons, args.overlap)
             # search for amplicon scheme
             coverage, amplicon_scheme = scheme.find_best_covering_scheme(
@@ -291,16 +299,7 @@ def main(sysargs=sys.argv[1:]):
                     "\t - relax primer settings (not recommended)\n",
                     log_file
                 )
-        elif args.mode == "sanger":
-            amplicon_scheme = scheme.find_sanger_amplicons(amplicons, all_primers, args.report_n)
-            logging.varvamp_progress(
-                log_file,
-                progress=0.9,
-                job="Finding low scoring amplicons.",
-                progress_text="The lowest scoring amplicon is amplicon_0."
-            )
-
-        # write  mode specific files
+        # write  SANGER/TILED specific files
         reporting.write_all_primers(data_dir, all_primers)
         reporting.write_scheme_to_files(
             results_dir,
@@ -332,7 +331,8 @@ def main(sysargs=sys.argv[1:]):
         # digest probe regions
         probe_kmers = conserved.produce_kmers(
             probe_conserved_regions,
-            majority_consensus
+            majority_consensus,
+            config.QPROBE_SIZES
         )
         # find potential probes
         qpcr_probes = qpcr.get_qpcr_probes(probe_kmers, ambiguous_consensus, alignment_cleaned)
@@ -346,7 +346,7 @@ def main(sysargs=sys.argv[1:]):
             log_file,
             progress=0.7,
             job="Finding qPCR probes.",
-            progress_text=f"{len(qpcr_probes)} potential qPCR probes with max {args.pn_ambig} ambiguous chars"
+            progress_text=f"{len(qpcr_probes)} potential qPCR probes"
         )
         # find unique high scoring amplicons with internal probe
         qpcr_scheme_candidates = qpcr.find_qcr_schemes(qpcr_probes, left_primer_candidates, right_primer_candidates, majority_consensus)
@@ -375,6 +375,8 @@ def main(sysargs=sys.argv[1:]):
             job="Filtering amplicons for deltaG.",
             progress_text=f"{len(final_schemes)} non-overlapping qPCR schemes that passed deltaG cutoff"
         )
+        reporting.write_conserved_to_bed(probe_conserved_regions, data_dir, "probe")
+        reporting.write_qpcr_to_files(results_dir, final_schemes, ambiguous_consensus)
     # write files that are shared in all modes
     reporting.write_conserved_to_bed(conserved_regions, data_dir)
     reporting.write_alignment(data_dir, alignment_cleaned)

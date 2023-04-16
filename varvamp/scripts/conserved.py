@@ -99,7 +99,7 @@ def digest_seq(seq, kmer_size):
     return[[seq[i:i+kmer_size], i, i+len(seq[i:i+kmer_size])] for i in range(len(seq)-kmer_size+1)]
 
 
-def produce_kmers(conserved_regions, consensus):
+def produce_kmers(conserved_regions, consensus, sizes=config.PRIMER_SIZES):
     """
     produce kmers for all conserved regions
     """
@@ -107,7 +107,7 @@ def produce_kmers(conserved_regions, consensus):
 
     for region in conserved_regions:
         sliced_seq = consensus[region[0]:region[1]]
-        for kmer_size in range(config.PRIMER_SIZES[0], config.PRIMER_SIZES[1]+1):
+        for kmer_size in range(sizes[0], sizes[1]+1):
             kmers_temp = digest_seq(sliced_seq, kmer_size)
             # adjust the start and stop position of the kmers
             for kmer_temp in kmers_temp:

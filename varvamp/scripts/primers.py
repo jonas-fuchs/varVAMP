@@ -149,7 +149,7 @@ def calc_permutation_penalty(amb_seq):
     return permutations*config.PRIMER_PERMUTATION_PENALTY
 
 
-def calc_base_penalty(seq):
+def calc_base_penalty(seq, primer_temps, gc_range, primer_sizes):
     """
     Calculate intrinsic primer penalty.
     """
@@ -160,31 +160,31 @@ def calc_base_penalty(seq):
     size = len(seq)
 
     # TEMP penalty
-    if tm > config.PRIMER_TMP[2]:
+    if tm > primer_temps[2]:
         penalty += config.PRIMER_TM_PENALTY*(
-            tm - config.PRIMER_TMP[2]
+            tm - primer_temps[2]
             )
-    if tm < config.PRIMER_TMP[2]:
+    if tm < primer_temps[2]:
         penalty += config.PRIMER_TM_PENALTY*(
-            config.PRIMER_TMP[2] - tm
+            primer_temps[2] - tm
             )
     # GC penalty
-    if gc > config.PRIMER_GC_RANGE[2]:
+    if gc > gc_range[2]:
         penalty += config.PRIMER_GC_PENALTY*(
-            gc - config.PRIMER_GC_RANGE[2]
+            gc - gc_range[2]
             )
-    if gc < config.PRIMER_GC_RANGE[2]:
+    if gc < gc_range[2]:
         penalty += config.PRIMER_GC_PENALTY*(
-            config.PRIMER_GC_RANGE[2] - gc
+            gc_range[2] - gc
         )
     # SIZE penalty
-    if size > config.PRIMER_SIZES[2]:
+    if size > primer_sizes[2]:
         penalty += config.PRIMER_SIZE_PENALTY*(
-            size - config.PRIMER_SIZES[2]
+            size - primer_sizes[2]
         )
-    if size < config.PRIMER_SIZES[2]:
+    if size < primer_sizes[2]:
         penalty += config.PRIMER_SIZE_PENALTY * (
-            config.PRIMER_SIZES[2] - size
+            primer_sizes[2] - size
         )
 
     return penalty
@@ -258,17 +258,17 @@ def calc_3_prime_penalty(direction, mismatches):
     return(penalty)
 
 
-def filter_kmer_direction_independent(seq):
+def filter_kmer_direction_independent(seq, primer_temps=config.PRIMER_TMP, gc_range=config.PRIMER_GC_RANGE, primer_sizes=config.PRIMER_SIZES):
     """
     filter kmer for temperature, gc content,
     poly x, dinucleotide repeats and homodimerization
     """
     return(
-        (config.PRIMER_TMP[0] <= calc_temp(seq) <= config.PRIMER_TMP[1])
-        and (config.PRIMER_GC_RANGE[0] <= calc_gc(seq) <= config.PRIMER_GC_RANGE[1])
+        (primer_temps[0] <= calc_temp(seq) <= primer_temps[1])
+        and (gc_range[0] <= calc_gc(seq) <= gc_range[1])
         and (calc_max_polyx(seq) <= config.PRIMER_MAX_POLYX)
         and (calc_max_dinuc_repeats(seq) <= config.PRIMER_MAX_DINUC_REPEATS)
-        and (calc_base_penalty(seq) <= config.PRIMER_MAX_BASE_PENALTY)
+        and (calc_base_penalty(seq, primer_temps, gc_range, primer_sizes) <= config.PRIMER_MAX_BASE_PENALTY)
         and (calc_dimer(seq, seq).tm <= config.PRIMER_MAX_DIMER_TMP)
     )
 
@@ -288,7 +288,7 @@ def filter_kmer_direction_dependend(direction, kmer, ambiguous_consensus):
     # filter kmer
     return(
         (calc_hairpin(kmer_seq).tm <= config.PRIMER_HAIRPIN)
-        and (config.PRIMER_GC_CLAMP <= calc_end_gc(kmer_seq) <= config.PRIMER_MAX_GC_END)
+        and (config.PRIMER_GC_END[0] <= calc_end_gc(kmer_seq) <= config.PRIMER_GC_END[1])
         and not is_three_prime_ambiguous(amb_kmer_seq)
     )
 
@@ -306,7 +306,7 @@ def find_primers(kmers, ambiguous_consensus, alignment):
         if not filter_kmer_direction_independent(kmer[0]):
             continue
         # calc base penalty
-        base_penalty = calc_base_penalty(kmer[0])
+        base_penalty = calc_base_penalty(kmer[0],config.PRIMER_TMP, config.PRIMER_GC_RANGE, config.PRIMER_SIZES)
         # calcualte per base mismatches
         per_base_mismatches = calc_per_base_mismatches(
                                 kmer,
