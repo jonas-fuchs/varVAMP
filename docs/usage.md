@@ -38,12 +38,12 @@ usage: varvamp sanger [optional arguments] <alignment> <output dir>
 ```
 ```
 optional arguments:
-  -h, --help            			show this help message and exit
-  -t 0.89, --threshold 0.89		threshold for conserved nucleotides
-  -a 4, --n-ambig 4     			max number of ambiguous characters in a primer
-  -ol 1000, --opt-length 1000 optimal length of the amplicons
-  -ml 1500, --max-length 1500 max length of the amplicons
-  -n inf, --report-n inf			report the top n best hits
+  -h, --help            	show this help message and exit
+  -t 0.89, --threshold 0.89	threshold for conserved nucleotides
+  -a 4, --n-ambig 4     	max number of ambiguous characters in a primer
+  -ol 1000, --opt-length 1000   optimal length of the amplicons
+  -ml 1500, --max-length 1500   max length of the amplicons
+  -n inf, --report-n inf	report the top n best hits
 ```
 **tiled** mode:
 ```shell
@@ -51,12 +51,12 @@ usage: varvamp tiled [optional arguments] <alignment> <output dir>
 ```
 ```
 optional arguments:
-  -h, --help            			show this help message and exit
+  -h, --help            	show this help message and exit
   -t 0.89, --threshold 0.89 	threshold for conserved nucleotides
-  -a 4, --n-ambig 4     			max number of ambiguous characters in a primer
+  -a 4, --n-ambig 4     	max number of ambiguous characters in a primer
   -ol 1000, --opt-length 1000	optimal length of the amplicons
   -ml 1500, --max-length 1500	max length of the amplicons
-  -o 100, --overlap 100				min overlap of the amplicons
+  -o 100, --overlap 100		min overlap of the amplicons
 ```
 **qpcr** mode:
 ```shell
@@ -65,11 +65,11 @@ usage: varvamp qpcr [optional arguments] <alignment> <output dir>
 ```
 optional arguments:
 optional arguments:
-  -h, --help            		show this help message and exit
+  -h, --help            	show this help message and exit
   -t 0.89, --threshold 0.89	threshold for conserved nucleotides
-  -a 4, --n-ambig 4     		max number of ambiguous characters in a primer
-  -pa 1, --pn-ambig 1  			max number of ambiguous characters in a probe
-  -n 50, --test-n 50    		test the top n qPCR amplicons for secondary structures at the minimal primer temperature
+  -a 4, --n-ambig 4     	max number of ambiguous characters in a primer
+  -pa 1, --pn-ambig 1  		max number of ambiguous characters in a probe
+  -n 50, --test-n 50    	test the top n qPCR amplicons for secondary structures at the minimal primer temperature
 
 ```
 
