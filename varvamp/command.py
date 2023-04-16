@@ -57,7 +57,7 @@ def get_args(sysargs):
         par.add_argument(
             "-t",
             "--threshold",
-            metavar="",
+            metavar="0.89",
             type=float,
             default=0.89,
             help="threshold for conserved nucleotides"
@@ -65,7 +65,7 @@ def get_args(sysargs):
         par.add_argument(
             "-a",
             "--n-ambig",
-            metavar="",
+            metavar="4",
             type=int,
             default=4,
             help="max number of ambiguous characters in a primer"
@@ -75,7 +75,7 @@ def get_args(sysargs):
             "-ol",
             "--opt-length",
             help="optimal length of the amplicons",
-            metavar="",
+            metavar="1000",
             type=int,
             default=1000
         )
@@ -83,7 +83,7 @@ def get_args(sysargs):
             "-ml",
             "--max-length",
             help="max length of the amplicons",
-            metavar="",
+            metavar="1500",
             type=int,
             default=1500
         )
@@ -91,7 +91,7 @@ def get_args(sysargs):
         "-o",
         "--overlap",
         type=int,
-        metavar="",
+        metavar="100",
         default=100,
         help="min overlap of the amplicons"
     )
@@ -99,14 +99,14 @@ def get_args(sysargs):
         "-n",
         "--report-n",
         type=int,
-        metavar="",
+        metavar="inf",
         default=float("inf"),
         help="report the top n best hits"
     )
     QPCR_parser.add_argument(
         "-pa",
         "--pn-ambig",
-        metavar="",
+        metavar="1",
         type=int,
         default=1,
         help="max number of ambiguous characters in a probe"
@@ -115,7 +115,7 @@ def get_args(sysargs):
         "-n",
         "--test-n",
         type=int,
-        metavar="",
+        metavar="50",
         default=50,
         help="test the top n qPCR amplicons for secondary structures at the minimal primer temperature"
     )
@@ -262,7 +262,7 @@ def main(sysargs=sys.argv[1:]):
                 log_file,
                 progress=0.9,
                 job="Finding low scoring amplicons.",
-                progress_text="The lowest scoring amplicon is amplicon_0."
+                progress_text=f"{len(amplicon_scheme[0])} low scoring amplicons."
             )
         elif args.mode == "tiled":
             amplicon_graph = scheme.create_amplicon_graph(amplicons, args.overlap)

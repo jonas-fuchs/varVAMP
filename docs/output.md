@@ -12,7 +12,8 @@ varVAMP produces multiple main output files:
 | TILED/SANGER | primer_to_amplicon_assignments.tabular | Simple tab separated file, which primers belong together. Useful for bioinformatic workflows that include primer trimming |
 | ALL | primers.bed | A bed file with the primer locations. Includes the primer score. The lower, the better. |
 | TILED/SANGER | primer.tsv | A tab separated file with important parameters for the primers including the sequence with ambiguous nucleotides (already in the right strand) and the gc and temperature of the best fitting primer as well as for the mean for all permutations of the primer. |
-| QPCR | qpcr_design.tsv | A tab separated file with important parameters for the primers  and probes including the sequence with ambiguous nucleotides (already in the right strand) and the gc and temperature of the best fitting primer and probe as well as for the mean for all permutations. also tells the deltaG of the amplicon |
+| QPCR | qpcr_design.tsv | A tab separated file with important parameters for the qPCR amplicon including the deltaG of the amplicon. |
+| QPCR | qpcr_primers.tsv | A tab separated file with important parameters for the primers  and probes including the sequence with ambiguous nucleotides (already in the right strand) and the gc and temperature of the best fitting primer and probe as well as for the mean for all permutations. also tells the deltaG of the amplicon |
 | TILED | unsolvable_primer_dimers.tsv | Only produced if there are primer dimers without replacements. Tells which primers form dimers and at which temperature.
 | ALL | varvamp_log.txt | Log file. |
 

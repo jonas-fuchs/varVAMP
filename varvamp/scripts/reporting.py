@@ -127,18 +127,46 @@ def write_qpcr_to_files(dir, final_schemes, ambiguous_consensus):
     """
 
     tsv_file = os.path.join(dir, "qpcr_design.tsv")
+    tsv_file_2 = os.path.join(dir, "qpcr_primers.tsv")
     primer_bed_file = os.path.join(dir, "primers.bed")
     amplicon_bed_file = os.path.join(dir, "amplicons.bed")
 
-    with open(tsv_file, "w") as tsv, open(amplicon_bed_file, "w") as bed:
+    with open(tsv_file, "w") as tsv, open(tsv_file_2, "w") as tsv2, open(amplicon_bed_file, "w") as bed:
         print(
             "qpcr_scheme\toligo_type\tstart\tstop\tseq\tsize\tgc_best\ttemp_best\tmean_gc\tmean_temp\tscore",
+            file=tsv2
+        )
+        print(
+            "qpcr_scheme\tscore\tdeltaG\tlength\tstart\tstop\tseq",
             file=tsv
         )
         for scheme in final_schemes:
             # write bed amplicon file
-            print("ambiguous_consensus", final_schemes[scheme]["left"][1], final_schemes[scheme]["right"][2], scheme, round(final_schemes[scheme]["score"], 1), sep="\t", file=bed)
+            print(
+                "ambiguous_consensus",
+                final_schemes[scheme]["left"][1],
+                final_schemes[scheme]["right"][2],
+                scheme,
+                round(final_schemes[scheme]["score"], 1),
+                sep="\t",
+                file=bed
+            )
             # write tsv
+            amplicon_start = final_schemes[scheme]["left"][1]
+            amplicon_stop = final_schemes[scheme]["right"][2]
+            amplicon_seq = ambiguous_consensus[amplicon_start:amplicon_stop]
+            print(
+                scheme,
+                round(final_schemes[scheme]["score"], 1),
+                final_schemes[scheme]["deltaG"],
+                len(amplicon_seq),
+                amplicon_start,
+                amplicon_stop,
+                amplicon_seq,
+                sep="\t",
+                file=tsv
+            )
+            # write tsv2
             for type in final_schemes[scheme]:
                 if type == "score" or type == "deltaG":
                     continue
@@ -165,10 +193,15 @@ def write_qpcr_to_files(dir, final_schemes, ambiguous_consensus):
                     temp,
                     round(final_schemes[scheme][type][3], 1),
                     sep="\t",
-                    file=tsv
+                    file=tsv2
                 )
                 # write primer bed file
-                write_primers_to_bed(primer_bed_file, f"{scheme}_{type}", final_schemes[scheme][type], direction)
+                write_primers_to_bed(
+                    primer_bed_file,
+                    f"{scheme}_{type}",
+                    final_schemes[scheme][type],
+                    direction
+                )
 
 
 def write_scheme_to_files(dir, amplicon_scheme, ambiguous_consensus, mode):
@@ -200,13 +233,20 @@ def write_scheme_to_files(dir, amplicon_scheme, ambiguous_consensus, mode):
                 primer_names = list(amplicon_scheme[pool][amp].keys())
                 left = (primer_names[0], amplicon_scheme[pool][amp][primer_names[0]])
                 right = (primer_names[1], amplicon_scheme[pool][amp][primer_names[1]])
-
                 # write amplicon bed
                 if mode == "tiled":
-                    print("ambiguous_consensus", left[1][1], right[1][2], new_name, pool, sep="\t", file=bed)
+                    bed_score = pool
                 elif mode == "sanger":
-                    print("ambiguous_consensus", left[1][1], right[1][2], new_name, round(left[1][3] + right[1][3], 1), sep="\t", file=bed)
-
+                    bed_score = round(left[1][3] + right[1][3], 1)
+                print(
+                    "ambiguous_consensus",
+                    left[1][1],
+                    right[1][2],
+                    new_name,
+                    bed_score,
+                    sep="\t",
+                    file=bed
+                )
                 # write primer assignments tabular file
                 print(left[0], right[0], sep="\t", file=tabular)
 
@@ -236,7 +276,12 @@ def write_scheme_to_files(dir, amplicon_scheme, ambiguous_consensus, mode):
                         file=tsv
                     )
                     # write primer bed file
-                    write_primers_to_bed(primer_bed_file, primer[0], primer[1], direction)
+                    write_primers_to_bed(
+                        primer_bed_file,
+                        primer[0],
+                        primer[1],
+                        direction
+                    )
 
 
 def write_dimers(dir, not_solved):

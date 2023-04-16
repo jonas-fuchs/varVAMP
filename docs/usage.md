@@ -38,12 +38,12 @@ usage: varvamp sanger [optional arguments] <alignment> <output dir>
 ```
 ```
 optional arguments:
-  -h, --help           show this help message and exit
-  -t , --threshold     threshold for conserved nucleotides
-  -a , --n-ambig       max number of ambiguous characters in a primer
-  -ol , --opt-length   optimal length of the amplicons
-  -ml , --max-length   max length of the amplicons
-  -n , --report-n      report the top n best hits
+  -h, --help            			show this help message and exit
+  -t 0.89, --threshold 0.89		threshold for conserved nucleotides
+  -a 4, --n-ambig 4     			max number of ambiguous characters in a primer
+  -ol 1000, --opt-length 1000 optimal length of the amplicons
+  -ml 1500, --max-length 1500 max length of the amplicons
+  -n inf, --report-n inf			report the top n best hits
 ```
 **tiled** mode:
 ```shell
@@ -51,12 +51,12 @@ usage: varvamp tiled [optional arguments] <alignment> <output dir>
 ```
 ```
 optional arguments:
-  -h, --help           show this help message and exit
-  -t , --threshold     threshold for conserved nucleotides
-  -a , --n-ambig       max number of ambiguous characters in a primer
-  -ol , --opt-length   optimal length of the amplicons
-  -ml , --max-length   max length of the amplicons
-  -o , --overlap       min overlap of the amplicons
+  -h, --help            			show this help message and exit
+  -t 0.89, --threshold 0.89 	threshold for conserved nucleotides
+  -a 4, --n-ambig 4     			max number of ambiguous characters in a primer
+  -ol 1000, --opt-length 1000	optimal length of the amplicons
+  -ml 1500, --max-length 1500	max length of the amplicons
+  -o 100, --overlap 100				min overlap of the amplicons
 ```
 **qpcr** mode:
 ```shell
@@ -64,11 +64,13 @@ usage: varvamp qpcr [optional arguments] <alignment> <output dir>
 ```
 ```
 optional arguments:
-  -h, --help         show this help message and exit
-  -t , --threshold   threshold for conserved nucleotides
-  -a , --n-ambig     max number of ambiguous characters in a primer
-  -pa , --pn-ambig   max number of ambiguous characters in a probe
-  -n , --test-n      test the top n qPCR amplicons for secondary structures at the minimal primer temperature
+optional arguments:
+  -h, --help            		show this help message and exit
+  -t 0.89, --threshold 0.89	threshold for conserved nucleotides
+  -a 4, --n-ambig 4     		max number of ambiguous characters in a primer
+  -pa 1, --pn-ambig 1  			max number of ambiguous characters in a probe
+  -n 50, --test-n 50    		test the top n qPCR amplicons for secondary structures at the minimal primer temperature
+
 ```
 
 ## Further customization (advanced)
@@ -93,19 +95,17 @@ PRIMER_GC_RANGE = (35, 65, 50)  # gc (min, max, opt)
 PRIMER_SIZES = (18, 24, 21)  # size (min, max, opt)
 PRIMER_MAX_POLYX = 3  # max number of polyx repeats
 PRIMER_MAX_DINUC_REPEATS = 3  # max number of dinucleotide repeats
-PRIMER_HAIRPIN = 47  # max melting temp for secondary structures
-PRIMER_MAX_GC_END = 3  # max GCs in the last 5 bases of the primer
-PRIMER_GC_CLAMP = 1  # min number of GCs in the last 5 bases of the primer
+PRIMER_HAIRPIN = 47  # max melting temp for secondary structure
+PRIMER_GC_END = (0, 4)  # min/max GCs in the last 5 bases of the 3' end
 PRIMER_MIN_3_WITHOUT_AMB = 3  # min len of 3' without ambiguous charaters
 PRIMER_MAX_DIMER_TMP = 47  # max melting temp for dimers (homo- or heterodimers)
 
 # QPCR parameters
-# base probe parameters to consider
+# basic probe parameters
 QPROBE_TMP = (64, 70, 67)  # mean 7°C higher than the primer temp
 QPROBE_SIZES = (20, 30, 25)
 QPROBE_GC_RANGE = (40, 80, 60)
-QPROBE_MAX_GC_END = 4
-QPROBE_GC_CLAMP = 0
+QPROBE_GC_END = (0, 4)
 # constraints for amplicon design
 QPRIMER_DIFF = 2  # maximal temperature diff of qPCR primers
 QPROBE_TEMP_DIFF = (5, 10)  # min/max temp diff between probe and primers
