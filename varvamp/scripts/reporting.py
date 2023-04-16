@@ -248,8 +248,12 @@ def write_scheme_to_files(dir, amplicon_scheme, ambiguous_consensus, mode):
                     file=bed
                 )
                 # write primer assignments tabular file
-                print(left[0], right[0], sep="\t", file=tabular)
-
+                print(
+                    left[0],
+                    right[0],
+                    sep="\t",
+                    file=tabular
+                )
                 # write primer tsv and primer bed
                 for direction, primer in [("+", left), ("-", right)]:
                     seq = ambiguous_consensus[primer[1][1]:primer[1][2]]
@@ -349,24 +353,13 @@ def alignment_entropy(alignment_cleaned):
     return entropy_df
 
 
-def varvamp_plot(dir, threshold, alignment_cleaned, conserved_regions, all_primers, amplicon_scheme):
+def entropy_subplot(ax, alignment_cleaned):
     """
-    creates overview plot for the amplicon design
-    and per base coverage plots
+    creates the entropy subplot
     """
-
-    amplicon_primers = []
-    # first plot: overview
-    # - create pdf name
-    name = "amplicon_plot.pdf"
-    out = os.path.join(dir, name)
     # - create entropy df
     entropy_df = alignment_entropy(alignment_cleaned)
 
-    # - ini figure
-    fig, ax = plt.subplots(2, 1, figsize=[22, 6], squeeze=True, sharex=True, gridspec_kw={'height_ratios': [4, 1]})
-    fig.subplots_adjust(hspace=0)
-    # - entropy plot
     ax[0].fill_between(entropy_df["position"], entropy_df["entropy"], color="gainsboro", label="entropy")
     ax[0].plot(entropy_df["position"], entropy_df["average"], color="black", label="average entropy", linewidth=0.5)
     ax[0].set_ylim((0, 1))
@@ -376,13 +369,21 @@ def varvamp_plot(dir, threshold, alignment_cleaned, conserved_regions, all_prime
     ax[0].spines['top'].set_visible(False)
     ax[0].spines['right'].set_visible(False)
 
-    # - conserved regions plot
-    for region in conserved_regions:
-        ax[1].hlines([1], region[0], region[1], linewidth=15, color="darkorange")
-    # - conserved legend
-    ax[1].hlines([1], conserved_regions[0][1], conserved_regions[0][1], label="possible primer regions", linewidth=5, color="darkorange")
 
-    # - all primer plot
+def conserved_subplot(ax, conserved_regions, location=0.95, color="darkorange", description="possible primer regions"):
+    """
+    creates the conserved regions subplot
+    """
+    for region in conserved_regions:
+        ax[1].hlines(location, region[0], region[1], linewidth=5, color=color)
+    # legend
+    ax[1].hlines(location, conserved_regions[0][1], conserved_regions[0][1], label=description, linewidth=5, color=color)
+
+
+def all_primer_subplot(ax, all_primers):
+    """
+    creates the all primer subplot
+    """
     for direction in all_primers:
         if direction == "-":
             primer_position = 0.85
@@ -394,10 +395,14 @@ def varvamp_plot(dir, threshold, alignment_cleaned, conserved_regions, all_prime
             primer_label = "all left primers"
         for primer in all_primers[direction]:
             ax[1].hlines(primer_position, all_primers[direction][primer][1], all_primers[direction][primer][2], linewidth=5, color=primer_color)
-    # - legend
-        ax[1].hlines(primer_position, all_primers[direction][primer][1], all_primers[direction][primer][2], linewidth=5, color=primer_color, label=primer_label)
+    # legend
+    ax[1].hlines(primer_position, all_primers[direction][primer][1], all_primers[direction][primer][2], linewidth=5, color=primer_color, label=primer_label)
 
-    # - amplicon, text and primer plot
+
+def amplicon_subplot(ax, amplicon_scheme):
+    """
+    creates the amplicon subplot
+    """
     counter = 0
     for pool in amplicon_scheme:
         for amp in amplicon_scheme[pool]:
@@ -407,7 +412,7 @@ def varvamp_plot(dir, threshold, alignment_cleaned, conserved_regions, all_prime
             elif pool == 1:
                 position_amp = 0.6
                 position_text = 0.65
-            primer_names = list(amplicon_scheme[pool][amp].keys())
+            primer_names = [i for i in amplicon_scheme[pool][amp]]
             left = amplicon_scheme[pool][amp][primer_names[0]]
             right = amplicon_scheme[pool][amp][primer_names[1]]
             # amplicons
@@ -417,17 +422,65 @@ def varvamp_plot(dir, threshold, alignment_cleaned, conserved_regions, all_prime
             # primers
             ax[1].hlines(position_amp, left[1], left[2], linewidth=5, color="red")
             ax[1].hlines(position_amp, right[1], right[2], linewidth=5, color="red")
-
             counter += 1
-            # remember primers and names as they are needed for the last plot
-            amplicon_primers.append((primer_names[0], left))
-            amplicon_primers.append((primer_names[1], right))
-
-    # - legends
+    # legends
     ax[1].hlines(position_amp, left[1]+config.PRIMER_SIZES[1], right[2]-config.PRIMER_SIZES[1], linewidth=5, label="amplicons")
     ax[1].hlines(position_amp, left[1], left[2], linewidth=5, color="red", label="primers")
 
-    # - finalize
+
+def qpcr_subplot(ax, amplicon_scheme):
+    """
+    creates the qpcr subplot
+    """
+    counter = 0
+
+    for scheme in amplicon_scheme:
+        left = amplicon_scheme[scheme]["left"]
+        right = amplicon_scheme[scheme]["right"]
+        probe = amplicon_scheme[scheme]["probe"]
+        # amplicons
+        ax[1].hlines(0.8, left[1], right[2], linewidth=5)
+        # text
+        ax[1].text(right[2] - (right[2]-left[1])/2, 0.65, str(counter), fontsize=8)
+        # primers
+        ax[1].hlines(0.8, left[1], left[2], linewidth=5, color="red")
+        ax[1].hlines(0.8, right[1], right[2], linewidth=5, color="red")
+        # probe
+        ax[1].hlines(0.75, probe[1], probe[2], linewidth=5, color="darkgrey")
+
+        counter += 1
+    # legends
+    ax[1].hlines(0.8, left[1]+config.PRIMER_SIZES[1], right[2]-config.PRIMER_SIZES[1], linewidth=5, label="amplicons")
+    ax[1].hlines(0.8, left[1], left[2], linewidth=5, color="red", label="primers")
+    ax[1].hlines(0.75, probe[1], probe[2], linewidth=5, color="darkgrey", label="probe")
+
+
+def varvamp_plot(dir, alignment_cleaned, conserved_regions, all_primers=None, amplicon_scheme=None, probe_conserved_regions=None):
+    """
+    creates overview plot for the amplicon design
+    and per base coverage plots
+    """
+    # first plot: overview
+    # create pdf name
+    name = "amplicon_plot.pdf"
+    out = os.path.join(dir, name)
+    # ini figure
+    fig, ax = plt.subplots(2, 1, figsize=[22, 6], squeeze=True, sharex=True, gridspec_kw={'height_ratios': [4, 1]})
+    fig.subplots_adjust(hspace=0)
+    # entropy plot
+    entropy_subplot(ax, alignment_cleaned)
+    # conserved regions plot
+    conserved_subplot(ax, conserved_regions)
+    # conserved region plot for probes
+    if probe_conserved_regions is not None and amplicon_scheme is not None:
+        conserved_subplot(ax, probe_conserved_regions, 0.9, color="dimgrey", description="possible probe regions")
+        qpcr_subplot(ax, amplicon_scheme)
+    # all primer plot
+    elif all_primers is not None and amplicon_scheme is not None:
+        all_primer_subplot(ax, all_primers)
+        # amplicon, text and primer plot
+        amplicon_subplot(ax, amplicon_scheme)
+    # finalize
     ax[1].spines['right'].set_visible(False)
     ax[1].spines['left'].set_visible(False)
     ax[1].spines['bottom'].set_visible(False)
@@ -435,24 +488,67 @@ def varvamp_plot(dir, threshold, alignment_cleaned, conserved_regions, all_prime
     ax[1].set_xlabel("genome position")
     ax[1].set_ylim((0.5, 1))
     fig.legend(loc=(0.83, 0.7))
-    # - save fig
+
+    # save fig
     fig.savefig(out, bbox_inches='tight')
 
-    # second plot: per base primer mismatches
-    # - ini name
-    name = "per_base_mismatches.pdf"
-    out = os.path.join(dir, name)
-    # - ini multi pdf
+
+def get_SANGER_TILED_primers_for_plot(amplicon_scheme):
+    """
+    get the primers for per base pair plot (sanger, tiled)
+    """
+    amplicon_primers = []
+
+    for pool in amplicon_scheme:
+        for amp in amplicon_scheme[pool]:
+            primer_names = [i for i in amplicon_scheme[pool][amp]]
+            left = amplicon_scheme[pool][amp][primer_names[0]]
+            right = amplicon_scheme[pool][amp][primer_names[1]]
+            amplicon_primers.append((primer_names[0], left))
+            amplicon_primers.append((primer_names[1], right))
+
+    return amplicon_primers
+
+
+def get_QPCR_primers_for_plot(amplicon_schemes):
+    """
+    get the primers for per base pair plot (qpcr)
+    """
+    amplicon_primers = []
+
+    for scheme in amplicon_schemes:
+        for type in amplicon_schemes[scheme]:
+            if type == "score" or type == "deltaG":
+                continue
+            primer_name = f"{scheme}_{type}"
+            amplicon_primers.append((primer_name, amplicon_schemes[scheme][type]))
+
+    return amplicon_primers
+
+
+def per_base_mismatch_plot(dir, amplicon_scheme, threshold, mode="SANGER/TILED"):
+    """
+    per base pair mismatch multiplot
+    """
+    out = os.path.join(dir, "per_base_mismatches.pdf")
+    if mode == "SANGER/TILED":
+        amplicon_primers = get_SANGER_TILED_primers_for_plot(amplicon_scheme)
+    elif mode == "QPCR":
+        amplicon_primers = get_QPCR_primers_for_plot(amplicon_scheme)
+    # ini multi pdf
     with PdfPages(out) as pdf:
-        # - always print 4 primers to one page
+        # always print 4 primers to one page
         for i in range(0, len(amplicon_primers), 4):
-            # - ini figure
+            # ini figure
             primers_temp = amplicon_primers[i:i+4]
             fig, ax = plt.subplots(len(primers_temp), figsize=(12, len(primers_temp)*4), squeeze=True)
+            # edge case if primer_temp has the length 1
+            if len(primers_temp) == 1:
+                ax = [ax]
             fig.suptitle("Per base mismatches", fontsize=18)
             fig.tight_layout(rect=[0.05, 0.05, 1, 0.98])
             fig.subplots_adjust(hspace=0.5)
-            # - plotting
+            # plotting
             for idx, primer in enumerate(primers_temp):
                 x = [pos+primer[1][1] for pos in range(0, len(primer[1][4]))]
                 ax[idx].bar(x, primer[1][4], color='lightgrey', edgecolor='black')

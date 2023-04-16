@@ -381,14 +381,6 @@ def qpcr_workflow(args, alignment_cleaned, ambiguous_consensus, majority_consens
         job="Filtering amplicons for deltaG.",
         progress_text=f"{len(final_schemes)} non-overlapping qPCR schemes that passed deltaG cutoff"
     )
-    reporting.varvamp_plot(
-        results_dir,
-        alignment_cleaned,
-        conserved_regions,
-        probe_conserved_regions=probe_conserved_regions
-    )
-    reporting.write_conserved_to_bed(probe_conserved_regions, data_dir, "probe")
-    reporting.write_qpcr_to_files(results_dir, final_schemes, ambiguous_consensus)
 
     return probe_conserved_regions, final_schemes
 
@@ -466,13 +458,16 @@ def main(sysargs=sys.argv[1:]):
             right_primer_candidates,
             log_file
         )
+        reporting.write_conserved_to_bed(probe_conserved_regions, data_dir, "probe")
+        reporting.write_qpcr_to_files(results_dir, final_schemes, ambiguous_consensus)
         reporting.varvamp_plot(
             results_dir,
             alignment_cleaned,
             conserved_regions,
-            probe_conserved_regions=probe_conserved_regions
+            probe_conserved_regions=probe_conserved_regions,
+            amplicon_scheme=final_schemes
         )
-        reporting.per_base_mismatch_plot(results_dir, amplicon_scheme, args.threshold, mode="QPCR")
+        reporting.per_base_mismatch_plot(results_dir, final_schemes, args.threshold, mode="QPCR")
 
     # varVAMP finished
     logging.varvamp_progress(log_file, progress=1, start_time=start_time)
