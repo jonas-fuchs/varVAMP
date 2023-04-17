@@ -3,6 +3,7 @@ This contains all varVAMP parameters.
 """
 
 # CAN BE CHANGED, DO NOT DELETE
+
 # basic primer parameters
 PRIMER_TMP = (57, 63, 60)  # melting temperatur (min, max, opt)
 PRIMER_GC_RANGE = (35, 65, 50)  # gc (min, max, opt)
@@ -10,7 +11,7 @@ PRIMER_SIZES = (18, 24, 21)  # size (min, max, opt)
 PRIMER_MAX_POLYX = 3  # max number of polyx repeats
 PRIMER_MAX_DINUC_REPEATS = 3  # max number of dinucleotide repeats
 PRIMER_HAIRPIN = 47  # max melting temp for secondary structure
-PRIMER_GC_END = (0, 4)  # min/max GCs in the last 5 bases of the 3' end
+PRIMER_GC_END = (1, 3)  # min/max GCs in the last 5 bases of the 3' end
 PRIMER_MIN_3_WITHOUT_AMB = 3  # min len of 3' without ambiguous charaters
 PRIMER_MAX_DIMER_TMP = 47  # max melting temp for dimers (homo- or heterodimers)
 
@@ -26,7 +27,7 @@ QPROBE_TEMP_DIFF = (5, 10)  # min/max temp diff between probe and primers
 QPROBE_DISTANCE = (4, 15)  # min/max distance to the primer on the same strand
 QAMPLICON_LENGTH = (70, 200)  # min/max length of the qPCR amplicon
 QAMPLICON_GC = (40, 60)  # GC min/max of the qPCR amplicon
-QAMPLICON_DELTAG_CUTOFF = -1  # minimum free energy (kcal/mol/K) at the lowest primer temp
+QAMPLICON_DEL_CUTOFF = 4  # consider regions of the alignment for deltaG calculation if they have smaller deletions than cutoff
 
 # PCR parameters
 PCR_MV_CONC = 100  # monovalent cations mM

@@ -190,6 +190,11 @@ def raise_arg_errors(args, log_file):
                     "setting the degeneracy of probes higher than 2 can result in variable probe design. Consider reducing!",
                     log_file
                 )
+            if args.deltaG > 0:
+                raise_error(
+                    "setting the deltaG cutoff larger than 0 is not recommended!",
+                    log_file
+                )
 
 
 def confirm_config(args, log_file):
@@ -234,7 +239,7 @@ def confirm_config(args, log_file):
             "QPROBE_DISTANCE",
             "QAMPLICON_LENGTH",
             "QAMPLICON_GC",
-            "QAMPLICON_DELTAG_CUTOFF"
+            "QAMPLICON_DEL_CUTOFF"
         )
     ]
 
@@ -319,6 +324,7 @@ def confirm_config(args, log_file):
         ("max base penalty", config.PRIMER_MAX_BASE_PENALTY),
         ("primer permutation penalty", config.PRIMER_PERMUTATION_PENALTY),
         ("qpcr flanking primer difference", config.QPRIMER_DIFF),
+        ("qpcr deletion size still considered for deltaG calculation", config.QAMPLICON_DEL_CUTOFF)
     ]
     for type, var in non_negative_var:
         if var < 0:
@@ -367,11 +373,6 @@ def confirm_config(args, log_file):
             "only the last 5 nucleotides of the 3' end are considered for GC 3'end calculation.",
             log_file
         )
-    if config.QAMPLICON_DELTAG_CUTOFF > 0:
-        raise_error(
-            "there is no need to set the deltaG cutoff higher than 0 (0 will already avoid any secondary structures at the primer melting temp).",
-            log_file
-        )
 
     # write all settings to file
     var_dic = vars(config)
@@ -411,6 +412,7 @@ def confirm_config(args, log_file):
             print(
                 f"PROBE_ALLOWED_N_AMB = {args.pn_ambig}",
                 f"TEST_DELTAG_N_AMPLICONS = {args.test_n}",
+                f"DELTAG_CUTOFF = {args.deltaG}",
                 sep="\n",
                 file=f
             )
