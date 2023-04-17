@@ -35,7 +35,7 @@ To search for the best scoring amplicon, varVAMP uses a graph based approach.
 7. Lastly, the best scoring scheme is evaluated for primer dimers in their respective pools. If a primer dimer pair is found, varVAMP evaluates for each primer their overlapping and previously not considered primers (primer search step 2) and again minimizes the score. The scheme and all primers are updated. If no alternative primers can be found, varVAMP issues a warning and reports the unsolvable primer dimers.
 
 #### Sanger sequencing
-1. varVAMP sorts all amplicons by their score and takes the non-overlapping amplicon with the lowest score! 
+1. varVAMP sorts all amplicons by their score and takes the non-overlapping amplicon with the lowest score!
 2. As varVAMP gives a size penalty to amplicons, varVAMP automatically finds amplicons with low primer scores close to your optimal length (if possible).
 
 #### qPCR
@@ -45,7 +45,7 @@ To search for the best scoring amplicon, varVAMP uses a graph based approach.
 4. Evaluate amplicon parameters
 5. Decide for the best primer/probe combination
 6. For amplicons with the same primer sets but different probes, decide for the lowest probe
-7. Test amplicons for their [minimal free energy](https://en.wikipedia.org/wiki/Gibbs_free_energy) at their lowest primer temperature with [seqfold](https://github.com/Lattice-Automation/seqfold) and filter to avoid secondary structures.
+7. Test amplicons for their [minimal free energy](https://en.wikipedia.org/wiki/Gibbs_free_energy) at their lowest primer temperature with [seqfold](https://github.com/Lattice-Automation/seqfold) and filter to avoid secondary structures. Amplicons with large potential deletions (>QAMPLICON_DEL_CUTOFF) will be ignored. Smaller deletions will be accepted.
 8. Take the best qPCR schemes of overlapping schemes.
 
 #### Penalty calculation

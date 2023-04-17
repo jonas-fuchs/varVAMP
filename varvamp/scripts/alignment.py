@@ -5,6 +5,9 @@ alignment preprocessing
 # BUILT-INS
 import re
 
+# varVAMP
+from varvamp.scripts import config
+
 # LIBS
 from Bio import AlignIO
 from Bio.Seq import Seq
@@ -163,11 +166,23 @@ def clean_gaps(alignment, gaps_to_mask):
         start = 0
         masked_seq = str()
         for region in gaps_to_mask:
+            # check if it is three bases or more and mark with 2 Ns
+            if region[1]-region[0] >= config.QAMPLICON_DEL_CUTOFF:
+                mask = "NN"
+            # or mask
+            else:
+                mask = "N"
             stop = region[0]
             masked_seq_temp = sequence[1][start:stop]
             # check if the deletion is at the start
-            if len(masked_seq_temp) != 0:
-                masked_seq = (masked_seq + "N" + masked_seq_temp)
+            if len(masked_seq_temp) == 0:
+                masked_seq = mask
+            # check if deletion is not at start
+            elif start == 0 and len(masked_seq_temp) != 0:
+                masked_seq = masked_seq_temp
+            # else we are in the middle of the alignment
+            else:
+                masked_seq = masked_seq + mask + masked_seq_temp
             start = region[1]+1
         if max(gaps_to_mask)[1] < len(sequence[1])-1:
             # append the last gaps if it is not
@@ -175,10 +190,10 @@ def clean_gaps(alignment, gaps_to_mask):
             start = max(gaps_to_mask)[1]
             stop = len(sequence[1])-1
             masked_seq_temp = sequence[1][start:stop]
-            masked_seq = (masked_seq + "N" + masked_seq_temp)
+            masked_seq = masked_seq + mask + masked_seq_temp
         else:
             # append the mask to the end of the seq
-            masked_seq = masked_seq + "N"
+            masked_seq = masked_seq + mask
 
         cleaned_alignment.append([sequence[0], masked_seq])
 

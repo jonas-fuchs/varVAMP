@@ -125,7 +125,7 @@ def hardfilter_amplicon(majority_consensus, left_primer, right_primer):
     return (
         (config.QAMPLICON_LENGTH[0] <= amplicon_length <= config.QAMPLICON_LENGTH[1])
         and (config.QAMPLICON_GC[0] <= primers.calc_gc(amplicon_seq) <= config.QAMPLICON_GC[1])
-        and not any(char in amplicon_seq for char in "Nn")
+        and not "NN" in amplicon_seq
     )
 
 
@@ -238,7 +238,7 @@ def find_qcr_schemes(qpcr_probes, left_primer_candidates, right_primer_candidate
     return qpcr_scheme_candidates
 
 
-def test_amplicon_deltaG(qpcr_schemes_candiadates, majority_consensus, n_to_test):
+def test_amplicon_deltaG(qpcr_schemes_candiadates, majority_consensus, n_to_test, deltaG_cutoff):
     """
     test all amplicon deltaGsfor the top n hits  at the lowest primer temperature
     and filters if they fall below the cutoff. relies in seqfold. only consider
@@ -257,6 +257,10 @@ def test_amplicon_deltaG(qpcr_schemes_candiadates, majority_consensus, n_to_test
         start = qpcr_schemes_candiadates[amp]["left"][1]
         stop = qpcr_schemes_candiadates[amp]["right"][2]
         seq = majority_consensus[start:stop]
+        # delta G cannot be calculated if non-atcg chars are in the sequence, so
+        # delete any single Ns (small deletions) or ns (ambiguties) from seq
+        seq = seq.replace("N", "")
+        seq = seq.replace("n", "")
         amp_positions = list(range(start, stop+1))
         # check if the amplicon overlaps with an amplicon that was previously
         # found and had a high enough deltaG
@@ -269,7 +273,7 @@ def test_amplicon_deltaG(qpcr_schemes_candiadates, majority_consensus, n_to_test
             deltaG = seqfold.dg(seq, min_temp)
             # and if this passes cutoff make a dict entry and do not allow further
             # amplicons in that region (they will have a lower score)
-            if deltaG > config.QAMPLICON_DELTAG_CUTOFF:
+            if deltaG > deltaG_cutoff:
                 new_name = f"QPCR_SCHEME_{passed_counter}"
                 final_schemes[new_name] = qpcr_schemes_candiadates[amp]
                 final_schemes[new_name]["deltaG"] = deltaG

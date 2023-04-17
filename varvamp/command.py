@@ -119,6 +119,14 @@ def get_args(sysargs):
         default=50,
         help="test the top n qPCR amplicons for secondary structures at the minimal primer temperature"
     )
+    QPCR_parser.add_argument(
+        "-d",
+        "--deltaG",
+        type=int,
+        metavar="-1",
+        default=-1,
+        help="minimum free energy (kcal/mol/K) cutoff at the lowest primer melting temp"
+    )
     parser.add_argument(
         "--verbose",
         action=argparse.BooleanOptionalAction,
@@ -368,7 +376,7 @@ def qpcr_workflow(args, alignment_cleaned, ambiguous_consensus, majority_consens
         job="Finding unique amplicons with probe.",
         progress_text=f"{len(qpcr_scheme_candidates)} unique amplicons with internal probe"
     )
-    final_schemes = qpcr.test_amplicon_deltaG(qpcr_scheme_candidates, majority_consensus, args.test_n)
+    final_schemes = qpcr.test_amplicon_deltaG(qpcr_scheme_candidates, majority_consensus, args.test_n, args.deltaG)
     if not final_schemes:
         logging.raise_error(
             "no qPCR amplicon passed the deltaG threshold\n",
