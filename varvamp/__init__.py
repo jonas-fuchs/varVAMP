@@ -1,3 +1,3 @@
 """Tool to design amplicons for highly variable virusgenomes"""
 _program = "varvamp"
-__version__ = "0.6"
+__version__ = "0.7"

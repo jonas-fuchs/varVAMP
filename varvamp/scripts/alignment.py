@@ -166,10 +166,10 @@ def clean_gaps(alignment, gaps_to_mask):
         start = 0
         masked_seq = str()
         for region in gaps_to_mask:
-            # check if it is three bases or more and mark with 2 Ns
+            # check if it is three bases or more and mask with 2 Ns
             if region[1]-region[0] >= config.QAMPLICON_DEL_CUTOFF:
                 mask = "NN"
-            # or mask
+            # or mask with one N (small deletion)
             else:
                 mask = "N"
             stop = region[0]
