@@ -19,63 +19,51 @@ def find_regions(consensus_amb, allowed_ambiguous):
     last_amb = 0
     conserved_regions = []
 
-    seq = str(consensus_amb) + 2*'N'
+    # append enough Ns to ensure that last window is closed
+    seq = str(consensus_amb) + allowed_ambiguous*'N'
+
     for idx, nuc in enumerate(seq):
         if in_ambiguous_region and nuc in config.NUCS:
             in_ambiguous_region = False
             # just entered a new stretch of non-ambiguous bases
             # may be time to open a new window
             if not current_window:
+                # track window start and ambiguous chars so far
                 current_window = [idx, 0]
-                amb_pos = []
-                # create new window if none is there. First element
-                # keeps track of start of the window, second element is
-                # a counter that resets if two ambiguous chars are longer
-                # than specified apart and last one counts all ambiguous
-                # chars. also track all amb chars after a window has opened
+                all_previous_ambiguous_pos = []
             continue
         if nuc not in config.NUCS:
             if current_window:
                 in_ambiguous_region = True
                 amb_to_amb_len = idx - last_amb
-                if nuc != "N":
-                    # track previous amb pos only if current pos is not a N as this
-                    # region is witeable
-                    amb_pos.append(idx)
-                if current_window[1] >= allowed_ambiguous or nuc == "N":
-                    # check if there were too many previous amb char in subwindow
-                    # and make it writable. Always make it writeable if N is
-                    # reached
+                all_previous_ambiguous_pos.append(idx)
+                # check if there were too many previous amb char in subwindow
+                # or if N is reached -> writeable
+                if current_window[1] == allowed_ambiguous or nuc == "N":
                     writable = True
+                    # are the current and last ambig char sufficiently far?
                     if amb_to_amb_len >= config.PRIMER_SIZES[0] and nuc != "N":
-                        # check if the last amb is sufficiently far, if yes keep
-                        # window open and set amb counter to 0, reset also the
-                        # list of amb positions and track only the current pos
                         current_window[1] = 0
+                        all_previous_ambiguous_pos = [idx]
                         writable = False
-                        amb_pos = [idx]
 
                 current_window[1] += 1
 
                 if writable:
                     writable = False
+                    # check if the writable window has a sufficient length.
                     window_length = idx-current_window[0]
                     if window_length >= config.PRIMER_SIZES[0]:
-                        # check if the writable window has a sufficient length.
                         conserved_regions.append([current_window[0], idx])
-                        # reset the window and the list of amb positions
-                        # after it was written
-                        current_window = []
-                    elif nuc == "N":
-                        # if nuc was a N and region was not written also open a
-                        # new window
-                        current_window = []
+                    # reset the window start to the last ambig char
+                    if nuc != "N":
+                        current_window[0] = all_previous_ambiguous_pos[0]+1
+                        current_window[1] = current_window[1] - 1
+                        all_previous_ambiguous_pos.pop(0)
+                    # or open a new window
                     else:
-                        # else set the start pos to the next amb pos and
-                        # check again if the new window matches the criteria
-                        current_window[0] = amb_pos[0]+1
-                        current_window[1] = current_window[1]-1
-                        amb_pos.pop(0)
+                        current_window = []
+
             last_amb = idx
 
     return conserved_regions
@@ -86,10 +74,11 @@ def mean(conserved_regions, consensus):
     calculate the percentage of regions
     that are conserved
     """
-    sum = 0
+    covered_set = set()
     for region in conserved_regions:
-        sum += region[1]-region[0]
-    return round(sum/len(consensus)*100, 1)
+        pos_list = list(range(region[0], region[1]))
+        [covered_set.add(x) for x in pos_list]
+    return round(len(covered_set)/len(consensus)*100, 1)
 
 
 def digest_seq(seq, kmer_size):
@@ -113,6 +102,8 @@ def produce_kmers(conserved_regions, consensus, sizes=config.PRIMER_SIZES):
             for kmer_temp in kmers_temp:
                 kmer_temp[1] = kmer_temp[1]+region[0]
                 kmer_temp[2] = kmer_temp[2]+region[0]
-            kmers += kmers_temp
+                if kmer_temp in kmers:
+                    continue
+                kmers.append(kmer_temp)
 
     return kmers
