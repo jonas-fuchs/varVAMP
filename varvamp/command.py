@@ -190,7 +190,7 @@ def shared_workflow(args, log_file):
     )
     if not primer_regions:
         logging.raise_error(
-            "no primer regions. Lower the threshold!",
+            "no primer regions found. Lower the threshold!",
             log_file,
             exit=True
         )
