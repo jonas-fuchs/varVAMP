@@ -12,7 +12,7 @@ import argparse
 from varvamp.scripts import alignment
 from varvamp.scripts import config
 from varvamp.scripts import consensus
-from varvamp.scripts import conserved
+from varvamp.scripts import regions
 from varvamp.scripts import logging
 from varvamp.scripts import primers
 from varvamp.scripts import qpcr
@@ -60,7 +60,7 @@ def get_args(sysargs):
             metavar="0.89",
             type=float,
             default=0.89,
-            help="threshold for conserved nucleotides"
+            help="threshold for consensus nucleotides"
         )
         par.add_argument(
             "-a",
@@ -183,26 +183,26 @@ def shared_workflow(args, log_file):
         job="Creating consensus sequences.",
         progress_text=f"length of the consensus is {len(majority_consensus)} nt"
     )
-    # generate conserved region list
-    conserved_regions = conserved.find_regions(
+    # generate primer region list
+    primer_regions = regions.find_regions(
         ambiguous_consensus,
         args.n_ambig
     )
-    if not conserved_regions:
+    if not primer_regions:
         logging.raise_error(
-            "nothing conserved. Lower the threshold!",
+            "no primer regions. Lower the threshold!",
             log_file,
             exit=True
         )
     logging.varvamp_progress(
         log_file,
         progress=0.4,
-        job="Finding conserved primer regions.",
-        progress_text=f"{conserved.mean(conserved_regions, majority_consensus)} % conserved"
+        job="Finding primer regions.",
+        progress_text=f"{regions.mean(primer_regions, majority_consensus)} % of the consensus sequence will be evaluated for primers"
     )
-    # produce kmers for all conserved regions
-    kmers = conserved.produce_kmers(
-        conserved_regions,
+    # produce kmers for all primer regions
+    kmers = regions.produce_kmers(
+        primer_regions,
         majority_consensus
     )
     logging.varvamp_progress(
@@ -231,7 +231,7 @@ def shared_workflow(args, log_file):
         progress_text=f"{len(left_primer_candidates)} fw and {len(right_primer_candidates)} rw potential primers"
     )
 
-    return alignment_cleaned, majority_consensus, ambiguous_consensus, conserved_regions, left_primer_candidates, right_primer_candidates
+    return alignment_cleaned, majority_consensus, ambiguous_consensus, primer_regions, left_primer_candidates, right_primer_candidates
 
 
 def sanger_and_tiled_shared_workflow(args, left_primer_candidates, right_primer_candidates, log_file):
@@ -332,19 +332,19 @@ def qpcr_workflow(args, alignment_cleaned, ambiguous_consensus, majority_consens
     part of the workflow specific for the tiled mode
     """
     # find regions for qPCR probes
-    probe_conserved_regions = conserved.find_regions(
+    probe_regions = regions.find_regions(
         ambiguous_consensus,
         args.pn_ambig
     )
-    if not probe_conserved_regions:
+    if not probe_regions:
         logging.raise_error(
-            "no conserved regions that fullfill probe criterias! lower threshold or increase number of ambiguous chars in probe\n",
+            "no regions that fullfill probe criterias! lower threshold or increase number of ambiguous chars in probe\n",
             log_file,
             exit=True
         )
     # digest probe regions
-    probe_kmers = conserved.produce_kmers(
-        probe_conserved_regions,
+    probe_kmers = regions.produce_kmers(
+        probe_regions,
         majority_consensus,
         config.QPROBE_SIZES
     )
@@ -390,7 +390,7 @@ def qpcr_workflow(args, alignment_cleaned, ambiguous_consensus, majority_consens
         progress_text=f"{len(final_schemes)} non-overlapping qPCR schemes that passed deltaG cutoff"
     )
 
-    return probe_conserved_regions, final_schemes
+    return probe_regions, final_schemes
 
 
 def main(sysargs=sys.argv[1:]):
@@ -406,10 +406,10 @@ def main(sysargs=sys.argv[1:]):
     results_dir, data_dir, log_file = logging.create_dir_structure(args.input[1])
 
     # mode unspecific part of the workflow
-    alignment_cleaned, majority_consensus, ambiguous_consensus, conserved_regions, left_primer_candidates, right_primer_candidates = shared_workflow(args, log_file)
+    alignment_cleaned, majority_consensus, ambiguous_consensus, primer_regions, left_primer_candidates, right_primer_candidates = shared_workflow(args, log_file)
 
     # write files that are shared in all modes
-    reporting.write_conserved_to_bed(conserved_regions, data_dir)
+    reporting.write_regions_to_bed(primer_regions, data_dir)
     reporting.write_alignment(data_dir, alignment_cleaned)
     reporting.write_fasta(data_dir, "majority_consensus", majority_consensus)
     reporting.write_fasta(results_dir, "ambiguous_consensus", ambiguous_consensus)
@@ -450,14 +450,14 @@ def main(sysargs=sys.argv[1:]):
         reporting.varvamp_plot(
             results_dir,
             alignment_cleaned,
-            conserved_regions,
+            primer_regions,
             all_primers=all_primers,
             amplicon_scheme=amplicon_scheme,
         )
         reporting.per_base_mismatch_plot(results_dir, amplicon_scheme, args.threshold)
     # QPCR mode
     if args.mode == "qpcr":
-        probe_conserved_regions, final_schemes = qpcr_workflow(
+        probe_regions, final_schemes = qpcr_workflow(
             args,
             alignment_cleaned,
             ambiguous_consensus,
@@ -466,13 +466,13 @@ def main(sysargs=sys.argv[1:]):
             right_primer_candidates,
             log_file
         )
-        reporting.write_conserved_to_bed(probe_conserved_regions, data_dir, "probe")
+        reporting.write_regions_to_bed(probe_regions, data_dir, "probe")
         reporting.write_qpcr_to_files(results_dir, final_schemes, ambiguous_consensus)
         reporting.varvamp_plot(
             results_dir,
             alignment_cleaned,
-            conserved_regions,
-            probe_conserved_regions=probe_conserved_regions,
+            primer_regions,
+            probe_regions=probe_regions,
             amplicon_scheme=final_schemes
         )
         reporting.per_base_mismatch_plot(results_dir, final_schemes, args.threshold, mode="QPCR")

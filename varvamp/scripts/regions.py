@@ -1,5 +1,5 @@
 """
-finding and digesting conserved regions.
+finding and digesting potential primer regions.
 """
 
 # varVAMP
@@ -8,13 +8,13 @@ from varvamp.scripts import config
 
 def find_regions(consensus_amb, allowed_ambiguous):
     """
-    finds conserved regions as specified by a
+    finds primer regions as specified by a
     certain amount of ambiguous bases in a given
     sequence length
     """
 
     current_window = []
-    conserved_regions = []
+    primer_regions = []
     last_amb = 0
 
     # append one N so the last window is closed
@@ -39,7 +39,7 @@ def find_regions(consensus_amb, allowed_ambiguous):
             if current_window[1] > allowed_ambiguous or nuc == "N":
                 # check if the writable window has a sufficient length.
                 if idx-current_window[0] >= config.PRIMER_SIZES[0]:
-                    conserved_regions.append([current_window[0], idx])
+                    primer_regions.append([current_window[0], idx])
                 # open new window if N is reached
                 if nuc == "N":
                     current_window = []
@@ -50,16 +50,16 @@ def find_regions(consensus_amb, allowed_ambiguous):
                     all_previous_ambiguous_pos.pop(0)
             last_amb = idx
 
-    return conserved_regions
+    return primer_regions
 
 
-def mean(conserved_regions, consensus):
+def mean(primer_regions, consensus):
     """
     calculate the percentage of regions
-    that are conserved
+    that cover the consensus sequence
     """
     covered_set = set()
-    for region in conserved_regions:
+    for region in primer_regions:
         pos_list = list(range(region[0], region[1]))
         [covered_set.add(x) for x in pos_list]
     return round(len(covered_set)/len(consensus)*100, 1)
@@ -72,13 +72,13 @@ def digest_seq(seq, kmer_size):
     return[[seq[i:i+kmer_size], i, i+len(seq[i:i+kmer_size])] for i in range(len(seq)-kmer_size+1)]
 
 
-def produce_kmers(conserved_regions, consensus, sizes=config.PRIMER_SIZES):
+def produce_kmers(primer_regions, consensus, sizes=config.PRIMER_SIZES):
     """
-    produce kmers for all conserved regions
+    produce kmers for all primer regions
     """
     kmers = []
 
-    for region in conserved_regions:
+    for region in primer_regions:
         sliced_seq = consensus[region[0]:region[1]]
         for kmer_size in range(sizes[0], sizes[1]+1):
             kmers_temp = digest_seq(sliced_seq, kmer_size)

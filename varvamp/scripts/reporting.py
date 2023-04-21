@@ -39,19 +39,19 @@ def write_alignment(dir, alignment):
             print(f">{seq[0]}\n{seq[1]}", file=o)
 
 
-def write_conserved_to_bed(conserved_regions, dir, mode=None):
+def write_regions_to_bed(primer_regions, dir, mode=None):
     """
-    write conserved regions as bed file
+    write primer regions as bed file
     """
 
     if mode == "probe":
-        outfile = f"{dir}probe_conserved_regions.bed"
+        outfile = f"{dir}probe_regions.bed"
     else:
-        outfile = f"{dir}primer_conserved_regions.bed"
+        outfile = f"{dir}primer_regions.bed"
     counter = 0
 
     with open(outfile, 'w') as o:
-        for region in conserved_regions:
+        for region in primer_regions:
             print(
                 "ambiguous_consensus",
                 region[0],
@@ -370,14 +370,14 @@ def entropy_subplot(ax, alignment_cleaned):
     ax[0].spines['right'].set_visible(False)
 
 
-def conserved_subplot(ax, conserved_regions, location=0.95, color="darkorange", description="possible primer regions"):
+def region_subplot(ax, primer_regions, location=0.95, color="darkorange", description="possible primer regions"):
     """
-    creates the conserved regions subplot
+    creates the primer regions subplot
     """
-    for region in conserved_regions:
+    for region in primer_regions:
         ax[1].hlines(location, region[0], region[1], linewidth=5, color=color)
     # legend
-    ax[1].hlines(location, conserved_regions[0][1], conserved_regions[0][1], label=description, linewidth=5, color=color)
+    ax[1].hlines(location, primer_regions[0][1], primer_regions[0][1], label=description, linewidth=5, color=color)
 
 
 def all_primer_subplot(ax, all_primers):
@@ -455,7 +455,7 @@ def qpcr_subplot(ax, amplicon_scheme):
     ax[1].hlines(0.75, probe[1], probe[2], linewidth=5, color="darkgrey", label="probe")
 
 
-def varvamp_plot(dir, alignment_cleaned, conserved_regions, all_primers=None, amplicon_scheme=None, probe_conserved_regions=None):
+def varvamp_plot(dir, alignment_cleaned, primer_regions, all_primers=None, amplicon_scheme=None, probe_regions=None):
     """
     creates overview plot for the amplicon design
     and per base coverage plots
@@ -469,11 +469,11 @@ def varvamp_plot(dir, alignment_cleaned, conserved_regions, all_primers=None, am
     fig.subplots_adjust(hspace=0)
     # entropy plot
     entropy_subplot(ax, alignment_cleaned)
-    # conserved regions plot
-    conserved_subplot(ax, conserved_regions)
-    # conserved region plot for probes
-    if probe_conserved_regions is not None and amplicon_scheme is not None:
-        conserved_subplot(ax, probe_conserved_regions, 0.9, color="dimgrey", description="possible probe regions")
+    # primer regions plot
+    region_subplot(ax, primer_regions)
+    # probe region plot for probes
+    if probe_regions is not None and amplicon_scheme is not None:
+        primer_subplot(ax, probe_regions, 0.9, color="dimgrey", description="possible probe regions")
         qpcr_subplot(ax, amplicon_scheme)
     # all primer plot
     elif all_primers is not None and amplicon_scheme is not None:
