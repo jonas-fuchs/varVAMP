@@ -12,58 +12,42 @@ def find_regions(consensus_amb, allowed_ambiguous):
     certain amount of ambiguous bases in a given
     sequence length
     """
-    # init the variables
-    current_window = []
-    writable = False
-    in_ambiguous_region = True
-    last_amb = 0
-    conserved_regions = []
 
-    # append enough Ns to ensure that last window is closed
-    seq = str(consensus_amb) + allowed_ambiguous*'N'
+    current_window = []
+    conserved_regions = []
+    last_amb = 0
+
+    # append one N so the last window is closed
+    seq = str(consensus_amb) + "N"
 
     for idx, nuc in enumerate(seq):
-        if in_ambiguous_region and nuc in config.NUCS:
-            in_ambiguous_region = False
-            # just entered a new stretch of non-ambiguous bases
-            # may be time to open a new window
-            if not current_window:
-                # track window start and ambiguous chars so far
-                current_window = [idx, 0]
-                all_previous_ambiguous_pos = []
-            continue
-        if nuc not in config.NUCS:
-            if current_window:
-                in_ambiguous_region = True
-                amb_to_amb_len = idx - last_amb
-                all_previous_ambiguous_pos.append(idx)
-                # check if there were too many previous amb char in subwindow
-                # or if N is reached -> writeable
-                if current_window[1] == allowed_ambiguous or nuc == "N":
-                    writable = True
-                    # are the current and last ambig char sufficiently far?
-                    if amb_to_amb_len >= config.PRIMER_SIZES[0] and nuc != "N":
-                        current_window[1] = 0
-                        all_previous_ambiguous_pos = [idx]
-                        writable = False
-
+        # open a new window if none is there and we have a nucleotide
+        if nuc in config.NUCS and not current_window:
+            current_window = [idx, 0]
+            all_previous_ambiguous_pos = []
+        # if we have a non-nucleotide, check if its time to writ the window
+        elif nuc not in config.NUCS and current_window:
+            # are the current and last ambig char sufficiently far?
+            if idx - last_amb >= config.PRIMER_SIZES[0] and nuc != "N":
+                current_window[1] = 1
+                all_previous_ambiguous_pos = [idx]
+            else:
                 current_window[1] += 1
-
-                if writable:
-                    writable = False
-                    # check if the writable window has a sufficient length.
-                    window_length = idx-current_window[0]
-                    if window_length >= config.PRIMER_SIZES[0]:
-                        conserved_regions.append([current_window[0], idx])
-                    # reset the window start to the last ambig char
-                    if nuc != "N":
-                        current_window[0] = all_previous_ambiguous_pos[0]+1
-                        current_window[1] = current_window[1] - 1
-                        all_previous_ambiguous_pos.pop(0)
-                    # or open a new window
-                    else:
-                        current_window = []
-
+                all_previous_ambiguous_pos.append(idx)
+            # check if there were too many previous amb char in subwindow
+            # or if N is reached -> writeable
+            if current_window[1] > allowed_ambiguous or nuc == "N":
+                # check if the writable window has a sufficient length.
+                if idx-current_window[0] >= config.PRIMER_SIZES[0]:
+                    conserved_regions.append([current_window[0], idx])
+                # open new window if N is reached
+                if nuc == "N":
+                    current_window = []
+                # or reset to a previous ambig char
+                else:
+                    current_window[0] = all_previous_ambiguous_pos[0]+1
+                    current_window[1] = current_window[1] - 1
+                    all_previous_ambiguous_pos.pop(0)
             last_amb = idx
 
     return conserved_regions
@@ -102,6 +86,7 @@ def produce_kmers(conserved_regions, consensus, sizes=config.PRIMER_SIZES):
             for kmer_temp in kmers_temp:
                 kmer_temp[1] = kmer_temp[1]+region[0]
                 kmer_temp[2] = kmer_temp[2]+region[0]
+                # check if kmer is already in list (overlapping regions)
                 if kmer_temp in kmers:
                     continue
                 kmers.append(kmer_temp)
