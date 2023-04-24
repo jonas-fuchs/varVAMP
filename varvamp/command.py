@@ -14,6 +14,7 @@ from varvamp.scripts import config
 from varvamp.scripts import consensus
 from varvamp.scripts import regions
 from varvamp.scripts import logging
+from varvamp.scripts import param_estimation
 from varvamp.scripts import primers
 from varvamp.scripts import qpcr
 from varvamp.scripts import reporting
@@ -57,17 +58,17 @@ def get_args(sysargs):
         par.add_argument(
             "-t",
             "--threshold",
-            metavar="0.89",
+            metavar="",
             type=float,
-            default=0.89,
+            default=None,
             help="threshold for consensus nucleotides"
         )
         par.add_argument(
             "-a",
             "--n-ambig",
-            metavar="4",
+            metavar="",
             type=int,
-            default=4,
+            default=None,
             help="max number of ambiguous characters in a primer"
         )
     for par in (SANGER_parser, TILED_parser):
@@ -108,7 +109,7 @@ def get_args(sysargs):
         "--pn-ambig",
         metavar="1",
         type=int,
-        default=1,
+        default=None,
         help="max number of ambiguous characters in a probe"
     )
     QPCR_parser.add_argument(
@@ -150,9 +151,21 @@ def shared_workflow(args, log_file):
     """
     part of the workflow that is shared by all modes
     """
+    # start varvamp
+    logging.varvamp_progress(log_file, mode = args.mode)
 
+    # read in alignment and preprocess
+    preprocessed_alignment = alignment.preprocess(args.input[0])
+
+    # estimate threshold or number of ambiguous bases if args were not supplied
+    if args.threshold is None or args.n_ambig is None:
+        args.threshold, args.n_ambig = param_estimation.get_parameters(preprocessed_alignment, args, log_file)
+    if args.mode == "qpcr" and args.n_ambig >= 1 and args.pn_ambig == None:
+        args.pn_ambig = args.n_ambig - 1
+
+    # check arguments
     logging.raise_arg_errors(args, log_file)
-    logging.varvamp_progress(log_file)
+
     # config check
     logging.confirm_config(args, log_file)
     logging.varvamp_progress(
@@ -161,9 +174,10 @@ def shared_workflow(args, log_file):
         job="Checking config.",
         progress_text="config file passed"
     )
+
     # preprocess and clean alignment of gaps
     alignment_cleaned, gaps_to_mask = alignment.process_alignment(
-        args.input[0],
+        preprocessed_alignment,
         args.threshold
     )
     logging.varvamp_progress(
@@ -172,6 +186,7 @@ def shared_workflow(args, log_file):
         job="Preprocessing alignment and cleaning gaps.",
         progress_text=f"{len(gaps_to_mask)} gaps with {alignment.calculate_total_masked_gaps(gaps_to_mask)} nucleotides"
     )
+
     # create consensus sequences
     majority_consensus, ambiguous_consensus = consensus.create_consensus(
         alignment_cleaned,
@@ -183,6 +198,7 @@ def shared_workflow(args, log_file):
         job="Creating consensus sequences.",
         progress_text=f"length of the consensus is {len(majority_consensus)} nt"
     )
+
     # generate primer region list
     primer_regions = regions.find_regions(
         ambiguous_consensus,
@@ -200,6 +216,7 @@ def shared_workflow(args, log_file):
         job="Finding primer regions.",
         progress_text=f"{regions.mean(primer_regions, majority_consensus)} % of the consensus sequence will be evaluated for primers"
     )
+
     # produce kmers for all primer regions
     kmers = regions.produce_kmers(
         primer_regions,
@@ -211,6 +228,7 @@ def shared_workflow(args, log_file):
         job="Digesting into kmers.",
         progress_text=f"{len(kmers)} kmers"
     )
+
     # find potential primers
     left_primer_candidates, right_primer_candidates = primers.find_primers(
         kmers,
@@ -247,6 +265,7 @@ def sanger_and_tiled_shared_workflow(args, left_primer_candidates, right_primer_
         job="Considering only high scoring primers.",
         progress_text=f"{len(all_primers['+'])} fw and {len(all_primers['-'])} rw primers"
     )
+
     # find all possible amplicons
     amplicons = scheme.find_amplicons(
         all_primers,
@@ -290,13 +309,17 @@ def tiled_workflow(args, amplicons, left_primer_candidates, right_primer_candida
     part of the workflow specific for the tiled mode
     """
 
+    # create graph
     amplicon_graph = scheme.create_amplicon_graph(amplicons, args.overlap)
+
     # search for amplicon scheme
     coverage, amplicon_scheme = scheme.find_best_covering_scheme(
         amplicons,
         amplicon_graph,
         all_primers
     )
+
+    # check for dimers
     dimers_not_solved = scheme.check_and_solve_heterodimers(
         amplicon_scheme,
         left_primer_candidates,
@@ -308,6 +331,8 @@ def tiled_workflow(args, amplicons, left_primer_candidates, right_primer_candida
             log_file
         )
         reporting.write_dimers(dir, dimers_not_solved)
+
+    # evaluate coverage
     percent_coverage = round(coverage/len(ambiguous_consensus)*100, 2)
     logging.varvamp_progress(
         log_file,
@@ -342,6 +367,7 @@ def qpcr_workflow(args, alignment_cleaned, ambiguous_consensus, majority_consens
             log_file,
             exit=True
         )
+
     # digest probe regions
     probe_kmers = regions.produce_kmers(
         probe_regions,
@@ -362,6 +388,7 @@ def qpcr_workflow(args, alignment_cleaned, ambiguous_consensus, majority_consens
         job="Finding qPCR probes.",
         progress_text=f"{len(qpcr_probes)} potential qPCR probes"
     )
+
     # find unique high scoring amplicons with internal probe
     qpcr_scheme_candidates = qpcr.find_qcr_schemes(qpcr_probes, left_primer_candidates, right_primer_candidates, majority_consensus)
     if not qpcr_scheme_candidates:
@@ -376,6 +403,8 @@ def qpcr_workflow(args, alignment_cleaned, ambiguous_consensus, majority_consens
         job="Finding unique amplicons with probe.",
         progress_text=f"{len(qpcr_scheme_candidates)} unique amplicons with internal probe"
     )
+
+    # test amplicons for deltaG
     final_schemes = qpcr.test_amplicon_deltaG(qpcr_scheme_candidates, majority_consensus, args.test_n, args.deltaG)
     if not final_schemes:
         logging.raise_error(
@@ -455,6 +484,7 @@ def main(sysargs=sys.argv[1:]):
             amplicon_scheme=amplicon_scheme,
         )
         reporting.per_base_mismatch_plot(results_dir, amplicon_scheme, args.threshold)
+
     # QPCR mode
     if args.mode == "qpcr":
         probe_regions, final_schemes = qpcr_workflow(
