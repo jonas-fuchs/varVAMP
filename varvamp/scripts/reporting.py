@@ -473,6 +473,7 @@ def varvamp_plot(dir, alignment_cleaned, primer_regions, all_primers=None, ampli
     region_subplot(ax, primer_regions)
     # probe region plot for probes
     if probe_regions is not None and amplicon_scheme is not None:
+        region_subplot(ax, probe_conserved_regions, 0.9, color="dimgrey", description="possible probe regions")
         qpcr_subplot(ax, amplicon_scheme)
     # all primer plot
     elif all_primers is not None and amplicon_scheme is not None:
