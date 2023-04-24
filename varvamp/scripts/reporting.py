@@ -395,8 +395,8 @@ def all_primer_subplot(ax, all_primers):
             primer_label = "all left primers"
         for primer in all_primers[direction]:
             ax[1].hlines(primer_position, all_primers[direction][primer][1], all_primers[direction][primer][2], linewidth=5, color=primer_color)
-    # legend
-    ax[1].hlines(primer_position, all_primers[direction][primer][1], all_primers[direction][primer][2], linewidth=5, color=primer_color, label=primer_label)
+        # legend
+        ax[1].hlines(primer_position, all_primers[direction][primer][1], all_primers[direction][primer][2], linewidth=5, color=primer_color, label=primer_label)
 
 
 def amplicon_subplot(ax, amplicon_scheme):
@@ -473,7 +473,6 @@ def varvamp_plot(dir, alignment_cleaned, primer_regions, all_primers=None, ampli
     region_subplot(ax, primer_regions)
     # probe region plot for probes
     if probe_regions is not None and amplicon_scheme is not None:
-        primer_subplot(ax, probe_regions, 0.9, color="dimgrey", description="possible probe regions")
         qpcr_subplot(ax, amplicon_scheme)
     # all primer plot
     elif all_primers is not None and amplicon_scheme is not None:
