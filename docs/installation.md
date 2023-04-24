@@ -18,7 +18,7 @@ CONDA:
 DOCKER:
 
 ```shell
-docker pull quay.io/biocontainers/varvamp
+docker pull quay.io/biocontainers/varvamp:<current_tag>
 ```
 
 That was already it. To check if it worked:
