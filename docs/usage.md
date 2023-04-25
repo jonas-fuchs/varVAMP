@@ -39,8 +39,8 @@ usage: varvamp sanger [optional arguments] <alignment> <output dir>
 ```
 optional arguments:
   -h, --help            	show this help message and exit
-  -t 0.89, --threshold 0.89	threshold for consensus nucleotides
-  -a 4, --n-ambig 4     	max number of ambiguous characters in a primer
+	-t, --threshold 	threshold for consensus nucleotides
+  -a , --n-ambig        	max number of ambiguous characters in a primer
   -ol 1000, --opt-length 1000   optimal length of the amplicons
   -ml 1500, --max-length 1500   max length of the amplicons
   -n inf, --report-n inf	report the top n best hits
@@ -52,8 +52,8 @@ usage: varvamp tiled [optional arguments] <alignment> <output dir>
 ```
 optional arguments:
   -h, --help            	show this help message and exit
-  -t 0.89, --threshold 0.89 	threshold for consensus nucleotides
-  -a 4, --n-ambig 4     	max number of ambiguous characters in a primer
+  -t, --threshold 	threshold for consensus nucleotides
+  -a , --n-ambig        	max number of ambiguous characters in a primer
   -ol 1000, --opt-length 1000	optimal length of the amplicons
   -ml 1500, --max-length 1500	max length of the amplicons
   -o 100, --overlap 100		min overlap of the amplicons
@@ -65,9 +65,9 @@ usage: varvamp qpcr [optional arguments] <alignment> <output dir>
 ```
 optional arguments:
   -h, --help            	show this help message and exit
-  -t 0.89, --threshold 0.89	threshold for consensus nucleotides
-  -a 4, --n-ambig 4     	max number of ambiguous characters in a primer
-  -pa 1, --pn-ambig 1  		max number of ambiguous characters in a probe
+	-t, --threshold 	threshold for consensus nucleotides
+  -a , --n-ambig        	max number of ambiguous characters in a primer
+  -pa , --pn-ambig   		 max number of ambiguous characters in a probe
   -n 50, --test-n 50    	test the top n qPCR amplicons for secondary structures at the minimal primer temperature
   -d -1, --deltaG -1    minimum free energy (kcal/mol/K) cutoff at the lowest primer melting temp
 

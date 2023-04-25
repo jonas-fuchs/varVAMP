@@ -5,7 +5,7 @@
 
 
 ### Automatic parameter selection
-If no arguments for either threshold or number of ambiguous bases is given, varVAMP automatically finds the best values so that roughly 50 % of the alignment can be considered for the primer design. If both values are not supllied, varVAMP allows 2 ambiguous nucleotides within the primer and optimizes the threshold. For the qPCR mode, varVAMP allows 1 ambiguous base less in the probe design compared to the primers if no value is given. This ensures a higher probe specificity and lower degeneracy.
+If no arguments for either threshold or number of ambiguous bases is given, varVAMP automatically estimates values so that roughly 50 % of the alignment can be considered for the primer design. If both values are not supllied, varVAMP allows 2 ambiguous nucleotides within the primer and optimizes the threshold. For the qPCR mode, varVAMP chooses 1 ambiguous base less in the probe compared to the primers if no value is given. This ensures a higher probe specificity and lower degeneracy than that of the primers.
 
 ### Alignment preprocessing
 The alignment preprocessing contains three steps.

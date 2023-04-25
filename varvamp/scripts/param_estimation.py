@@ -4,7 +4,6 @@ estimate varVAMP threshold and max n of ambiguous bases if none are given
 
 # varVAMP
 from varvamp.scripts import config
-from varvamp.scripts import alignment
 
 
 def calculate_frequencys(preprocessed_alignment):
@@ -89,6 +88,7 @@ def get_parameters(preprocessed_alignment, args, log_file):
             coverage = covered_pos/len(preprocessed_alignment[0][1])
             # change the non fixed param if threshold has not been reached
             if coverage >= 0.5:
+                # write each iteration to log
                 print(round(args.threshold, 2), args.n_ambig, round(coverage*100, 1), sep="\t", file=f)
                 if fixed:
                     args.n_ambig -= 1
@@ -101,5 +101,6 @@ def get_parameters(preprocessed_alignment, args, log_file):
                 else:
                     args.threshold -= 0.01
                 break
+        print(f"Automatic parameter selection set -t {round(args.threshold, 2)} and -a {args.n_ambig}.", file=f)
 
     return round(args.threshold, 2), args.n_ambig

@@ -124,8 +124,8 @@ def get_args(sysargs):
         "-d",
         "--deltaG",
         type=int,
-        metavar="-1",
-        default=-1,
+        metavar="-3",
+        default=-3,
         help="minimum free energy (kcal/mol/K) cutoff at the lowest primer melting temp"
     )
     parser.add_argument(
@@ -152,7 +152,7 @@ def shared_workflow(args, log_file):
     part of the workflow that is shared by all modes
     """
     # start varvamp
-    logging.varvamp_progress(log_file, mode = args.mode)
+    logging.varvamp_progress(log_file, mode=args.mode)
 
     # read in alignment and preprocess
     preprocessed_alignment = alignment.preprocess(args.input[0])
@@ -160,8 +160,10 @@ def shared_workflow(args, log_file):
     # estimate threshold or number of ambiguous bases if args were not supplied
     if args.threshold is None or args.n_ambig is None:
         args.threshold, args.n_ambig = param_estimation.get_parameters(preprocessed_alignment, args, log_file)
-    if args.mode == "qpcr" and args.n_ambig >= 1 and args.pn_ambig == None:
+    if args.mode == "qpcr" and args.n_ambig >= 1 and args.pn_ambig is None:
         args.pn_ambig = args.n_ambig - 1
+        with open(log_file, "a") as f:
+            print(f"Automatic parameter selection set -pn {args.pn_ambig}.", file=f)
 
     # check arguments
     logging.raise_arg_errors(args, log_file)
@@ -175,7 +177,7 @@ def shared_workflow(args, log_file):
         progress_text="config file passed"
     )
 
-    # preprocess and clean alignment of gaps
+    # clean alignment of gaps
     alignment_cleaned, gaps_to_mask = alignment.process_alignment(
         preprocessed_alignment,
         args.threshold
@@ -496,6 +498,7 @@ def main(sysargs=sys.argv[1:]):
             right_primer_candidates,
             log_file
         )
+        # write files
         reporting.write_regions_to_bed(probe_regions, data_dir, "probe")
         reporting.write_qpcr_to_files(results_dir, final_schemes, ambiguous_consensus)
         reporting.varvamp_plot(
