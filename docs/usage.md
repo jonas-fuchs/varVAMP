@@ -69,7 +69,7 @@ optional arguments:
   -a , --n-ambig        	max number of ambiguous characters in a primer
   -pa , --pn-ambig   		max number of ambiguous characters in a probe
   -n 50, --test-n 50    	test the top n qPCR amplicons for secondary structures at the minimal primer temperature
-  -d -1, --deltaG -1            minimum free energy (kcal/mol/K) cutoff at the lowest primer melting temp
+  -d -3, --deltaG -3            minimum free energy (kcal/mol/K) cutoff at the lowest primer melting temp
 
 
 ```
