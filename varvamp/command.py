@@ -163,7 +163,7 @@ def shared_workflow(args, log_file):
     if args.mode == "qpcr" and args.n_ambig >= 1 and args.pn_ambig is None:
         args.pn_ambig = args.n_ambig - 1
         with open(log_file, "a") as f:
-            print(f"Automatic parameter selection set -pn {args.pn_ambig}.", file=f)
+            print(f"Automatic parameter selection set -pa {args.pn_ambig}.", file=f)
 
     # check arguments
     logging.raise_arg_errors(args, log_file)
