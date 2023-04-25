@@ -19,7 +19,7 @@ usage: 	varvamp <mode> --help
 positional arguments:
   input                 alignment file and dir to write results
 
-optional arguments:
+optional arguments:git ls-files | grep '\.js' | xargs wc -l
   -h, --help            show this help message and exit
   --verbose, --no-verbose
                         show varvamp console output (default: True)
@@ -39,7 +39,7 @@ usage: varvamp sanger [optional arguments] <alignment> <output dir>
 ```
 optional arguments:
   -h, --help            	show this help message and exit
-	-t, --threshold 	threshold for consensus nucleotides
+  -t, --threshold 	        threshold for consensus nucleotides
   -a , --n-ambig        	max number of ambiguous characters in a primer
   -ol 1000, --opt-length 1000   optimal length of the amplicons
   -ml 1500, --max-length 1500   max length of the amplicons
@@ -52,7 +52,7 @@ usage: varvamp tiled [optional arguments] <alignment> <output dir>
 ```
 optional arguments:
   -h, --help            	show this help message and exit
-  -t, --threshold 	threshold for consensus nucleotides
+  -t, --threshold 	        threshold for consensus nucleotides
   -a , --n-ambig        	max number of ambiguous characters in a primer
   -ol 1000, --opt-length 1000	optimal length of the amplicons
   -ml 1500, --max-length 1500	max length of the amplicons
@@ -67,9 +67,9 @@ optional arguments:
   -h, --help            	show this help message and exit
 	-t, --threshold 	threshold for consensus nucleotides
   -a , --n-ambig        	max number of ambiguous characters in a primer
-  -pa , --pn-ambig   		 max number of ambiguous characters in a probe
+  -pa , --pn-ambig   		max number of ambiguous characters in a probe
   -n 50, --test-n 50    	test the top n qPCR amplicons for secondary structures at the minimal primer temperature
-  -d -1, --deltaG -1    minimum free energy (kcal/mol/K) cutoff at the lowest primer melting temp
+  -d -1, --deltaG -1            minimum free energy (kcal/mol/K) cutoff at the lowest primer melting temp
 
 
 ```
