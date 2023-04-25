@@ -48,7 +48,7 @@ To search for the best scoring amplicon, varVAMP uses a graph based approach.
 4. Evaluate amplicon parameters
 5. Decide for the best primer/probe combination
 6. For amplicons with the same primer sets but different probes, decide for the lowest probe
-7. Test amplicons for their [minimal free energy](https://en.wikipedia.org/wiki/Gibbs_free_energy) at their lowest primer temperature with [seqfold](https://github.com/Lattice-Automation/seqfold) and filter to avoid secondary structures. Amplicons with large potential deletions (>QAMPLICON_DEL_CUTOFF) will be ignored. Smaller deletions will be accepted.
+7. Test amplicons for their [minimal free energy](https://en.wikipedia.org/wiki/Gibbs_free_energy) at their lowest primer temperature with [`seqfold`](https://github.com/Lattice-Automation/seqfold) and filter to avoid secondary structures. Amplicons with large potential deletions (>QAMPLICON_DEL_CUTOFF) will be ignored. Smaller deletions will be accepted.
 8. Take the best qPCR schemes of overlapping schemes.
 
 #### Penalty calculation
