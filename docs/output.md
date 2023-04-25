@@ -24,8 +24,8 @@ It also produces some secondary output files [*data/*]:
 | --- | --- | --- |
 | ALL | alignment_cleaned | The preprocessed alignment. |
 | ALL | majority_consensus.fasta | Consensus sequence that does not have ambiguous characters but instead has the most prevalent nucleotide at each position. |
-| ALL | conserved_primer_regions.bed | A bed file showing where the conserved regions lie on the ambiguous consensus. |
+| ALL | primer_regions.bed | A bed file showing the location of the potential regions of the consensus sequence that were evaluated for primers. |
 | TILED/SANGER | all_primers.bed | A bed file with all high scoring primers that varVAMP found. |
-| qPCR | conserved_probe_regions.bed | A bed file showing where the conserved regions lie on the ambiguous consensus. |
+| qPCR | probe_regions.bed | A bed file showing the location of the potential regions of the consensus sequence that were evaluated for probes. |
 
 #### [Previous: Usage](./usage.md)&emsp;&emsp;[Next: How varVAMP works](./how_varvamp_works.md)

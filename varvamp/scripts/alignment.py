@@ -26,12 +26,15 @@ def read_alignment(alignment_path):
     return alignment_list
 
 
-def preprocess(alignment):
+def preprocess(alignment_path):
     """
     force nucleotides to lower and
     back transcripe if its RNA
     """
+
     preprocessed_alignment = []
+    # read alignment
+    alignment = read_alignment(alignment_path)
 
     for sequence in alignment:
         seq = Seq(sequence[1])
@@ -200,26 +203,24 @@ def clean_gaps(alignment, gaps_to_mask):
     return cleaned_alignment
 
 
-def process_alignment(alignment_path, threshold):
+def process_alignment(preprocessed_alignment, threshold):
     """
     proprocesses alignment and cleans gaps
     """
-    alignment = read_alignment(alignment_path)
-    gap_cutoff = len(alignment)*(1-threshold)
+    gap_cutoff = len(preprocessed_alignment)*(1-threshold)
 
-    alignment_preprocessed = preprocess(alignment)
-    all_gaps = find_gaps_in_alignment(alignment_preprocessed)
+    all_gaps = find_gaps_in_alignment(preprocessed_alignment)
     unique_gaps = find_unique_gaps(all_gaps)
 
     if unique_gaps:
         gap_dic = create_gap_dictionary(unique_gaps, all_gaps)
         gaps_to_mask = find_gaps_to_mask(gap_dic, gap_cutoff)
         alignment_cleaned = clean_gaps(
-            alignment_preprocessed, gaps_to_mask
+            preprocessed_alignment, gaps_to_mask
         )
     else:
         gaps_to_mask = []
-        alignment_cleaned = alignment_preprocessed
+        alignment_cleaned = preprocessed_alignment
 
     return alignment_cleaned, gaps_to_mask
 

@@ -33,7 +33,7 @@ def create_dir_structure(dir):
     return results_dir, data_dir, log_file
 
 
-def varvamp_progress(log_file, start_time=None, progress=0, job="", progress_text=""):
+def varvamp_progress(log_file, mode=None, start_time=None, progress=0, job="", progress_text=""):
     """
     progress bar, main progress logging and folder creation
     """
@@ -46,7 +46,7 @@ def varvamp_progress(log_file, start_time=None, progress=0, job="", progress_tex
             flush=True
         )
         with open(log_file, 'w') as f:
-            f.write('VARVAMP log \n\n')
+            print(f"VARVAMP log \n\nMODE = {mode}\n", file=f)
     else:
         if progress == 1:
             stop_time = str(round(time.process_time() - start_time, 2))
@@ -378,12 +378,7 @@ def confirm_config(args, log_file):
     var_dic = vars(config)
     with open(log_file, 'a') as f:
         print(
-            f"MODE = {args.mode}",
-            sep="\n",
-            file=f
-        )
-        print(
-            "\nsettings that can be adjusted via arguments\n",
+            "\nARG SETTINGS\n",
             f"THRESHOLD = {args.threshold}",
             f"PRIMER_ALLOWED_N_AMB = {args.n_ambig}",
             sep="\n",
@@ -417,7 +412,7 @@ def confirm_config(args, log_file):
                 file=f
             )
         print(
-            "\nconfig settings\n",
+            "\nCONFIG SETTINGS\n",
             sep="\n",
             file=f
         )
@@ -426,4 +421,4 @@ def confirm_config(args, log_file):
         if args.mode == "qpcr":
             for var in all_vars[1]:
                 print(f"{var} = {var_dic[var]}", file=f)
-        print("\nprogress", file=f)
+        print("\nPROGRESS", file=f)

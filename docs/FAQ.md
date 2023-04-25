@@ -2,19 +2,15 @@
 
 1. **How do I set settings for varVAMP?**
 
-Settings differ for each mode.
+Settings differ for each mode. However, varVAMP comes with some pre-defined values and can optimize the threshold or number of ambiguous bases by itself if no arguments are supplied.
 
-For SANGER mode: Start with setting your optimal length of your amplicon, the max length that you can tolerate and if you want to allow ambiguous characters, set them to 4 as a start.
-
-For TILED mode:  Also set the overlap that you want to achieve.
-
-For QPCR mode: Also set the number of ambiguous character for the probe lower than the value for the primers. You can also increase the number of amplicons tested for their deltaG, but be aware that this might increase running time.
-
-If you are not satisfied with the results try to optimize and run varVAMP again. 
+If you are not satisfied with the results try to optimize and run varVAMP again.
 
 2. **How do I optimize the output?**
 
-It all depends on how many conserved regions varVAMP is able to find! There are two main parameters that influence this. The number of ambiguous bases allowed within a primer and the threshold for consensus nucleotides. Setting the threshold higher or the number of ambiguous bases lower will result in less conserved regions. If you have set the parameters below and get a decent output, increase the threshold until the output gets worse. This will increase the specificity of your primers. Likewise, if you do not have a good output, consider increasing the number of ambiguous bases before you lower the threshold. The console output varVAMP will also give you some suggestions.
+It all depends on how many primer regions varVAMP is able to find! There are two main parameters that influence this. The number of ambiguous bases allowed within a primer and the threshold for consensus nucleotides. Setting the threshold higher or the number of ambiguous bases lower will result in less primer regions. If you have set the parameters below and get a decent output, increase the threshold until the output gets worse. This will increase the specificity of your primers. Likewise, if you do not have a good output, consider increasing the number of ambiguous bases before you lower the threshold.
+
+The most easy way is to set the number of ambiguous characters you can tolerate in your primers and let varVAMP optimize the threshold. Have a look in the log file, to get detailed information on this. Afterwards you can try to optimize by incrementing the threshold 0.1.
 
 3. **varVAMP TILED reported primer dimers. What now?**
 
@@ -32,12 +28,20 @@ DeltaG is the [minimal free energy](https://en.wikipedia.org/wiki/Gibbs_free_ene
 
 This you have to do [manually](https://blast.ncbi.nlm.nih.gov/Blast.cgi?PROGRAM=blastn&PAGE_TYPE=BlastSearch&LINK_LOC=blasthome) at the moment. A BLAST feature is planned for the future.
 
-7. **How fast is varVAMP?**
+7. **Why does the % primer regions differ from the coverage estimated with the automatic parameter selection?**
+
+The coverage is estimated on an alignment that still has gaps. If there are a lot of large gaps the consensus sequence will be shorter and the % of the alignment that is considered for the alignment will be larger. The parameter selection is therefore only a rough estimate to provide settings at which varVAMP will perform reasonably well. However, it is likely that the output can be tweaked to find even better primers.
+
+8. **Can I customize all parameters (e.g. primer temperature)**
+
+[Yes you can!](./usage.md) Just edit the config file as explained. If you want to use your pip installation, you have to make it [editable](https://setuptools.pypa.io/en/latest/userguide/development_mode.html).
+
+9. **How fast is varVAMP?**
 
 varVAMP is pretty fast given the complexity of the problem. Running time is depended on the alignment length, number of sequences and the running mode. While the TILED is rather slow, qPCR and SANGER can be faster. An alignment with a few hundred sequences and with a genome size of 10 kb will likely run in under a minute for the TILED mode. For large e.g. DNA viruses (200 kb) it takes considerably longer, but should still finish in minutes. Running time optimizations are planned.
 
 
-8. **Can I contribute?**
+10. **Can I contribute?**
 
 Yes, please. Give feedback to code or settings or also if you have successfully used this to design primers that make your life easier in the lab!
 

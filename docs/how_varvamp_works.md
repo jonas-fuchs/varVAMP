@@ -4,6 +4,9 @@
 <img src="./workflow.png" alt="varVAMP logo" />
 
 
+### Automatic parameter selection
+If no arguments for either threshold or number of ambiguous bases is given, varVAMP automatically estimates values so that roughly 50 % of the alignment can be considered for the primer design. If both values are not supllied, varVAMP allows 2 ambiguous nucleotides within the primer and optimizes the threshold. For the qPCR mode, varVAMP chooses 1 ambiguous base less in the probe compared to the primers if no value is given. This ensures a higher probe specificity and lower degeneracy than that of the primers.
+
 ### Alignment preprocessing
 The alignment preprocessing contains three steps.
 1. Convert RNA to DNA
@@ -13,12 +16,12 @@ The alignment preprocessing contains three steps.
 ### Consensus generation
 varVAMP creates a consensus sequence based on a given threshold. If a nucleotide occurs with a frequency equal to or higher than the threshold in all aligned sequences, it is considered a consensus nucleotide. If not, the frequencies of the highest scoring nucleotides are added until the threshold is reached and the appropriate [ambiguous nucleotide character](https://www.bioinformatics.org/sms/iupac.html) is used. Importantly, varVAMP is aware of ambiguous nucleotides in the alignment and handels them by de-multiplexing the character into real nucleotides and adding its portion to the nucleotide counts at the alignment position.
 
-### Conserved region search
-varVAMP searches for conserved regions as defined by a user-defined number of ambiguous bases that is allowed within the minimal length of a primer. The algorithm opens windows over the ambiguous consensus sequence and determines if a window satisfies these constraints.
+### Primer region search
+varVAMP searches for potential primer regions as defined by a user-defined number of ambiguous bases that is allowed within the minimal length of a primer. The algorithm opens windows over the ambiguous consensus sequence and determines if a window satisfies these constraints.
 
 ### Primer search
 varVAMP uses [`primer3-py`](https://pypi.org/project/primer3-py/) to search for potential primers. Some of the evaluation process, determining if primers match certain criteria, was adapted from [`primalscheme`](www.github.com/aresti/primalscheme). The primer search contains multiple steps:
-1. Digest the conserved regions into kmers with the min and max length of primers. This is performed on a consensus sequence that does not contain ambiguous characters but is just the majority consensus of the alignment. Therefore, primer parameters will be later calculated for the best fitting primer.
+1. Digest the primer regions into kmers with the min and max length of primers. This is performed on a consensus sequence that does not contain ambiguous characters but is just the majority consensus of the alignment. Therefore, primer parameters will be later calculated for the best fitting primer.
 2. Evaluate if these kmers are potential primers independent of their orientation (temperature, GC, size, poly-x repeats and poly dinucleotide repeats) and dependent on their orientation (secondary structure, GC clamp, number of GCs in the last 5 bases of the 3' end and min 3' nucleotides without an ambiguous base). Filter for kmers that satisfy all constraints and calculate their penalties (explained in the last section).
 3. Sanger and tiled mode: Find lowest scoring primer. varVAMP sorts the primers by their score and always takes the best scoring if the primer positions have not been covered by a better primer. This greatly reduces the complexity of the later amplicon search while only retaining the best scoring primer of a set of overlapping primers.
 
@@ -39,13 +42,13 @@ To search for the best scoring amplicon, varVAMP uses a graph based approach.
 2. As varVAMP gives a size penalty to amplicons, varVAMP automatically finds amplicons with low primer scores close to your optimal length (if possible).
 
 #### qPCR
-1. Find conserved regions with lesser number of ambigouous characters.
+1. Find probe regions with their own number of ambiguous characters.
 2. Digest and search for probes (with their own base parameter)
 3. Find primers flanking a probe
 4. Evaluate amplicon parameters
 5. Decide for the best primer/probe combination
 6. For amplicons with the same primer sets but different probes, decide for the lowest probe
-7. Test amplicons for their [minimal free energy](https://en.wikipedia.org/wiki/Gibbs_free_energy) at their lowest primer temperature with [seqfold](https://github.com/Lattice-Automation/seqfold) and filter to avoid secondary structures. Amplicons with large potential deletions (>QAMPLICON_DEL_CUTOFF) will be ignored. Smaller deletions will be accepted.
+7. Test amplicons for their [minimal free energy](https://en.wikipedia.org/wiki/Gibbs_free_energy) at their lowest primer temperature with [`seqfold`](https://github.com/Lattice-Automation/seqfold) and filter to avoid secondary structures. Amplicons with large potential deletions (>QAMPLICON_DEL_CUTOFF) will be ignored. Smaller deletions will be accepted.
 8. Take the best qPCR schemes of overlapping schemes.
 
 #### Penalty calculation
