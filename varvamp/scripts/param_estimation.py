@@ -38,11 +38,11 @@ def calculate_distances(all_freqs, threshold):
     previous_dis = 0
     all_dis = []
 
-    for freq in all_freqs:
+    for idx, freq in enumerate(all_freqs):
         if freq < threshold:
             current_dis = 0
         current_dis += 1
-        if current_dis <= previous_dis:
+        if current_dis <= previous_dis or idx == len(all_freqs)-1:
             all_dis.append(previous_dis)
 
         previous_dis = current_dis
@@ -85,7 +85,7 @@ def get_parameters(preprocessed_alignment, args, log_file):
                 [distances[x] for x in range(0, len(distances)) if sum(distances[x:x+args.n_ambig+1]) >= config.PRIMER_SIZES[0]]
             )
             # calculate coverage
-            coverage = covered_pos/len(preprocessed_alignment[0][1])
+            coverage = (covered_pos+1)/len(preprocessed_alignment[0][1])
             # change the non fixed param if threshold has not been reached
             if coverage >= 0.5:
                 # write each iteration to log
