@@ -216,7 +216,7 @@ def process_alignment(preprocessed_alignment, threshold):
         gap_dic = create_gap_dictionary(unique_gaps, all_gaps)
         gaps_to_mask = find_gaps_to_mask(gap_dic, gap_cutoff)
         if gaps_to_mask:
-            alignment_cleaned = alignment.clean_gaps(
+            alignment_cleaned = clean_gaps(
                 preprocessed_alignment, gaps_to_mask
             )
         else:
