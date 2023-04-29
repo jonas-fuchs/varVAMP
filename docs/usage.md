@@ -19,7 +19,7 @@ usage: 	varvamp <mode> --help
 positional arguments:
   input                 alignment file and dir to write results
 
-optional arguments:git ls-files | grep '\.js' | xargs wc -l
+optional arguments:
   -h, --help            show this help message and exit
   --verbose, --no-verbose
                         show varvamp console output (default: True)
