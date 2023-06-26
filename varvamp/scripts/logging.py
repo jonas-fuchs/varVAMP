@@ -159,42 +159,42 @@ def raise_arg_errors(args, log_file):
                 "your intended overlap is higher than half of your optimal length. This reduces how well varvamps will find overlapping amplicons. Consider decreasing.",
                 log_file
             )
-        # QPCR specific warnings
-        if args.mode == "qpcr":
-            if args.pn_ambig < 0:
-                raise_error(
-                    "number of ambiguous characters in the qPCR probe cannot be 0.",
-                    log_file,
-                    exit=True
-                )
-            if args.pn_ambig > args.n_ambig:
-                raise_error(
-                    "the degeneracy of qPCR probes should not be higher than that of qPCR primers to retain specificity",
-                    log_file,
-                    exit=True
-                )
-            if args.test_n <= 0:
-                raise_error(
-                    "if the number of tested qPCR amplicons is 0 or lower, no amplicons will be reported.",
-                    log_file,
-                    exit=True
-                )
+    # QPCR specific warnings
+    if args.mode == "qpcr":
+        if args.pn_ambig < 0:
+            raise_error(
+                "number of ambiguous characters in the qPCR probe cannot be 0.",
+                log_file,
+                exit=True
+            )
+        if args.pn_ambig > args.n_ambig:
+            raise_error(
+                "the degeneracy of qPCR probes should not be higher than that of qPCR primers to retain specificity",
+                log_file,
+                exit=True
+            )
+        if args.test_n <= 0:
+            raise_error(
+                "if the number of tested qPCR amplicons is 0 or lower, no amplicons will be reported.",
+                log_file,
+                exit=True
+            )
 
-            if args.test_n > 200:
-                raise_error(
-                    "checking the deltaG of amplicons is computationally intensive. setting this higher than 200 will likely take a bit to compute.",
-                    log_file
-                )
-            if args.pn_ambig > 2:
-                raise_error(
-                    "setting the degeneracy of probes higher than 2 can result in variable probe design. Consider reducing!",
-                    log_file
-                )
-            if args.deltaG > 0:
-                raise_error(
-                    "setting the deltaG cutoff larger than 0 is not recommended!",
-                    log_file
-                )
+        if args.test_n > 200:
+            raise_error(
+                "checking the deltaG of amplicons is computationally intensive. setting this higher than 200 will likely take a bit to compute.",
+                log_file
+            )
+        if args.pn_ambig > 2:
+            raise_error(
+                "setting the degeneracy of probes higher than 2 can result in variable probe design. Consider reducing!",
+                log_file
+            )
+        if args.deltaG > 0:
+            raise_error(
+                "setting the deltaG cutoff larger than 0 is not recommended!",
+                log_file
+            )
 
 
 def confirm_config(args, log_file):
