@@ -47,7 +47,7 @@ PRIMER_PERMUTATION_PENALTY = 0.1  # penalty for the number of permutations
 # target-specific primers for polymerase chain reaction. BMC bioinformatics, 2012, 13.
 # Jg., S. 1-11.)
 
-blast_config = {
+BLAST_SETTINGS = {
     "outfmt": 6,
     "evalue": 5000,
     "reward": 1,

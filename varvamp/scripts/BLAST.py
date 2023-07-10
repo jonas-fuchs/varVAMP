@@ -35,6 +35,9 @@ from sys import platform
 #LIBS
 from Bio.Blast.Applications import NcbiblastnCommandline
 
+# varVAMP
+from varvamp.scripts import config
+
 def check_BLAST_installation():
     """
      simple check if BLAST is installed
@@ -62,13 +65,20 @@ def create_BLAST_query(all_primers, data_dir):
                 print(f">{primer}\n{all_primers[strand][primer][0]}", file=query)
 
 
-
-def run_BLAST():
+def run_BLAST(query, blast_db, data_dir):
     """
-    runs a BLAST search on the masked fasta sequence.
+    runs a BLAST search on a search query.
     """
-    print('TODO')
+    outfile = os.path.join(data_dir, f"{query.strip('.fasta')}_result.tabular")
+    blast_command = NcbiblastnCommandline(query=query,
+                                          db=blast_db,
+                                          out=outfile,
+                                          task="blastn-short",
+                                          num_threads=4,
+                                          **config.blast_settings
+                                          )
 
+    stdout, stderr = blast_command()
 
 def parse_BLAST_output_to_dictionary():
     """
