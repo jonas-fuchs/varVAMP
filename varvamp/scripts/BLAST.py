@@ -28,6 +28,12 @@ produce off-target amplicons.
 # - multithreading?
 
 ###############################################################################
+# BUILT-INS
+import subprocess
+from sys import platform
+
+#LIBS
+from Bio.Blast.Applications import NcbiblastnCommandline
 
 def check_BLAST_installation():
     """
@@ -41,12 +47,21 @@ def check_BLAST_installation():
         sys.exit("ERROR: BLASTN is not installed")
 
 
-def create_masked_fasta():
+def create_BLAST_query(all_primers, data_dir):
     """
-    create a masked fasta only containing the primer sequences
-    this is used as a query for BLAST. Writes a fasta seq.
+    create a query for the BLAST search
     """
-    print('TODO')
+    for strand in all_primers:
+        if strand == "+":
+            BLAST_query = os.path.join(data_dir, "BLAST_query_fw.fasta")
+        else:
+            BLAST_query = os.path.join(data_dir, "BLAST_query_rw.fasta")
+
+        with open(BLAST_query, "w") as query:
+            for primer in all_primers[strand]:
+                print(f">{primer}\n{all_primers[strand][primer][0]}", file=query)
+
+
 
 def run_BLAST():
     """
@@ -54,21 +69,24 @@ def run_BLAST():
     """
     print('TODO')
 
-def parse_BLAST_output_to_dictionary:
+
+def parse_BLAST_output_to_dictionary():
     """
     create a BLAST hit database for each primer. this can then be used to
     look up if two primers of an amplicons have potential amplificates
     """
     print('TODO')
 
-def predict_non_specific_amplicons:
+
+def predict_non_specific_amplicons():
     """
     for a given primer pair, predict unspecific targets within a size
     range and give these primers a high penalty.
     """
     print('TODO')
 
-def write_non_specific_warnings:
+
+def write_non_specific_warnings():
     """
     for each primer pair that has potential unspecific amplicons
     write warnings to file.

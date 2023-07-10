@@ -43,8 +43,19 @@ PRIMER_MAX_BASE_PENALTY = 8  # max base penalty for a primer
 PRIMER_3_PENALTY = (32, 16, 8, 4, 2)  # penalties for 3' mismatches
 PRIMER_PERMUTATION_PENALTY = 0.1  # penalty for the number of permutations
 
+# BLAST parameters (ref: PrimerBLAST (YE, Jian, et al. Primer-BLAST: a tool to design
+# target-specific primers for polymerase chain reaction. BMC bioinformatics, 2012, 13.
+# Jg., S. 1-11.)
 
-# DO NOT CHANGE
+blast_config = {
+    "outfmt": 6,
+    "evalue": 5000,
+    "reward": 1,
+    "penalty": -1,
+    "gapopen": 2,
+    "gapextend": 1
+}
+
 # nucleotide definitions
 NUCS = set("atcg")
 AMBIG_NUCS = {
