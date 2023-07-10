@@ -8,7 +8,7 @@ produce off-target amplicons.
 
 # CHALLENGES/QUESTIONS TO CONSIDER
 
-# code must adress the following challenges:
+# code must address the following challenges:
 # - well-defined BLAST criteria for off-target effects based on:
 #   - BLAST coverage and mismatches
 #   - E-value
@@ -27,16 +27,50 @@ produce off-target amplicons.
 # - write primers to test into files
 # - multithreading?
 
-
-# NEEDED FUNCTIONS
-
-# 'def write_primers_to_fasta'
-# 'def clean_BLAST_output'
-# 'def BLAST_primers'
-# 'def parse_BLAST_output'
-# 'def find_off_targets'
-# 'def mask_primers'
-# 'def write_off_target_warnings'
-# (...)
-
 ###############################################################################
+
+def check_BLAST_installation():
+    """
+     simple check if BLAST is installed
+    """
+    if platform == "win32":
+        blast_loc = subprocess.getoutput("where blastn")
+    else:
+        blast_loc = subprocess.getoutput("which blastn")
+    if not blast_loc:
+        sys.exit("ERROR: BLASTN is not installed")
+
+
+def create_masked_fasta():
+    """
+    create a masked fasta only containing the primer sequences
+    this is used as a query for BLAST. Writes a fasta seq.
+    """
+    print('TODO')
+
+def run_BLAST():
+    """
+    runs a BLAST search on the masked fasta sequence.
+    """
+    print('TODO')
+
+def parse_BLAST_output_to_dictionary:
+    """
+    create a BLAST hit database for each primer. this can then be used to
+    look up if two primers of an amplicons have potential amplificates
+    """
+    print('TODO')
+
+def predict_non_specific_amplicons:
+    """
+    for a given primer pair, predict unspecific targets within a size
+    range and give these primers a high penalty.
+    """
+    print('TODO')
+
+def write_non_specific_warnings:
+    """
+    for each primer pair that has potential unspecific amplicons
+    write warnings to file.
+    """
+    print('TODO')
