@@ -1,6 +1,6 @@
 """
 BLAST feature of varVAMP. Checks primers of potential amplicons for hits
-against a db and evals if hits are close enough together to potentially
+against a db and evals if hits are in close proximity to potentially
 produce off-target amplicons.
 """
 
@@ -19,6 +19,7 @@ import sys
 from sys import platform
 
 #LIBS
+import pandas as pd
 from Bio.Blast.Applications import NcbiblastnCommandline
 
 # varVAMP
@@ -33,7 +34,7 @@ def check_BLAST_installation():
     else:
         blast_loc = subprocess.getoutput("which blastn")
     if blast_loc:
-        print("BLAST is installed. varVAMP will continue...")
+        print("BLASTN is installed. Continuing...")
     else:
         sys.exit("ERROR: BLASTN is not installed")
 
@@ -42,46 +43,59 @@ def create_BLAST_query(all_primers, data_dir):
     """
     create a query for the BLAST search
     """
-    query_loc = []
-
     for strand in all_primers:
-        if strand == "+":
-            BLAST_query = os.path.join(data_dir, "BLAST_query_fw.fasta")
-            query_loc.append(BLAST_query)
-        else:
-            BLAST_query = os.path.join(data_dir, "BLAST_query_rw.fasta")
-            query_loc.append(BLAST_query)
-        with open(BLAST_query, "w") as query:
+        query_path = os.path.join(data_dir, "BLAST_query.fasta")
+        with open(query_path, "w") as query:
             for primer in all_primers[strand]:
                 print(f">{primer}\n{all_primers[strand][primer][0]}", file=query)
 
-    return query_loc
+    return query_path
 
 def run_BLAST(query, blast_db, data_dir):
     """
     runs a BLAST search on a search query.
     """
     basename = os.path.basename(os.path.normpath(query))
-    outfile = os.path.join(data_dir, f"{basename.strip('.fasta')}_result.tabular")
+    blast_out = os.path.join(data_dir, f"{basename.strip('.fasta')}_result.tabular")
 
-    blast_command = NcbiblastnCommandline(query=query,
-                                          db=blast_db,
-                                          out=outfile,
-                                          task="blastn-short",
-                                          num_threads=4,
-                                          **config.BLAST_SETTINGS
-                                          )
-
+    blast_command = NcbiblastnCommandline(
+        query=query,
+        db=blast_db,
+        out=blast_out,
+        task="blastn-short",
+        num_threads=4,
+        **config.BLAST_SETTINGS
+    )
+    # run BLAST
     stdout, stderr = blast_command()
+    # remove query input
+    os.remove(query)
 
-    return outfile
+    return blast_out
 
-def parse_BLAST_output_to_dictionary():
+def parse_and_filter_BLAST_output(blast_out):
     """
-    create a BLAST hit database for each primer. this can then be used to
-    look up if two primers of an amplicons have potential amplificates
+    create a BLAST hit database for each primer. filter for mismatches.
+    returns a prefiltered pandas df
     """
-    print('TODO')
+    columns = ["query",
+               "ref",
+               "query_len",
+               "aln_len",
+               "mismatch",
+               "gaps",
+               "ref_start",
+               "ref_end",
+               ]
+
+    blast_df = pd.read_table(blast_out, names=columns)
+    blast_df = blast_df[
+        blast_df["query_len"] - blast_df["aln_len"] + blast_df["mismatch"] + blast_df["gaps"] <= round(
+            blast_df["query_len"] * config.BLAST_MAX_DIFF)
+        ]
+    os.remove(blast_out)
+
+    return(blast_df)
 
 
 def predict_non_specific_amplicons():
@@ -96,12 +110,5 @@ def write_non_specific_warnings():
     """
     for each primer pair that has potential unspecific amplicons
     write warnings to file.
-    """
-    print('TODO')
-
-
-def clean_temp_files():
-    """
-    cleans temp files of the blast search (query and tabular results)
     """
     print('TODO')

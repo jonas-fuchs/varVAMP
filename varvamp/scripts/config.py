@@ -47,14 +47,17 @@ PRIMER_PERMUTATION_PENALTY = 0.1  # penalty for the number of permutations
 # target-specific primers for polymerase chain reaction. BMC bioinformatics, 2012, 13.
 # Jg., S. 1-11.)
 
+# blast settings for query search
 BLAST_SETTINGS = {
-    "outfmt": 6,
+    "outfmt": "6 qseqid sseqid qlen length mismatch gapopen sstart send",
     "evalue": 5000,
     "reward": 1,
     "penalty": -1,
     "gapopen": 2,
     "gapextend": 1
 }
+# allowed % differences between primer and BLAST hit
+BLAST_MAX_DIFF = 0.8
 
 # nucleotide definitions
 NUCS = set("atcg")
