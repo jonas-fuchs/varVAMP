@@ -30,6 +30,8 @@ produce off-target amplicons.
 ###############################################################################
 # BUILT-INS
 import subprocess
+import os
+import sys
 from sys import platform
 
 #LIBS
@@ -46,7 +48,9 @@ def check_BLAST_installation():
         blast_loc = subprocess.getoutput("where blastn")
     else:
         blast_loc = subprocess.getoutput("which blastn")
-    if not blast_loc:
+    if blast_loc:
+        print("BLAST is installed. varVAMP will continue...")
+    else:
         sys.exit("ERROR: BLASTN is not installed")
 
 
@@ -54,31 +58,39 @@ def create_BLAST_query(all_primers, data_dir):
     """
     create a query for the BLAST search
     """
+    query_loc = []
+
     for strand in all_primers:
         if strand == "+":
             BLAST_query = os.path.join(data_dir, "BLAST_query_fw.fasta")
+            query_loc.append(BLAST_query)
         else:
             BLAST_query = os.path.join(data_dir, "BLAST_query_rw.fasta")
-
+            query_loc.append(BLAST_query)
         with open(BLAST_query, "w") as query:
             for primer in all_primers[strand]:
                 print(f">{primer}\n{all_primers[strand][primer][0]}", file=query)
 
+    return query_loc
 
 def run_BLAST(query, blast_db, data_dir):
     """
     runs a BLAST search on a search query.
     """
-    outfile = os.path.join(data_dir, f"{query.strip('.fasta')}_result.tabular")
+    basename = os.path.basename(os.path.normpath(query))
+    outfile = os.path.join(data_dir, f"{basename.strip('.fasta')}_result.tabular")
+
     blast_command = NcbiblastnCommandline(query=query,
                                           db=blast_db,
                                           out=outfile,
                                           task="blastn-short",
                                           num_threads=4,
-                                          **config.blast_settings
+                                          **config.BLAST_SETTINGS
                                           )
 
     stdout, stderr = blast_command()
+
+    return outfile
 
 def parse_BLAST_output_to_dictionary():
     """
@@ -100,5 +112,12 @@ def write_non_specific_warnings():
     """
     for each primer pair that has potential unspecific amplicons
     write warnings to file.
+    """
+    print('TODO')
+
+
+def clean_temp_files():
+    """
+    cleans temp files of the blast search (query and tabular results)
     """
     print('TODO')
