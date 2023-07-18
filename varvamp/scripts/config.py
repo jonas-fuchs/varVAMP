@@ -46,18 +46,17 @@ PRIMER_PERMUTATION_PENALTY = 0.1  # penalty for the number of permutations
 # BLAST parameters (ref: PrimerBLAST (YE, Jian, et al. Primer-BLAST: a tool to design
 # target-specific primers for polymerase chain reaction. BMC bioinformatics, 2012, 13.
 # Jg., S. 1-11.)
-
-# blast settings for query search
-BLAST_SETTINGS = {
-    "outfmt": "6 qseqid sseqid qlen length mismatch gapopen sstart send",
+BLAST_SETTINGS = {  # blast settings for query search
+    "outfmt": "6 qseqid sseqid qlen length mismatch gapopen sstart send",  # do NOT change
     "evalue": 5000,
     "reward": 1,
     "penalty": -1,
     "gapopen": 2,
     "gapextend": 1
 }
-# allowed % differences between primer and BLAST hit
-BLAST_MAX_DIFF = 0.8
+BLAST_MAX_DIFF = 0.8  # allowed % differences between primer and BLAST hit
+BLAST_SIZE_MULTI = 2  # multiplier for the max_amp size of off targets (in relation to max amp size)
+BLAST_PENALTY = 50  # amplicon score increase -> considered only if no other possibilities
 
 # nucleotide definitions
 NUCS = set("atcg")
