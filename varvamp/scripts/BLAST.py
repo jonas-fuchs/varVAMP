@@ -4,28 +4,12 @@ against a db and evals if hits are close enough together to potentially
 produce off-target amplicons.
 """
 
-##########################   DEV Notes  #######################################
+##########################   Next steps  #####################################
 
-# CHALLENGES/QUESTIONS TO CONSIDER
-
-# code must address the following challenges:
-# - well-defined BLAST criteria for off-target effects based on:
-#   - BLAST coverage and mismatches
-#   - E-value
-#   - closeness of two hits
-#   --> kind of similar to the primer BLAST feature
-# - hard or soft-masking? If no other amplicons than the one producing
-#   the off-target amplificate is possible should it be considered or should
-#   varvamp fail
-# - off-target effects within the consensus genome? so can the primer also
-#   bind a different spot? Probably more relevant for larger alignments with
-#   repetitive regions
-# - error catching if BLAST is installed or not (windoof as well)
-# - output cleanup: Clean the output of useless files (BLAST always needs
-#   fasta sequences as input). No way (?) to just stay in ram
-# - automatic db download if none is provided?
-# - write primers to test into files
-# - multithreading?
+# - check for amplicons unspecific amplification (max size 2x amplicon length)
+# - if so add a high penalty for this amplicon (+100 (?) - which means it will
+# be used if no other amplicon is available). in this case write a warning to
+# log file
 
 ###############################################################################
 # BUILT-INS

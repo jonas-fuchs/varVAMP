@@ -11,6 +11,7 @@ import datetime
 
 # varVAMP
 from varvamp.scripts import config
+from varvamp import __version__
 
 
 def create_dir_structure(dir):
@@ -50,7 +51,7 @@ def varvamp_progress(log_file, mode=None, start_time=None, progress=0, job="", p
     else:
         if progress == 1:
             stop_time = str(round(time.process_time() - start_time, 2))
-            progress_text = f"all done \n\n\rvarVAMP finished in {stop_time} sec!\n{datetime.datetime.now()}"
+            progress_text = f"all done \n\n\rvarVAMP {__version__} finished in {stop_time} sec!\n{datetime.datetime.now()}"
             job = "Finalizing output."
         print(
             "\rJob:\t\t " + job + "\nProgress: \t [{0}] {1}%".format("█"*block + "-"*(barLength-block), progress*100) + "\t" + progress_text,
