@@ -58,7 +58,7 @@ BLAST_MAX_DIFF = 0.8  # allowed % differences between primer and BLAST hit
 BLAST_SIZE_MULTI = 2  # multiplier for the max_amp size of off targets (in relation to max amp size)
 BLAST_PENALTY = 50  # amplicon score increase -> considered only if no other possibilities
 
-# nucleotide definitions
+# nucleotide definitions, do NOT change
 NUCS = set("atcg")
 AMBIG_NUCS = {
     "r": ["a", "g"],

@@ -19,6 +19,7 @@ from varvamp.scripts import primers
 from varvamp.scripts import qpcr
 from varvamp.scripts import reporting
 from varvamp.scripts import scheme
+from varvamp.scripts import blast
 from varvamp import __version__
 from . import _program
 
@@ -87,6 +88,22 @@ def get_args(sysargs):
             metavar="1500",
             type=int,
             default=1500
+        )
+        par.add_argument(
+            "-db",
+            "--database",
+            help="location of the BLAST db",
+            metavar="None",
+            type=str,
+            default=None
+        )
+        par.add_argument(
+            "-th",
+            "--n-threads",
+            help="number of threads for the BLAST search",
+            metavar="1",
+            type=int,
+            default=1
         )
     TILED_parser.add_argument(
         "-o",
@@ -254,7 +271,7 @@ def shared_workflow(args, log_file):
     return alignment_cleaned, majority_consensus, ambiguous_consensus, primer_regions, left_primer_candidates, right_primer_candidates
 
 
-def sanger_and_tiled_shared_workflow(args, left_primer_candidates, right_primer_candidates, log_file):
+def sanger_and_tiled_shared_workflow(args, left_primer_candidates, right_primer_candidates, data_dir, log_file):
     """
     part of the workflow shared by the sanger and tiled mode
     """
@@ -287,7 +304,21 @@ def sanger_and_tiled_shared_workflow(args, left_primer_candidates, right_primer_
         job="Finding potential amplicons.",
         progress_text=f"{len(amplicons)} potential amplicons"
     )
-    return all_primers, amplicons
+
+    if args.database is not None:
+        amplicons, off_target_amplicons = blast.sanger_or_tiled_blast(
+            all_primers,
+            data_dir,
+            args.database,
+            amplicons,
+            args.max_length,
+            args.n_threads,
+            log_file
+        )
+    else:
+        off_target_amplicons = []
+
+    return all_primers, amplicons, off_target_amplicons
 
 
 def sanger_workflow(args, amplicons, all_primers, log_file):
@@ -365,7 +396,7 @@ def qpcr_workflow(args, alignment_cleaned, ambiguous_consensus, majority_consens
     )
     if not probe_regions:
         logging.raise_error(
-            "no regions that fullfill probe criterias! lower threshold or increase number of ambiguous chars in probe\n",
+            "no regions that fullfill probe criteria! lower threshold or increase number of ambiguous chars in probe\n",
             log_file,
             exit=True
         )
@@ -447,10 +478,11 @@ def main(sysargs=sys.argv[1:]):
 
     # SANGER/TILED mode
     if args.mode == "tiled" or args.mode == "sanger":
-        all_primers, amplicons = sanger_and_tiled_shared_workflow(
+        all_primers, amplicons, off_target_amplicons = sanger_and_tiled_shared_workflow(
             args,
             left_primer_candidates,
             right_primer_candidates,
+            data_dir,
             log_file
         )
         if args.mode == "sanger":
@@ -470,6 +502,8 @@ def main(sysargs=sys.argv[1:]):
                 ambiguous_consensus,
                 log_file
             )
+        if args.database is not None:
+            blast.write_BLAST_warning(off_target_amplicons, amplicon_scheme, log_file)
         # write files
         reporting.write_all_primers(data_dir, all_primers)
         reporting.write_scheme_to_files(
