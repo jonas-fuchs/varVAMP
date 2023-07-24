@@ -41,6 +41,12 @@ To search for the best scoring amplicon, varVAMP uses a graph based approach.
 1. varVAMP sorts all amplicons by their score and takes the non-overlapping amplicon with the lowest score!
 2. As varVAMP gives a size penalty to amplicons, varVAMP automatically finds amplicons with low primer scores close to your optimal length (if possible).
 
+#### primer BLAST module (currently only for the sanger and tiled modi)
+1. varVAMP generates a fasta query and searches for possible hits with the same settings as [primer blast](https://bmcbioinformatics.biomedcentral.com/articles/10.1186/1471-2105-13-134).
+2. For each amplicon varVAMP searches for off-targets, defined as hits in the db that are the maximum amplicons length multiplied by `BLAST_SIZE_MULTI` apart from each other.
+3. varVAMP appends a high penalty score to the amplicons score if these producing off-targets. This ensures that all other available amplicons are preferentially used.
+4. Reports if amplicons with off-targets are in the final scheme.
+
 #### qPCR
 1. Find probe regions with their own number of ambiguous characters.
 2. Digest and search for probes (with their own base parameter)
@@ -69,5 +75,11 @@ PRIMER_PERMUTATION_PENALTY
 The number of permutations of a primer is multiplied by the penalty. For example 24 permutations and a penalty of 0.1 will yield a penalty of 2.4. Set `PRIMER_PERMUTATION_PENALTY` to 0 if you do not care about the number of permutations.
 
 All scores of a primer are summed up and yield a final score. The score for each amplicon is then the score of its LEFT + RIGHT primers multiplied by the fold increase of the amplicon length compared to the optional length. This insures that in the final scheme not only large amplicons are used.
+
+```python3
+BLAST_PENALTY
+```
+
+If the `-db` argument is used, varVAMP will perform a BLAST search and evaluate off-targets against this database for each amplicon. If an off-target effect is predicted varVAMP will add this penalty to the amplicon score. This insures that this amplicon is only considered if no other amplicons are in this alignment region.
 
 #### [Previous: Output](./output.md)&emsp;&emsp;[Next: FAQ](./FAQ.md)
