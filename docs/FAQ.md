@@ -26,7 +26,7 @@ DeltaG is the [minimal free energy](https://en.wikipedia.org/wiki/Gibbs_free_ene
 
 6. **Does varVAMP evaluate the off-target specificity of the designed oligos?**
 
-This you have to do [manually](https://blast.ncbi.nlm.nih.gov/Blast.cgi?PROGRAM=blastn&PAGE_TYPE=BlastSearch&LINK_LOC=blasthome) at the moment. A BLAST feature is planned for the future.
+Yes, you can run primers against a local [BLAST](https://blast.ncbi.nlm.nih.gov/doc/blast-help/downloadblastdata.html#downloadblastdata) db via the `-db` argument. At the moment only for the sanger and tiled modes.
 
 7. **Why does the % primer regions differ from the coverage estimated with the automatic parameter selection?**
 
@@ -39,7 +39,6 @@ The coverage is estimated on an alignment that still has gaps. If there are a lo
 9. **How fast is varVAMP?**
 
 varVAMP is pretty fast given the complexity of the problem. Running time is depended on the alignment length, number of sequences and the running mode. While the TILED is rather slow, qPCR and SANGER can be faster. An alignment with a few hundred sequences and with a genome size of 10 kb will likely run in under a minute for the TILED mode. For large e.g. DNA viruses (200 kb) it takes considerably longer, but should still finish in minutes. Running time optimizations are planned.
-
 
 10. **Can I contribute?**
 

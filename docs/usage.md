@@ -43,6 +43,8 @@ optional arguments:
   -a , --n-ambig        	max number of ambiguous characters in a primer
   -ol 1000, --opt-length 1000   optimal length of the amplicons
   -ml 1500, --max-length 1500   max length of the amplicons
+  -db None, --database None     location of the BLAST db
+  -th 1, --n-threads 1          number of threads for the BLAST search
   -n inf, --report-n inf	report the top n best hits
 ```
 **tiled** mode:
@@ -56,6 +58,8 @@ optional arguments:
   -a , --n-ambig        	max number of ambiguous characters in a primer
   -ol 1000, --opt-length 1000	optimal length of the amplicons
   -ml 1500, --max-length 1500	max length of the amplicons
+  -db None, --database None     location of the BLAST db
+  -th 1, --n-threads 1          number of threads for the BLAST search
   -o 100, --overlap 100		min overlap of the amplicons
 ```
 **qpcr** mode:
@@ -129,6 +133,20 @@ PRIMER_MAX_BASE_PENALTY = 8  # max base penalty for a primer
 PRIMER_3_PENALTY = (32, 16, 8, 4, 2)  # penalties for 3' mismatches
 PRIMER_PERMUTATION_PENALTY = 0.1  # penalty for the number of permutations
 
+# BLAST parameters (ref: PrimerBLAST (YE, Jian, et al. Primer-BLAST: a tool to design
+# target-specific primers for polymerase chain reaction. BMC bioinformatics, 2012, 13.
+# Jg., S. 1-11.)
+BLAST_SETTINGS = {  # blast settings for query search
+    "outfmt": "6 qseqid sseqid qlen length mismatch gapopen sstart send",  # do NOT change
+    "evalue": 5000,
+    "reward": 1,
+    "penalty": -1,
+    "gapopen": 2,
+    "gapextend": 1
+}
+BLAST_MAX_DIFF = 0.8  # allowed % differences between primer and BLAST hit
+BLAST_SIZE_MULTI = 2  # multiplier for the max_amp size of off targets (in relation to max amp size)
+BLAST_PENALTY = 50  # amplicon score increase -> considered only if no other possibilities
 ```
 To apply these new settings just repeat the installation procedure in the varVAMP dir:
 ```shell

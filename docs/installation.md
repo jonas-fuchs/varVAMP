@@ -3,19 +3,19 @@ varVAMP runs on UNIX Systems, MacOSX and Windows with Python3 >=3.9 installed.
 
 ## Installation
 
-PyPI:
+### PyPI:
 
 ```shell
 pip install varvamp
 ```
 
-CONDA:
+### CONDA:
 
 ```shell
  conda install -c bioconda varvamp
 ```
 
-DOCKER:
+### DOCKER:
 
 ```shell
 docker pull quay.io/biocontainers/varvamp:<current_tag>
@@ -27,6 +27,11 @@ That was already it. To check if it worked:
 varvamp -v
 ```
 You should see the current varVAMP version.
+
+### BLAST module
+
+If you want to use varVAMPs blast module to predict off-targets, make sure that you have installed [BLASTN](https://blast.ncbi.nlm.nih.gov/doc/blast-help/downloadblastdata.html#downloadblastdata) and created a local blast database containing sequences of potential off-targets.
+
 
 ## Installation for advanced customization or development
 

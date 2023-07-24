@@ -6,8 +6,6 @@ produce off-target amplicons.
 
 # BUILT-INS
 import os
-import subprocess
-from sys import platform
 from shutil import which
 
 #LIBS
@@ -24,7 +22,7 @@ def check_BLAST_installation(log_file):
      simple check if BLAST is installed
     """
     if which("blastn") is not None:
-        print("\n INFO: BLASTN is installed.")
+        print("\nINFO: BLASTN is installed.")
     else:
         logging.raise_error("BLASTN is not installed", log_file, exit=True)
 
@@ -147,7 +145,7 @@ def sanger_or_tiled_blast(all_primers, data_dir, db, amplicons, max_length, n_th
     """
     performs the blast search for the sanger or tiled workflow
     """
-    print("\n#### Starting blast search. ####\n")
+    print("\n#### Starting varVAMP primerBLAST. ####\n")
     print("Job_1: Creating BLAST query.")
     query_path = create_BLAST_query(all_primers, data_dir)
     print("Job_2: Running BLAST.")
@@ -162,7 +160,7 @@ def sanger_or_tiled_blast(all_primers, data_dir, db, amplicons, max_length, n_th
             f"\nBLAST results: {success_text}",
             file=f
         )
-    print("\n#### BLAST search finished ####\n")
+    print("\n#### off-target search finished ####\n")
 
     return amplicons, off_target_amplicons
 
@@ -179,4 +177,3 @@ def write_BLAST_warning(off_target_amplicons, amplicon_scheme, log_file):
                 log_file,
                 exit=False,
             )
-
