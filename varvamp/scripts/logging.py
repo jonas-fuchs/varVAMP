@@ -117,6 +117,13 @@ def raise_arg_errors(args, log_file):
                 log_file,
                 exit=True
             )
+        if args.database is not None:
+            if args.n_threads < 1:
+                raise_error(
+                    "number of threads cannot be smaller than 1.",
+                    log_file,
+                    exit=True
+                )
     # SANGER specific warnings
     if args.mode == "sanger":
         if args.report_n < 1:
@@ -241,6 +248,11 @@ def confirm_config(args, log_file):
             "QAMPLICON_LENGTH",
             "QAMPLICON_GC",
             "QAMPLICON_DEL_CUTOFF"
+        ),
+        (
+            "BLAST_MAX_DIFF",
+            "BLAST_SIZE_MULTI",
+            "BLAST_PENALTY"
         )
     ]
 
@@ -325,7 +337,10 @@ def confirm_config(args, log_file):
         ("max base penalty", config.PRIMER_MAX_BASE_PENALTY),
         ("primer permutation penalty", config.PRIMER_PERMUTATION_PENALTY),
         ("qpcr flanking primer difference", config.QPRIMER_DIFF),
-        ("qpcr deletion size still considered for deltaG calculation", config.QAMPLICON_DEL_CUTOFF)
+        ("qpcr deletion size still considered for deltaG calculation", config.QAMPLICON_DEL_CUTOFF),
+        ("maximum difference between primer and blast db", config.BLAST_MAX_DIFF),
+        ("multiplier of the maximum length for non-specific amplicons", config.BLAST_SIZE_MULTI),
+        ("blast penalty for off targets", config.BLAST_PENALTY)
     ]
     for type, var in non_negative_var:
         if var < 0:
@@ -374,6 +389,53 @@ def confirm_config(args, log_file):
             "only the last 5 nucleotides of the 3' end are considered for GC 3'end calculation.",
             log_file
         )
+    if config.BLAST_MAX_DIFF > 1:
+        raise_error(
+            "max difference to the blast db should be between 0-1.",
+            log_file,
+            exit=True
+        )
+    if config.BLAST_SIZE_MULTI < 1:
+        raise_error(
+            "off-targets should be considered at least in the range of the maximal amplicon length.",
+            log_file,
+            exit=True
+        )
+    if config.BLAST_PENALTY < 10:
+        raise_error(
+            "giving a too small penalty could result in the selection of off-target producing amplicons in the final scheme.",
+            log_file,
+        )
+    # confirm proper BLAST settings in dictionary
+    if not isinstance(config.BLAST_SETTINGS, dict):
+        raise_error(
+            "BLAST settings have to be in a dictionary format!",
+            log_file,
+            exit=True
+        )
+    if config.BLAST_SETTINGS["outfmt"] != "6 qseqid sseqid qlen length mismatch gapopen sstart send":
+        raise_error(
+            "output format (outfmt) of BLAST settings is not correct",
+            log_file,
+            exit=True
+        )
+
+    # check all dict values
+    dict_values = ["evalue", "reward", "penalty", "gapopen", "gapextend"]
+
+    for blast_setting in dict_values:
+        if blast_setting not in config.BLAST_SETTINGS:
+            raise_error(
+                f"blast setting ({blast_setting}) is missing in BLAST dict",
+                log_file,
+                exit=True
+            )
+        if not isinstance(config.BLAST_SETTINGS[blast_setting], int):
+            raise_error(
+                f"blast setting ({blast_setting}) has to be an integer",
+                log_file,
+                exit=True
+            )
 
     # write all settings to file
     var_dic = vars(config)
@@ -392,6 +454,13 @@ def confirm_config(args, log_file):
                 sep="\n",
                 file=f
             )
+            if args.database is not None:
+                print(
+                    f"BLAST_DATABASE = {args.database}",
+                    f"N_THREADS = {args.n_threads}",
+                    sep="\n",
+                    file=f
+                )
         if args.mode == "tiled":
             print(
                 f"MIN_OVERLAP = {args.overlap}",
@@ -419,6 +488,10 @@ def confirm_config(args, log_file):
         )
         for var in all_vars[0]:
             print(f"{var} = {var_dic[var]}", file=f)
+        if args.mode in ("tiled", "sanger"):
+            if args.database is not None:
+                for var in all_vars[2]:
+                    print(f"{var} = {var_dic[var]}", file=f)
         if args.mode == "qpcr":
             for var in all_vars[1]:
                 print(f"{var} = {var_dic[var]}", file=f)

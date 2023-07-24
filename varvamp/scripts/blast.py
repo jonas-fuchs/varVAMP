@@ -5,9 +5,10 @@ produce off-target amplicons.
 """
 
 # BUILT-INS
-import subprocess
 import os
+import subprocess
 from sys import platform
+from shutil import which
 
 #LIBS
 import pandas as pd
@@ -22,12 +23,8 @@ def check_BLAST_installation(log_file):
     """
      simple check if BLAST is installed
     """
-    if platform == "win32":
-        blast_loc = subprocess.getoutput("where blastn")
-    else:
-        blast_loc = subprocess.getoutput("which blastn")
-    if blast_loc:
-        print("BLASTN is installed.")
+    if which("blastn") is not None:
+        print("\n INFO: BLASTN is installed.")
     else:
         logging.raise_error("BLASTN is not installed", log_file, exit=True)
 
@@ -151,7 +148,6 @@ def sanger_or_tiled_blast(all_primers, data_dir, db, amplicons, max_length, n_th
     performs the blast search for the sanger or tiled workflow
     """
     print("\n#### Starting blast search. ####\n")
-    check_BLAST_installation(log_file)
     print("Job_1: Creating BLAST query.")
     query_path = create_BLAST_query(all_primers, data_dir)
     print("Job_2: Running BLAST.")
