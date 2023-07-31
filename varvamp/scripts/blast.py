@@ -76,12 +76,13 @@ def parse_and_filter_BLAST_output(blast_out):
                "gaps",
                "ref_start",
                "ref_end",
+               "strand"
                ]
 
     blast_df = pd.read_table(blast_out, names=columns)
     blast_df = blast_df[
-        blast_df["query_len"] - blast_df["aln_len"] + blast_df["mismatch"] + blast_df["gaps"] <= round(
-            blast_df["query_len"] * config.BLAST_MAX_DIFF)
+        blast_df["query_len"] - blast_df["aln_len"] + blast_df["mismatch"] + blast_df["gaps"] <=
+        blast_df["query_len"]-(round(blast_df["query_len"] * config.BLAST_MAX_DIFF))
         ]
     # removes tabular output
     os.remove(blast_out)
@@ -101,21 +102,21 @@ def predict_non_specific_amplicons(amplicons, blast_df, max_length):
         rw_primer = amplicons[amp][3]
         # subset df for primers
         df_amp_primers = blast_df[blast_df["query"].isin([fw_primer, rw_primer])]
-        # sort by reference and ref start (so one can easily iterate over rows)
+        # sort by reference and ref start
         df_amp_primers_sorted = df_amp_primers.sort_values(["ref", "ref_start"])
         # iterate over ref for each primer pair
         for ref in set(df_amp_primers_sorted["ref"]):
             df_ref_subset = df_amp_primers_sorted[df_amp_primers_sorted["ref"] == ref]
-            # reindex to remember the correct index
+            # reindex to remember the correct index later on
             df_ref_subset.reset_index(inplace=True, drop=True)
             # ini the primer search
             indices = []  # remember the index of the subset df
             start = -float("inf")
             off_target = False
-            for i, row in df_ref_subset.iterrows():
+            for row in df_ref_subset.itertuples():
                 # for the current row check if start of the current batch is close enough
-                if row[7] - start <= config.BLAST_SIZE_MULTI * max_length:
-                    indices.append(i)
+                if row[8] - start <= config.BLAST_SIZE_MULTI * max_length:
+                    indices.append(row[0])
                 else:
                     # reset start to the next element in the index list if list has more than
                     # one element
@@ -124,13 +125,21 @@ def predict_non_specific_amplicons(amplicons, blast_df, max_length):
                         start = df_ref_subset.iloc[indices[0]]["ref_start"]
                     # else reset to the current row and empty index list
                     else:
-                        start = row[6]
+                        start = row[7]
                         indices = []
-                # do we need to check the current index list?
-                if len(indices) <= 1:
+                # check if in the df subset is more than one primer
+                if len(set(df_ref_subset.iloc[indices]["query"])) <= 1:
                     continue
-                # check if in the df subset is more than one query
-                if len(set(df_ref_subset.iloc[indices]["query"])) > 1:
+                # subset of df with potential off-targets
+                possible_off_targets = df_ref_subset.iloc[indices]
+                # check if fw and rw primers bind in different directions
+                direction_fw = set(possible_off_targets[possible_off_targets["query"] == fw_primer]["strand"])
+                direction_rw = set(possible_off_targets[possible_off_targets["query"] == rw_primer]["strand"])
+                # do we have one primer in subset that binds both directions or are the
+                # direction sets different? --> 2 different primers bind on the same chrom,
+                # are close enough and are in opposite direction ->[seq]<-
+                # >this classifies as an off-target<
+                if len(direction_fw) > 1 or len(direction_rw) > 1 or direction_fw != direction_rw:
                     off_target = True
                     break
             if off_target:
