@@ -6,8 +6,8 @@ varVAMP logging and raising errors
 import sys
 import os
 import shutil
-import time
 import datetime
+import random
 
 # varVAMP
 from varvamp.scripts import config
@@ -50,8 +50,8 @@ def varvamp_progress(log_file, mode=None, start_time=None, progress=0, job="", p
             print(f"VARVAMP log \n\nMODE = {mode}\n", file=f)
     else:
         if progress == 1:
-            stop_time = str(round(time.process_time() - start_time, 2))
-            progress_text = f"all done \n\n\rvarVAMP {__version__} finished in {stop_time} sec!\n{datetime.datetime.now()}"
+            stop_time = datetime.datetime.now() - start_time
+            progress_text = f"all done \n\n\rvarVAMP {__version__} finished in {stop_time.total_seconds()} sec!\n{datetime.datetime.now()}"
             job = "Finalizing output."
         print(
             "\rJob:\t\t " + job + "\nProgress: \t [{0}] {1}%".format("█"*block + "-"*(barLength-block), progress*100) + "\t" + progress_text,
@@ -413,7 +413,7 @@ def confirm_config(args, log_file):
             log_file,
             exit=True
         )
-    if config.BLAST_SETTINGS["outfmt"] != "6 qseqid sseqid qlen length mismatch gapopen sstart send":
+    if config.BLAST_SETTINGS["outfmt"] != "6 qseqid sseqid qlen length mismatch gapopen sstart send sstrand":
         raise_error(
             "output format (outfmt) of BLAST settings is not correct",
             log_file,
@@ -496,3 +496,28 @@ def confirm_config(args, log_file):
             for var in all_vars[1]:
                 print(f"{var} = {var_dic[var]}", file=f)
         print("\nPROGRESS", file=f)
+
+def goodbye_message():
+    """
+    This is what happens when I am bored...
+    """
+
+    messages = [
+        "Thank you. Come again.",
+        ">Placeholder for your advertisement<",
+        "Make primers great again!",
+        "And now lets pray to the PCR gods.",
+        "**bibobibobop** task finished",
+        "Thank you for traveling with varVAMP.",
+        "This message will self-destruct in 0 seconds.... PUFF!",
+        "What? Already finished? Errr I mean, thanks for using varVAMP!",
+        "One primer design to rule them all.",
+        "42",
+        "Hope to see you again!",
+        "Wohooooo everything worked somehow!",
+        "Reminder: Get yourself a cup of coffee!",
+        "Barba non facit philosophum.",
+        "Task failed successfully.",
+        "Never gonna give you up, never gonna let you down.",
+    ]
+    print(f"\n{random.choice(messages)}")

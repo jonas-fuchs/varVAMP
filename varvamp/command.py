@@ -5,7 +5,7 @@ main workflow
 # BUILT-INS
 import sys
 import os
-import time
+import datetime
 import argparse
 
 # varVAMP
@@ -464,7 +464,7 @@ def main(sysargs=sys.argv[1:]):
     args = get_args(sysargs)
     if not args.verbose:
         sys.stdout = open(os.devnull, 'w')
-    start_time = time.process_time()
+    start_time = datetime.datetime.now()
     results_dir, data_dir, log_file = logging.create_dir_structure(args.input[1])
     # check if blast is installed
     if args.mode == "tiled" or args.mode == "sanger":
@@ -550,3 +550,4 @@ def main(sysargs=sys.argv[1:]):
 
     # varVAMP finished
     logging.varvamp_progress(log_file, progress=1, start_time=start_time)
+    logging.goodbye_message()
