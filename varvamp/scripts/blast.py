@@ -27,15 +27,22 @@ def check_BLAST_installation(log_file):
         logging.raise_error("BLASTN is not installed", log_file, exit=True)
 
 
-def create_BLAST_query(all_primers, data_dir):
+def create_BLAST_query(all_primers, amplicons, data_dir):
     """
     create a query for the BLAST search
     """
+    already_written = []
+
     query_path = os.path.join(data_dir, "BLAST_query.fasta")
     with open(query_path, "w") as query:
-        for strand in all_primers:
-            for primer in all_primers[strand]:
-                print(f">{primer}\n{all_primers[strand][primer][0]}", file=query)
+        for amp in amplicons:
+            fw_primer, rw_primer = amplicons[amp][2], amplicons[amp][3]
+            if fw_primer not in already_written:
+                print(f">{fw_primer}\n{all_primers['+'][fw_primer][0]}", file=query)
+                already_written.append(fw_primer)
+            if rw_primer not in already_written:
+                print(f">{rw_primer}\n{all_primers['-'][rw_primer][0]}", file=query)
+                already_written.append(rw_primer)
 
     return query_path
 
@@ -156,7 +163,7 @@ def sanger_or_tiled_blast(all_primers, data_dir, db, amplicons, max_length, n_th
     """
     print("\n#### Starting varVAMP primerBLAST. ####\n")
     print("Job_1: Creating BLAST query.")
-    query_path = create_BLAST_query(all_primers, data_dir)
+    query_path = create_BLAST_query(all_primers,amplicons, data_dir)
     print("Job_2: Running BLAST.")
     blast_out = run_BLAST(query_path, db, data_dir, n_threads)
     blast_df = parse_and_filter_BLAST_output(blast_out)
