@@ -115,6 +115,49 @@ def parse_and_filter_BLAST_output(blast_out):
     return(blast_df)
 
 
+def check_off_targets(df_amp_primers_sorted, max_length, fw_primer, rw_primer):
+    """
+    determines off targets in subset blast df
+    """
+    for ref in set(df_amp_primers_sorted["ref"]):
+        df_ref_subset = df_amp_primers_sorted[df_amp_primers_sorted["ref"] == ref]
+        # reindex to remember the correct index later on
+        df_ref_subset.reset_index(inplace=True, drop=True)
+        # ini the primer search
+        indices = []  # remember the index of the subset df
+        start = -float("inf")
+        off_target = False
+        for row in df_ref_subset.itertuples():
+            # for the current row check if start of the current batch is close enough
+            if row[8] - start <= config.BLAST_SIZE_MULTI * max_length:
+                indices.append(row[0])
+            else:
+                # reset start to the next element in the index list if list has more than
+                # one element
+                if len(indices) > 1:
+                    indices.pop(0)
+                    start = df_ref_subset.iloc[indices[0]]["ref_start"]
+                # else reset to the current row and empty index list
+                else:
+                    start = row[7]
+                    indices = []
+            # check if in the df subset is more than one primer
+            if len(set(df_ref_subset.iloc[indices]["query"])) <= 1:
+                continue
+            # subset of df with potential off-targets
+            possible_off_targets = df_ref_subset.iloc[indices]
+            # check if fw and rw primers bind in different directions
+            direction_fw = set(possible_off_targets[possible_off_targets["query"] == fw_primer]["strand"])
+            direction_rw = set(possible_off_targets[possible_off_targets["query"] == rw_primer]["strand"])
+            # do we have one primer in subset that binds both directions or are the
+            # direction sets different? --> 2 different primers bind on the same chrom,
+            # are close enough and are in opposite direction ->[seq]<-
+            # >this classifies as an off-target<
+            if len(direction_fw) > 1 or len(direction_rw) > 1 or direction_fw != direction_rw:
+                return True
+    return False
+
+
 def predict_non_specific_amplicons(amplicons, blast_df, max_length):
     """
     for a given primer pair, predict unspecific targets within a size
@@ -130,47 +173,9 @@ def predict_non_specific_amplicons(amplicons, blast_df, max_length):
         # sort by reference and ref start
         df_amp_primers_sorted = df_amp_primers.sort_values(["ref", "ref_start"])
         # iterate over ref for each primer pair
-        for ref in set(df_amp_primers_sorted["ref"]):
-            df_ref_subset = df_amp_primers_sorted[df_amp_primers_sorted["ref"] == ref]
-            # reindex to remember the correct index later on
-            df_ref_subset.reset_index(inplace=True, drop=True)
-            # ini the primer search
-            indices = []  # remember the index of the subset df
-            start = -float("inf")
-            off_target = False
-            for row in df_ref_subset.itertuples():
-                # for the current row check if start of the current batch is close enough
-                if row[8] - start <= config.BLAST_SIZE_MULTI * max_length:
-                    indices.append(row[0])
-                else:
-                    # reset start to the next element in the index list if list has more than
-                    # one element
-                    if len(indices) > 1:
-                        indices.pop(0)
-                        start = df_ref_subset.iloc[indices[0]]["ref_start"]
-                    # else reset to the current row and empty index list
-                    else:
-                        start = row[7]
-                        indices = []
-                # check if in the df subset is more than one primer
-                if len(set(df_ref_subset.iloc[indices]["query"])) <= 1:
-                    continue
-                # subset of df with potential off-targets
-                possible_off_targets = df_ref_subset.iloc[indices]
-                # check if fw and rw primers bind in different directions
-                direction_fw = set(possible_off_targets[possible_off_targets["query"] == fw_primer]["strand"])
-                direction_rw = set(possible_off_targets[possible_off_targets["query"] == rw_primer]["strand"])
-                # do we have one primer in subset that binds both directions or are the
-                # direction sets different? --> 2 different primers bind on the same chrom,
-                # are close enough and are in opposite direction ->[seq]<-
-                # >this classifies as an off-target<
-                if len(direction_fw) > 1 or len(direction_rw) > 1 or direction_fw != direction_rw:
-                    off_target = True
-                    break
-            if off_target:
-                amplicons[amp][5] = amplicons[amp][5] + config.BLAST_PENALTY
-                off_target_amp.append(amp)
-                break
+        if check_off_targets(df_amp_primers_sorted, max_length, fw_primer, rw_primer):
+            amplicons[amp][5] = amplicons[amp][5] + config.BLAST_PENALTY
+            off_target_amp.append(amp)
 
     return(off_target_amp, amplicons)
 
