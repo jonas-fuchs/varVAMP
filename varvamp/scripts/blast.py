@@ -129,7 +129,6 @@ def check_off_targets(df_amp_primers_sorted, max_length, primers):
         # ini the primer search
         indices = []  # remember the index of the subset df
         start = -float("inf")
-        off_target = False
         for row in df_ref_subset.itertuples():
             # for the current row check if start of the current batch is close enough
             if row[8] - start <= config.BLAST_SIZE_MULTI * max_length:
@@ -149,7 +148,7 @@ def check_off_targets(df_amp_primers_sorted, max_length, primers):
                 continue
             # subset of df with potential off-targets
             possible_off_targets = df_ref_subset.iloc[indices]
-            # check if fw and rw primers bind in different directions
+            # check if any two primers in scheme bind different directions
             for combi in combinations:
                 direction_fw = set(possible_off_targets[possible_off_targets["query"] == combi[0]]["strand"])
                 direction_rw = set(possible_off_targets[possible_off_targets["query"] == combi[1]]["strand"])
@@ -162,7 +161,7 @@ def check_off_targets(df_amp_primers_sorted, max_length, primers):
     return False
 
 
-def predict_non_specific_amplicons(amplicons, blast_df, max_length):
+def predict_non_specific_amplicons(amplicons, blast_df, max_length, mode):
     """
     for a given primer pair, predict unspecific targets within a size
     range and give these primers a high penalty.
@@ -170,31 +169,47 @@ def predict_non_specific_amplicons(amplicons, blast_df, max_length):
     off_target_amp = []
 
     for amp in amplicons:
-        primers = [amplicons[amp][2], amplicons[amp][3]]
+        if mode == "sanger_tiled":
+            primers = [amplicons[amp][2], amplicons[amp][3]]
+        elif mode == "qpcr":
+            primers = []
+            for primer_type in ["probe", "left", "right"]:
+                primers.append(f"{primer_type}_{amplicons[amp][primer_type][1]}_{amplicons[amp][primer_type][2]}")
         # subset df for primers
         df_amp_primers = blast_df[blast_df["query"].isin(primers)]
         # sort by reference and ref start
         df_amp_primers_sorted = df_amp_primers.sort_values(["ref", "ref_start"])
         # iterate over ref for each primer pair
         if check_off_targets(df_amp_primers_sorted, max_length, primers):
-            amplicons[amp][5] = amplicons[amp][5] + config.BLAST_PENALTY
+            if mode == "sanger_tiled":
+                amplicons[amp][5] = amplicons[amp][5] + config.BLAST_PENALTY
+            elif mode == "qpcr":
+                amplicons[amp]["score"][0] = amplicons[amp]["score"][0] + config.BLAST_PENALTY
             off_target_amp.append(amp)
 
     return(off_target_amp, amplicons)
 
 
-def sanger_or_tiled_blast(all_primers, data_dir, db, amplicons, max_length, n_threads, log_file):
+def primer_blast(data_dir, db, query_path, amplicons, max_length, n_threads, log_file, mode):
     """
     performs the blast search for the sanger or tiled workflow
     """
     print("\n#### Starting varVAMP primerBLAST. ####\n")
-    print("Job_1: Creating BLAST query.")
-    query_path = create_BLAST_query(all_primers, amplicons, data_dir)
-    print("Job_2: Running BLAST.")
-    blast_out = run_BLAST(query_path, db, data_dir, n_threads)
+    print("Running BLASTN...")
+    blast_out = run_BLAST(
+        query_path,
+        db,
+        data_dir,
+        n_threads
+    )
     blast_df = parse_and_filter_BLAST_output(blast_out)
-    print("Job_3: Predicting non-specific amplicons.")
-    off_target_amplicons, amplicons = predict_non_specific_amplicons(amplicons, blast_df, max_length)
+    print("Predicting non-specific amplicons...")
+    off_target_amplicons, amplicons = predict_non_specific_amplicons(
+        amplicons,
+        blast_df,
+        max_length,
+        mode
+    )
     success_text = f"varVAMP successfully predicted non-specific amplicons:\n\t> {len(off_target_amplicons)}/{len(amplicons)} amplicons could produce amplicons with the blast db.\n\t> raised their amplicon score by {config.BLAST_PENALTY}"
     print(success_text)
     with open(log_file, 'a') as f:
