@@ -29,7 +29,7 @@ def check_BLAST_installation(log_file):
 
 def create_BLAST_query(all_primers, amplicons, data_dir):
     """
-    create a query for the BLAST search
+    create a query for the BLAST search (tiled, sanger mode)
     """
     already_written = []
 
@@ -44,6 +44,24 @@ def create_BLAST_query(all_primers, amplicons, data_dir):
                 print(f">{rw_primer}\n{all_primers['-'][rw_primer][0]}", file=query)
                 already_written.append(rw_primer)
 
+    return query_path
+
+
+def create_BLAST_query_qpcr(qpcr_scheme_candidates, data_dir):
+    """
+    create a query for the BLAST search (qpcr mode)
+    """
+    already_written = []
+
+    query_path = os.path.join(data_dir, "BLAST_query.fasta")
+    with open(query_path, "w") as query:
+        for amp in qpcr_scheme_candidates:
+            for primer_type in ["probe", "left", "right"]:
+                name = f"{primer_type}_{qpcr_scheme_candidates[amp][primer_type][1]}_{qpcr_scheme_candidates[amp][primer_type][2]}"
+                if name in already_written:
+                    continue
+                print(f">{name}\n{qpcr_scheme_candidates[amp][primer_type][0]}", file=query)
+                already_written.append(name)
     return query_path
 
 
