@@ -6,6 +6,7 @@ produce off-target amplicons.
 
 # BUILT-INS
 import os
+import itertools
 from shutil import which
 
 #LIBS
@@ -115,10 +116,12 @@ def parse_and_filter_BLAST_output(blast_out):
     return(blast_df)
 
 
-def check_off_targets(df_amp_primers_sorted, max_length, fw_primer, rw_primer):
+def check_off_targets(df_amp_primers_sorted, max_length, primers):
     """
     determines off targets in subset blast df
     """
+    combinations = list(itertools.combinations(primers, 2))
+
     for ref in set(df_amp_primers_sorted["ref"]):
         df_ref_subset = df_amp_primers_sorted[df_amp_primers_sorted["ref"] == ref]
         # reindex to remember the correct index later on
@@ -147,14 +150,15 @@ def check_off_targets(df_amp_primers_sorted, max_length, fw_primer, rw_primer):
             # subset of df with potential off-targets
             possible_off_targets = df_ref_subset.iloc[indices]
             # check if fw and rw primers bind in different directions
-            direction_fw = set(possible_off_targets[possible_off_targets["query"] == fw_primer]["strand"])
-            direction_rw = set(possible_off_targets[possible_off_targets["query"] == rw_primer]["strand"])
-            # do we have one primer in subset that binds both directions or are the
-            # direction sets different? --> 2 different primers bind on the same chrom,
-            # are close enough and are in opposite direction ->[seq]<-
-            # >this classifies as an off-target<
-            if len(direction_fw) > 1 or len(direction_rw) > 1 or direction_fw != direction_rw:
-                return True
+            for combi in combinations:
+                direction_fw = set(possible_off_targets[possible_off_targets["query"] == combi[0]]["strand"])
+                direction_rw = set(possible_off_targets[possible_off_targets["query"] == combi[1]]["strand"])
+                # do we have one primer in subset that binds both directions or are the
+                # direction sets different? --> 2 different primers bind on the same chrom,
+                # are close enough and are in opposite direction ->[seq]<-
+                # >this classifies as an off-target<
+                if len(direction_fw) > 1 or len(direction_rw) > 1 or direction_fw != direction_rw:
+                    return True
     return False
 
 
@@ -166,14 +170,13 @@ def predict_non_specific_amplicons(amplicons, blast_df, max_length):
     off_target_amp = []
 
     for amp in amplicons:
-        fw_primer = amplicons[amp][2]
-        rw_primer = amplicons[amp][3]
+        primers = [amplicons[amp][2], amplicons[amp][3]]
         # subset df for primers
-        df_amp_primers = blast_df[blast_df["query"].isin([fw_primer, rw_primer])]
+        df_amp_primers = blast_df[blast_df["query"].isin(primers)]
         # sort by reference and ref start
         df_amp_primers_sorted = df_amp_primers.sort_values(["ref", "ref_start"])
         # iterate over ref for each primer pair
-        if check_off_targets(df_amp_primers_sorted, max_length, fw_primer, rw_primer):
+        if check_off_targets(df_amp_primers_sorted, max_length, primers):
             amplicons[amp][5] = amplicons[amp][5] + config.BLAST_PENALTY
             off_target_amp.append(amp)
 
@@ -186,7 +189,7 @@ def sanger_or_tiled_blast(all_primers, data_dir, db, amplicons, max_length, n_th
     """
     print("\n#### Starting varVAMP primerBLAST. ####\n")
     print("Job_1: Creating BLAST query.")
-    query_path = create_BLAST_query(all_primers,amplicons, data_dir)
+    query_path = create_BLAST_query(all_primers, amplicons, data_dir)
     print("Job_2: Running BLAST.")
     blast_out = run_BLAST(query_path, db, data_dir, n_threads)
     blast_df = parse_and_filter_BLAST_output(blast_out)
