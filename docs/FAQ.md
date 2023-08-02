@@ -26,7 +26,7 @@ DeltaG is the [minimal free energy](https://en.wikipedia.org/wiki/Gibbs_free_ene
 
 6. **Does varVAMP evaluate the off-target specificity of the designed oligos?**
 
-Yes, you can run primers against a local [BLAST](https://blast.ncbi.nlm.nih.gov/doc/blast-help/downloadblastdata.html#downloadblastdata) db via the `-db` argument. At the moment only for the sanger and tiled modes.
+Yes, you can run primers against a local [BLAST](https://blast.ncbi.nlm.nih.gov/doc/blast-help/downloadblastdata.html#downloadblastdata) db via the `-db` argument.
 
 7. **Why does the % primer regions differ from the coverage estimated with the automatic parameter selection?**
 
