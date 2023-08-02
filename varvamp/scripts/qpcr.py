@@ -240,54 +240,6 @@ def find_qcr_schemes(qpcr_probes, left_primer_candidates, right_primer_candidate
     return qpcr_scheme_candidates
 
 
-def test_amplicon_deltaG(qpcr_schemes_candiadates, majority_consensus, n_to_test, deltaG_cutoff):
-    """
-    test all amplicon deltaGsfor the top n hits  at the lowest primer temperature
-    and filters if they fall below the cutoff. relies in seqfold. only consider
-    non-overlapping amplicons.
-
-    NOTE: this is computationally intensive. Therefore, it is not advisable to
-    test all hits for their deltaG.
-    """
-
-    final_schemes = {}
-    n = 0
-    passed_counter = 0
-    amplicon_set = set()
-
-    for amp in qpcr_schemes_candiadates:
-        start = qpcr_schemes_candiadates[amp]["left"][1]
-        stop = qpcr_schemes_candiadates[amp]["right"][2]
-        seq = majority_consensus[start:stop]
-        # delta G cannot be calculated if non-atcg chars are in the sequence, so
-        # delete any single Ns (small deletions) or ns (ambiguties) from seq
-        seq = seq.replace("N", "")
-        seq = seq.replace("n", "")
-        amp_positions = list(range(start, stop+1))
-        # check if the amplicon overlaps with an amplicon that was previously
-        # found and had a high enough deltaG
-        if any(x in amp_positions for x in amplicon_set):
-            continue
-        # did we check enough amplicons?
-        if n < n_to_test:
-            min_temp = min((primers.calc_temp(qpcr_schemes_candiadates[amp]["left"][0]), primers.calc_temp(qpcr_schemes_candiadates[amp]["right"][0])))
-            # calculate deltaG at the minimal primer temp
-            deltaG = seqfold.dg(seq, min_temp)
-            # and if this passes cutoff make a dict entry and do not allow further
-            # amplicons in that region (they will have a lower score)
-            if deltaG > deltaG_cutoff:
-                new_name = f"QPCR_SCHEME_{passed_counter}"
-                final_schemes[new_name] = qpcr_schemes_candiadates[amp]
-                final_schemes[new_name]["deltaG"] = deltaG
-                amplicon_set.update(amp_positions)
-                passed_counter += 1
-            n += 1
-        # break if enough amplicons were checked
-        else:
-            break
-
-    return final_schemes
-
 def process_single_amplicon_deltaG(amplicon, majority_consensus):
     """
     Process a single amplicon to test its deltaG and apply filtering.
@@ -343,3 +295,5 @@ def test_amplicon_deltaG_parallel(qpcr_schemes_candidates, majority_consensus, n
                 passed_counter += 1
 
     return final_schemes
+
+#TODO: add option for number of threads (currently all are used)
