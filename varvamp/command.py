@@ -438,7 +438,7 @@ def qpcr_workflow(args, alignment_cleaned, ambiguous_consensus, majority_consens
     )
 
     # test amplicons for deltaG
-    final_schemes = qpcr.test_amplicon_deltaG(qpcr_scheme_candidates, majority_consensus, args.test_n, args.deltaG)
+    final_schemes = qpcr.test_amplicon_deltaG_parallel(qpcr_scheme_candidates, majority_consensus, args.test_n, args.deltaG)
     if not final_schemes:
         logging.raise_error(
             "no qPCR amplicon passed the deltaG threshold\n",

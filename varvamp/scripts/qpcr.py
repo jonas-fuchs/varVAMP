@@ -4,6 +4,8 @@ qPCR probe and amplicon design
 
 # LIBS
 import seqfold
+import itertools
+import multiprocessing
 
 # varVAMP
 from varvamp.scripts import config
@@ -283,5 +285,61 @@ def test_amplicon_deltaG(qpcr_schemes_candiadates, majority_consensus, n_to_test
         # break if enough amplicons were checked
         else:
             break
+
+    return final_schemes
+
+def process_single_amplicon_deltaG(amplicon, majority_consensus):
+    """
+    Process a single amplicon to test its deltaG and apply filtering.
+    This function will be called concurrently by multiple threads.
+    """
+    name, data = amplicon
+    start = data["left"][1]
+    stop = data["right"][2]
+    seq = majority_consensus[start:stop]
+    seq = seq.replace("N", "")
+    seq = seq.replace("n", "")
+    amp_positions = list(range(start, stop + 1))
+    # check if the amplicon overlaps with an amplicon that was previously
+    # found and had a high enough deltaG
+    min_temp = min((primers.calc_temp(data["left"][0]),
+                    primers.calc_temp(data["right"][0])))
+    # calculate deltaG at the minimal primer temp
+    deltaG = seqfold.dg(seq, min_temp)
+
+    return deltaG, amp_positions, name
+
+
+def test_amplicon_deltaG_parallel(qpcr_schemes_candidates, majority_consensus, n_to_test, deltaG_cutoff):
+    """
+    Test all amplicon deltaGs for the top n hits at the lowest primer temperature
+    and filters if they fall below the cutoff. Multiple processes are used
+    for processing amplicons in parallel.
+    """
+    final_schemes = {}
+    passed_counter = 0  # counter for re-naming amplicons that passed deltaG cutoff
+    amplicon_set = set()
+
+    # Create a pool of processes to handle the concurrent processing
+    with multiprocessing.Pool() as pool:
+        # Create a list of the first n amplicon tuples for processing
+        amplicons = itertools.islice(qpcr_schemes_candidates.items(), n_to_test)
+        # process amplicons concurrently
+        results = pool.starmap(process_single_amplicon_deltaG, [(amp, majority_consensus) for amp in amplicons])
+
+        # Process the results
+        for deltaG, amp_positions, amp_name in results:
+            # check if the amplicon overlaps with an amplicon that was previously
+            # found and had a high enough deltaG
+            if any(x in amp_positions for x in amplicon_set):
+                continue
+            # and if this passes cutoff make a dict entry and do not allow further
+            # amplicons in that region (they will have a lower score)
+            if deltaG > deltaG_cutoff:
+                new_name = f"QPCR_SCHEME_{passed_counter}"
+                final_schemes[new_name] = qpcr_schemes_candidates[amp_name]
+                final_schemes[new_name]["deltaG"] = deltaG
+                amplicon_set.update(amp_positions)
+                passed_counter += 1
 
     return final_schemes
