@@ -41,10 +41,10 @@ optional arguments:
   -h, --help            	show this help message and exit
   -t, --threshold 	        threshold for consensus nucleotides
   -a , --n-ambig        	max number of ambiguous characters in a primer
-  -ol 1000, --opt-length 1000   optimal length of the amplicons
-  -ml 1500, --max-length 1500   max length of the amplicons
   -db None, --database None     location of the BLAST db
   -th 1, --n-threads 1          number of threads for the BLAST search
+  -ol 1000, --opt-length 1000   optimal length of the amplicons
+  -ml 1500, --max-length 1500   max length of the amplicons
   -n inf, --report-n inf	report the top n best hits
 ```
 **tiled** mode:
@@ -56,10 +56,10 @@ optional arguments:
   -h, --help            	show this help message and exit
   -t, --threshold 	        threshold for consensus nucleotides
   -a , --n-ambig        	max number of ambiguous characters in a primer
-  -ol 1000, --opt-length 1000	optimal length of the amplicons
-  -ml 1500, --max-length 1500	max length of the amplicons
   -db None, --database None     location of the BLAST db
   -th 1, --n-threads 1          number of threads for the BLAST search
+  -ol 1000, --opt-length 1000	optimal length of the amplicons
+  -ml 1500, --max-length 1500	max length of the amplicons
   -o 100, --overlap 100		min overlap of the amplicons
 ```
 **qpcr** mode:
@@ -69,8 +69,10 @@ usage: varvamp qpcr [optional arguments] <alignment> <output dir>
 ```
 optional arguments:
   -h, --help            	show this help message and exit
-	-t, --threshold 	threshold for consensus nucleotides
+  -t, --threshold 	threshold for consensus nucleotides
   -a , --n-ambig        	max number of ambiguous characters in a primer
+  -db None, --database None     location of the BLAST db
+  -th 1, --n-threads 1          number of threads for the BLAST search
   -pa , --pn-ambig   		max number of ambiguous characters in a probe
   -n 50, --test-n 50    	test the top n qPCR amplicons for secondary structures at the minimal primer temperature
   -d -3, --deltaG -3            minimum free energy (kcal/mol/K) cutoff at the lowest primer melting temp

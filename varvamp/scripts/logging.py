@@ -105,6 +105,13 @@ def raise_arg_errors(args, log_file):
             "degeneracy. Consider reducing.",
             log_file
         )
+    if args.database is not None:
+        if args.n_threads < 1:
+            raise_error(
+                "number of threads cannot be smaller than 1.",
+                log_file,
+                exit=True
+            )
     if args.mode in ("tiled", "sanger"):
         if args.opt_length > args.max_length:
             raise_error(
@@ -118,13 +125,6 @@ def raise_arg_errors(args, log_file):
                 log_file,
                 exit=True
             )
-        if args.database is not None:
-            if args.n_threads < 1:
-                raise_error(
-                    "number of threads cannot be smaller than 1.",
-                    log_file,
-                    exit=True
-                )
     # SANGER specific warnings
     if args.mode == "sanger":
         if args.report_n < 1:

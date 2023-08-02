@@ -41,7 +41,7 @@ To search for the best scoring amplicon, varVAMP uses a graph based approach.
 1. varVAMP sorts all amplicons by their score and takes the non-overlapping amplicon with the lowest score!
 2. As varVAMP gives a size penalty to amplicons, varVAMP automatically finds amplicons with low primer scores close to your optimal length (if possible).
 
-#### primer BLAST module (currently only for the sanger and tiled modi)
+#### primer BLAST module
 1. varVAMP generates a fasta query and searches for possible hits with the same settings as [primer blast](https://bmcbioinformatics.biomedcentral.com/articles/10.1186/1471-2105-13-134).
 2. For each amplicon varVAMP searches for off-targets, defined as hits in the db that are the maximum amplicons length multiplied by `BLAST_SIZE_MULTI` apart from each other.
 3. varVAMP appends a high penalty score to the amplicons score if these producing off-targets. This ensures that all other available amplicons are preferentially used.
