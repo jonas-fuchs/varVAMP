@@ -72,6 +72,22 @@ def get_args(sysargs):
             default=None,
             help="max number of ambiguous characters in a primer"
         )
+        par.add_argument(
+            "-db",
+            "--database",
+            help="location of the BLAST db",
+            metavar="None",
+            type=str,
+            default=None
+        )
+        par.add_argument(
+            "-th",
+            "--n-threads",
+            help="number of threads for the BLAST search",
+            metavar="1",
+            type=int,
+            default=1
+        )
     for par in (SANGER_parser, TILED_parser):
         par.add_argument(
             "-ol",
@@ -88,22 +104,6 @@ def get_args(sysargs):
             metavar="1500",
             type=int,
             default=1500
-        )
-        par.add_argument(
-            "-db",
-            "--database",
-            help="location of the BLAST db",
-            metavar="None",
-            type=str,
-            default=None
-        )
-        par.add_argument(
-            "-th",
-            "--n-threads",
-            help="number of threads for the BLAST search",
-            metavar="1",
-            type=int,
-            default=1
         )
     TILED_parser.add_argument(
         "-o",
@@ -173,6 +173,8 @@ def shared_workflow(args, log_file):
 
     # read in alignment and preprocess
     preprocessed_alignment = alignment.preprocess(args.input[0])
+    # check alignment length distribution
+    logging.check_alignment_length(preprocessed_alignment, log_file)
 
     # estimate threshold or number of ambiguous bases if args were not supplied
     if args.threshold is None or args.n_ambig is None:
@@ -306,14 +308,18 @@ def sanger_and_tiled_shared_workflow(args, left_primer_candidates, right_primer_
     )
 
     if args.database is not None:
-        amplicons, off_target_amplicons = blast.sanger_or_tiled_blast(
-            all_primers,
+        # create blast query
+        query_path = blast.create_BLAST_query(all_primers, amplicons, data_dir)
+        # perform primer blast
+        amplicons, off_target_amplicons = blast.primer_blast(
             data_dir,
             args.database,
+            query_path,
             amplicons,
             args.max_length,
             args.n_threads,
-            log_file
+            log_file,
+            mode="sanger_tiled"
         )
     else:
         off_target_amplicons = []
@@ -385,7 +391,7 @@ def tiled_workflow(args, amplicons, left_primer_candidates, right_primer_candida
     return amplicon_scheme
 
 
-def qpcr_workflow(args, alignment_cleaned, ambiguous_consensus, majority_consensus, left_primer_candidates, right_primer_candidates, log_file):
+def qpcr_workflow(args, data_dir, alignment_cleaned, ambiguous_consensus, majority_consensus, left_primer_candidates, right_primer_candidates, log_file):
     """
     part of the workflow specific for the tiled mode
     """
@@ -436,7 +442,21 @@ def qpcr_workflow(args, alignment_cleaned, ambiguous_consensus, majority_consens
         job="Finding unique amplicons with probe.",
         progress_text=f"{len(qpcr_scheme_candidates)} unique amplicons with internal probe"
     )
-
+    # run blast if db is given
+    if args.database is not None:
+        # create blast query
+        query_path = blast.create_BLAST_query_qpcr(qpcr_scheme_candidates, data_dir)
+        # perform primer blast
+        amplicons, off_target_amplicons = blast.primer_blast(
+            data_dir,
+            args.database,
+            query_path,
+            qpcr_scheme_candidates,
+            config.QAMPLICON_LENGTH[1],
+            args.n_threads,
+            log_file,
+            mode="qpcr"
+        )
     # test amplicons for deltaG
     final_schemes = qpcr.test_amplicon_deltaG_parallel(qpcr_scheme_candidates, majority_consensus, args.test_n, args.deltaG)
     if not final_schemes:
@@ -445,13 +465,15 @@ def qpcr_workflow(args, alignment_cleaned, ambiguous_consensus, majority_consens
             log_file,
             exit=True
         )
+    # report potential blast warnings
+    if args.database is not None:
+        blast.write_BLAST_warning(off_target_amplicons, final_schemes, log_file)
     logging.varvamp_progress(
         log_file,
         progress=0.9,
         job="Filtering amplicons for deltaG.",
         progress_text=f"{len(final_schemes)} non-overlapping qPCR schemes that passed deltaG cutoff"
     )
-
     return probe_regions, final_schemes
 
 
@@ -529,6 +551,7 @@ def main(sysargs=sys.argv[1:]):
     if args.mode == "qpcr":
         probe_regions, final_schemes = qpcr_workflow(
             args,
+            data_dir,
             alignment_cleaned,
             ambiguous_consensus,
             majority_consensus,

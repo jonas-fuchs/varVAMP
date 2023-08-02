@@ -8,6 +8,7 @@ import os
 import shutil
 import datetime
 import random
+import statistics
 
 # varVAMP
 from varvamp.scripts import config
@@ -104,6 +105,13 @@ def raise_arg_errors(args, log_file):
             "degeneracy. Consider reducing.",
             log_file
         )
+    if args.database is not None:
+        if args.n_threads < 1:
+            raise_error(
+                "number of threads cannot be smaller than 1.",
+                log_file,
+                exit=True
+            )
     if args.mode in ("tiled", "sanger"):
         if args.opt_length > args.max_length:
             raise_error(
@@ -117,13 +125,6 @@ def raise_arg_errors(args, log_file):
                 log_file,
                 exit=True
             )
-        if args.database is not None:
-            if args.n_threads < 1:
-                raise_error(
-                    "number of threads cannot be smaller than 1.",
-                    log_file,
-                    exit=True
-                )
     # SANGER specific warnings
     if args.mode == "sanger":
         if args.report_n < 1:
@@ -203,6 +204,38 @@ def raise_arg_errors(args, log_file):
                 "setting the deltaG cutoff larger than 0 is not recommended!",
                 log_file
             )
+
+
+def check_alignment_length(preprocessed_alignment, log_file):
+    """
+    checks the sequence lengths of the alignment and reports a warning
+    if the length is larger or smaller than the mean +- 3std of all seqs
+    """
+
+    all_seq_length, all_names = [], []
+    # count the length
+    for seq in preprocessed_alignment:
+        all_names.append(seq[0])
+        all_seq_length.append(len(seq[1].strip("-")))
+    # clac mean and std
+    mean_len, mean_std = statistics.mean(all_seq_length), statistics.stdev(all_seq_length)
+    # check for each seq if it is larger or smaller than the mean +-3std
+    smaller_warning, larger_warning = [], []
+    for name, length in zip(all_names, all_seq_length):
+        if length <= mean_len-3*mean_std:
+            smaller_warning.append(f"{name} ({length} nt)\n")
+        elif length >= mean_len+3*mean_std:
+            larger_warning.append(f"{name} ({length} nt)\n")
+    # raise warning for non-empty lists
+    for warning, length_type in zip([larger_warning, smaller_warning], ["larger", "smaller"]):
+        if not warning:
+            continue
+        warning = "".join(warning)
+        raise_error(
+            f"The following sequences are considerably {length_type} than the alignment mean ({round(mean_len)} nt) and might cause signigicant trimming:\n{warning}",
+            log_file,
+            exit=False
+        )
 
 
 def confirm_config(args, log_file):
