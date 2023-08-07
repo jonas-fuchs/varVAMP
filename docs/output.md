@@ -28,4 +28,4 @@ It also produces some secondary output files [*data/*]:
 | TILED/SANGER | all_primers.bed | A bed file with all high scoring primers that varVAMP found. |
 | qPCR | probe_regions.bed | A bed file showing the location of the potential regions of the consensus sequence that were evaluated for probes. |
 
-#### [Previous: Usage](./usage.md)&emsp;&emsp;[Next: How varVAMP works](./how_varvamp_works.md)
+#### [Previous: Usage](./usage.md)&emsp;&emsp;[Next: Wet lab protocol](./wet_lab_protocol.md)

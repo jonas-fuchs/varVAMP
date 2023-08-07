@@ -7,6 +7,7 @@ produce off-target amplicons.
 # BUILT-INS
 import os
 import itertools
+import multiprocessing
 from shutil import which
 
 #LIBS
@@ -161,33 +162,48 @@ def check_off_targets(df_amp_primers_sorted, max_length, primers):
     return False
 
 
-def predict_non_specific_amplicons(amplicons, blast_df, max_length, mode):
+def predict_non_specific_amplicons_worker(amp, blast_df, max_length, mode):
     """
-    for a given primer pair, predict unspecific targets within a size
-    range and give these primers a high penalty.
+    Worker function to predict unspecific targets for a single amplicon.
     """
-    off_target_amp = []
+    name, data = amp
+    # get correct primers
+    if mode == "sanger_tiled":
+        primers = [data[2], data[3]]
+    elif mode == "qpcr":
+        primers = []
+        for primer_type in ["probe", "left", "right"]:
+            primers.append(f"{primer_type}_{data[primer_type][1]}_{data[primer_type][2]}")
+    # subset df for primers
+    df_amp_primers = blast_df[blast_df["query"].isin(primers)]
+    # sort by reference and ref start
+    df_amp_primers_sorted = df_amp_primers.sort_values(["ref", "ref_start"])
+    # check for off-targets for specific primers
+    if check_off_targets(df_amp_primers_sorted, max_length, primers):
+        return name
 
-    for amp in amplicons:
+
+def predict_non_specific_amplicons(amplicons, blast_df, max_length, mode, n_threads):
+    """
+    Main function to predict unspecific targets within a size range and give
+    these primers a high penalty. Uses multiprocessing for parallelization.
+    """
+    off_targets = []
+    # process amplicons concurrently
+    with multiprocessing.Pool(processes=n_threads) as pool:
+        amp_items = amplicons.items()
+        results = pool.starmap(predict_non_specific_amplicons_worker, [(amp, blast_df, max_length, mode) for amp in amp_items])
+    # check results
+    for off_target in results:
+        if off_target is None:
+            continue
+        off_targets.append(off_target)
         if mode == "sanger_tiled":
-            primers = [amplicons[amp][2], amplicons[amp][3]]
+            amplicons[off_target][5] = amplicons[off_target][5] + config.BLAST_PENALTY
         elif mode == "qpcr":
-            primers = []
-            for primer_type in ["probe", "left", "right"]:
-                primers.append(f"{primer_type}_{amplicons[amp][primer_type][1]}_{amplicons[amp][primer_type][2]}")
-        # subset df for primers
-        df_amp_primers = blast_df[blast_df["query"].isin(primers)]
-        # sort by reference and ref start
-        df_amp_primers_sorted = df_amp_primers.sort_values(["ref", "ref_start"])
-        # iterate over ref for each primer pair
-        if check_off_targets(df_amp_primers_sorted, max_length, primers):
-            if mode == "sanger_tiled":
-                amplicons[amp][5] = amplicons[amp][5] + config.BLAST_PENALTY
-            elif mode == "qpcr":
-                amplicons[amp]["score"][0] = amplicons[amp]["score"][0] + config.BLAST_PENALTY
-            off_target_amp.append(amp)
+            amplicons[off_target]["score"][0] = amplicons[off_target]["score"][0] + config.BLAST_PENALTY
 
-    return(off_target_amp, amplicons)
+    return off_targets, amplicons
 
 
 def primer_blast(data_dir, db, query_path, amplicons, max_length, n_threads, log_file, mode):
@@ -208,7 +224,8 @@ def primer_blast(data_dir, db, query_path, amplicons, max_length, n_threads, log
         amplicons,
         blast_df,
         max_length,
-        mode
+        mode,
+        n_threads
     )
     success_text = f"varVAMP successfully predicted non-specific amplicons:\n\t> {len(off_target_amplicons)}/{len(amplicons)} amplicons could produce amplicons with the blast db.\n\t> raised their amplicon score by {config.BLAST_PENALTY}"
     print(success_text)

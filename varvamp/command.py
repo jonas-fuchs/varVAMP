@@ -7,6 +7,7 @@ import sys
 import os
 import datetime
 import argparse
+import multiprocessing
 
 # varVAMP
 from varvamp.scripts import alignment
@@ -83,7 +84,7 @@ def get_args(sysargs):
         par.add_argument(
             "-th",
             "--n-threads",
-            help="number of threads for the BLAST search",
+            help="number of threads",
             metavar="1",
             type=int,
             default=1
@@ -199,7 +200,8 @@ def shared_workflow(args, log_file):
     # clean alignment of gaps
     alignment_cleaned, gaps_to_mask = alignment.process_alignment(
         preprocessed_alignment,
-        args.threshold
+        args.threshold,
+        args.n_threads
     )
     logging.varvamp_progress(
         log_file,
@@ -458,7 +460,7 @@ def qpcr_workflow(args, data_dir, alignment_cleaned, ambiguous_consensus, majori
             mode="qpcr"
         )
     # test amplicons for deltaG
-    final_schemes = qpcr.test_amplicon_deltaG(qpcr_scheme_candidates, majority_consensus, args.test_n, args.deltaG)
+    final_schemes = qpcr.test_amplicon_deltaG_parallel(qpcr_scheme_candidates, majority_consensus, args.test_n, args.deltaG, args.n_threads)
     if not final_schemes:
         logging.raise_error(
             "no qPCR amplicon passed the deltaG threshold\n",

@@ -4,6 +4,7 @@ alignment preprocessing
 
 # BUILT-INS
 import re
+import multiprocessing
 
 # varVAMP
 from varvamp.scripts import config
@@ -46,30 +47,6 @@ def preprocess(alignment_path):
     return preprocessed_alignment
 
 
-def find_gaps_in_alignment(alignment):
-    """
-    find all gaps for each sequence in alignment
-    """
-    all_gaps = []
-
-    for seq in alignment:
-        # find all gaps for all sequences with regular expression -{min}
-        all_gaps.append(
-            [(gap.start(0), gap.end(0)-1) for gap in re.finditer(
-                "-{1,}", seq[1])]
-            )
-
-    return all_gaps
-
-
-def find_unique_gaps(all_gaps):
-    """
-    get all unique gaps
-    """
-    result = list(set(gaps for gap_list in all_gaps for gaps in gap_list))
-    return result
-
-
 def find_internal_gaps(unique_gaps, gap):
     """
     find all unique gaps that
@@ -97,24 +74,41 @@ def find_internal_gaps(unique_gaps, gap):
     return overlapping_gaps
 
 
-def create_gap_dictionary(unique_gaps, all_gaps):
+def find_overlapping_gaps_worker(gap_list, unique_gaps):
     """
-    creates a dictionary with gap counts.
-    counts also all overlapping gaps per gap.
+    Worker function to find overlapping gaps and count their occurrences.
     """
+    gap_dict_part = {}
+    for gap in gap_list:
+        overlapping_gaps = find_internal_gaps(unique_gaps, gap)
+        for overlapping_gap in overlapping_gaps:
+            if overlapping_gap in gap_dict_part:
+                gap_dict_part[overlapping_gap] += 1
+            else:
+                gap_dict_part[overlapping_gap] = 1
+    return gap_dict_part
+
+
+def create_gap_dictionary(unique_gaps, all_gaps, n_threads):
+    """
+    Creates a dictionary with all gap counts.
+    Counts also all overlapping gaps per gap.
+    Uses multiprocessing for parallelization.
+    """
+
+    with multiprocessing.Pool(processes=n_threads) as pool:
+        results = pool.starmap(find_overlapping_gaps_worker, [(gap_list, unique_gaps) for gap_list in all_gaps])
 
     gap_dict = {}
-
-    for gap_list in all_gaps:
-        for gap in gap_list:
-            overlapping_gaps = find_internal_gaps(unique_gaps, gap)
-            for overlapping_gap in overlapping_gaps:
-                if overlapping_gap in gap_dict:
-                    gap_dict[overlapping_gap] += 1
-                else:
-                    gap_dict[overlapping_gap] = 1
+    for gap_dict_part in results:
+        for gap, count in gap_dict_part.items():
+            if gap in gap_dict:
+                gap_dict[gap] += count
+            else:
+                gap_dict[gap] = count
 
     return gap_dict
+
 
 
 def find_gaps_to_mask(gap_dict, cutoff):
@@ -125,6 +119,7 @@ def find_gaps_to_mask(gap_dict, cutoff):
     """
     gaps_to_mask = []
     potential_gaps = []
+    opened_region = []
 
     # check for each region if it is covered
     # by enough sequences
@@ -136,8 +131,6 @@ def find_gaps_to_mask(gap_dict, cutoff):
     potential_gaps = sorted(potential_gaps)
 
     # get the min and max of overlapping gaps
-    opened_region = []
-    gaps_to_mask = []
     for i, region in enumerate(potential_gaps):
         region = list(region)
         if opened_region:
@@ -203,17 +196,23 @@ def clean_gaps(alignment, gaps_to_mask):
     return cleaned_alignment
 
 
-def process_alignment(preprocessed_alignment, threshold):
+def process_alignment(preprocessed_alignment, threshold, n_threads):
     """
     proprocesses alignment and cleans gaps
     """
-    gap_cutoff = len(preprocessed_alignment)*(1-threshold)
+    all_gaps = []
 
-    all_gaps = find_gaps_in_alignment(preprocessed_alignment)
-    unique_gaps = find_unique_gaps(all_gaps)
+    gap_cutoff = len(preprocessed_alignment)*(1-threshold)
+    for seq in preprocessed_alignment:
+        # find all gaps for all sequences with regular expression -{min}
+        all_gaps.append(
+            [(gap.start(0), gap.end(0) - 1) for gap in re.finditer(
+                "-{1,}", seq[1])]
+        )
+    unique_gaps = list(set(gaps for gap_list in all_gaps for gaps in gap_list))
 
     if unique_gaps:
-        gap_dic = create_gap_dictionary(unique_gaps, all_gaps)
+        gap_dic = create_gap_dictionary(unique_gaps, all_gaps, n_threads)
         gaps_to_mask = find_gaps_to_mask(gap_dic, gap_cutoff)
         if gaps_to_mask:
             alignment_cleaned = clean_gaps(
