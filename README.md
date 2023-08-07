@@ -37,6 +37,7 @@ This program is currently being developed and in an alpha state. You are welcome
 * [Preparing the data](https://github.com/jonas-fuchs/varVAMP/blob/master/docs/preparing_the_data.md)
 * [Usage](https://github.com/jonas-fuchs/varVAMP/blob/master/docs/usage.md)
 * [Output](https://github.com/jonas-fuchs/varVAMP/blob/master/docs/output.md)
+* [Wet-lab protocol](https://github.com/jonas-fuchs/varVAMP/blob/master/docs/wet_lab_protocol.md)
 * [How it works](https://github.com/jonas-fuchs/varVAMP/blob/master/docs/how_varvamp_works.md)
 * [FAQ](https://github.com/jonas-fuchs/varVAMP/blob/master/docs/FAQ.md)
 
