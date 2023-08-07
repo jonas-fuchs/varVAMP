@@ -82,4 +82,4 @@ BLAST_PENALTY
 
 If the `-db` argument is used, varVAMP will perform a BLAST search and evaluate off-targets against this database for each amplicon. If an off-target effect is predicted varVAMP will add this penalty to the amplicon score. This insures that this amplicon is only considered if no other amplicons are in this alignment region.
 
-#### [Previous: Output](./output.md)&emsp;&emsp;[Next: FAQ](./FAQ.md)
+#### [Previous: Wet lab protocol](./wet_lab_protocol.md)&emsp;&emsp;[Next: FAQ](./FAQ.md)
