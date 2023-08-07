@@ -262,7 +262,7 @@ def process_single_amplicon_deltaG(amplicon, majority_consensus):
     return deltaG, amp_positions, name
 
 
-def test_amplicon_deltaG_parallel(qpcr_schemes_candidates, majority_consensus, n_to_test, deltaG_cutoff):
+def test_amplicon_deltaG_parallel(qpcr_schemes_candidates, majority_consensus, n_to_test, deltaG_cutoff, n_threads):
     """
     Test all amplicon deltaGs for the top n hits at the lowest primer temperature
     and filters if they fall below the cutoff. Multiple processes are used
@@ -273,12 +273,11 @@ def test_amplicon_deltaG_parallel(qpcr_schemes_candidates, majority_consensus, n
     amplicon_set = set()
 
     # Create a pool of processes to handle the concurrent processing
-    with multiprocessing.Pool() as pool:
+    with multiprocessing.Pool(processes=n_threads) as pool:
         # Create a list of the first n amplicon tuples for processing
         amplicons = itertools.islice(qpcr_schemes_candidates.items(), n_to_test)
         # process amplicons concurrently
         results = pool.starmap(process_single_amplicon_deltaG, [(amp, majority_consensus) for amp in amplicons])
-
         # Process the results
         for deltaG, amp_positions, amp_name in results:
             # check if the amplicon overlaps with an amplicon that was previously
@@ -295,5 +294,3 @@ def test_amplicon_deltaG_parallel(qpcr_schemes_candidates, majority_consensus, n
                 passed_counter += 1
 
     return final_schemes
-
-#TODO: add option for number of threads (currently all are used)
