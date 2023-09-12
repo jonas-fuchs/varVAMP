@@ -15,14 +15,14 @@ Thanks to Mathias Schmmerer for providing HepE infected cell cultures.
 ## Amplicon Generation by SuperScript-IV One-Step-PCR
 The RNA amplification was performed with the following approach and PCR protocol for every single amplicon. 
 
-Mastermix:
+PCR reaction:
 
     • 12,5 μL 	2X Platinum™ SuperFi™ RT-PCR Master Mix 
-    • 0.25 μL	SuperScript™ IV RT Mix [1] 
-    • 0,75 µl	Nuclease-free water
-    • 9,00 µl 	Template RNA (0.01 pg to 1 μg total RNA) 
-    • 1,25 μl 	varVAMP´s forward primer (10 μM)
-    • 1,25 μl 	varVAMP´s reverse primer (10 μM) 
+    • 0.25 μL	SuperScript™ IV RT Mix 
+    • 0.75 µl	Nuclease-free water
+    • 9.00 µl 	Template RNA (0.01 pg to 1 μg total RNA) 
+    • 1.25 μl 	varVAMP´s forward primer (10 μM)
+    • 1.25 μl 	varVAMP´s reverse primer (10 μM) 
     
     Total volume: 25 µl
 
@@ -43,7 +43,7 @@ PCR cycler program (Touchdown):
 
 **INFO:** Primers can also be used in two multiplex reactions.
 
-### Results
+## Results
 
 <img src="./pcr_gel.png" alt="PCR" />
 
