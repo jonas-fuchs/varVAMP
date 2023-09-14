@@ -43,7 +43,7 @@ def calc_hairpin(seq):
         )
 
 
-def calc_dimer(seq1, seq2):
+def calc_dimer(seq1, seq2, structure=False):
     """
     Calculate the heterodimerization thermodynamics of two DNA sequences.
     Return primer3 thermo object.
@@ -55,6 +55,7 @@ def calc_dimer(seq1, seq2):
         dv_conc=config.PCR_DV_CONC,
         dna_conc=config.PCR_DNA_CONC,
         dntp_conc=config.PCR_DNTP_CONC,
+        output_structure=structure
     )
 
 

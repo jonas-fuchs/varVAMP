@@ -225,6 +225,7 @@ def check_alignment_length(preprocessed_alignment, log_file):
     # (otherwise varvamp will report very small differences).
     smaller_warning, larger_warning = [], []
     for name, length in zip(all_names, all_seq_length):
+        # consider variation of sequence lengths and check if it is at least 1 % deviation
         if length <= mean_len-3*mean_std and length <= mean_len-mean_len*0.01:
             smaller_warning.append(f"{name} ({length} nt)\n")
         elif length >= mean_len+3*mean_std and length >= mean_len+mean_len*0.01:

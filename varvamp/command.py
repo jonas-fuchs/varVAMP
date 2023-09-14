@@ -431,7 +431,7 @@ def qpcr_workflow(args, data_dir, alignment_cleaned, ambiguous_consensus, majori
     )
 
     # find unique high scoring amplicons with internal probe
-    qpcr_scheme_candidates = qpcr.find_qcr_schemes(qpcr_probes, left_primer_candidates, right_primer_candidates, majority_consensus)
+    qpcr_scheme_candidates = qpcr.find_qcr_schemes(qpcr_probes, left_primer_candidates, right_primer_candidates, majority_consensus, ambiguous_consensus)
     if not qpcr_scheme_candidates:
         logging.raise_error(
             "no qPCR scheme candidates found. lower threshold or increase number of ambiguous chars in primer and/or probe\n",
