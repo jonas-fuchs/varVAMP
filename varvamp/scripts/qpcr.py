@@ -1,6 +1,7 @@
 """
 qPCR probe and amplicon design
 """
+import re
 
 # LIBS
 import seqfold
@@ -130,30 +131,23 @@ def hardfilter_amplicon(majority_consensus, left_primer, right_primer):
         and not "NN" in amplicon_seq
     )
 
-############# rework!!!!!!!!!!!
-def check_end_overlap(dimer_result, oligo2):
+
+def check_end_overlap(dimer_result):
     """
-    checks if two oligos overlap at the end
+    checks if two oligos overlap at their ends
     Example:
         xxxxxxxxtagc-------
         --------atcgxxxxxxx
     """
     if dimer_result.structure_found:
+        # clean structure
         structure = [x[4:] for x in dimer_result.ascii_structure_lines]
-        # check if there is enough overlap
+        # calc overlap and the cummulative len of the oligos
         overlap = len(structure[1].replace(" ", ""))
-        if overlap > config.END_OVERLAP and "-" not in structure[3]:
-            # check if the overlap occurs between the two ends of the primers
-            print("structure")
-            for i in structure:
-                print(i)
-            overhang = len(structure[0]) - len(structure[0].rstrip("-"))
-            overlap_white = len(structure[1]) - len(structure[1].lstrip(" "))
-            if overhang + overlap_white == len(oligo2):
-
-                return True
-            else:
-                return False
+        nt_count = len(re.findall("[ATCG]", "".join(structure)))
+        # check for overlaps at the ends and the min overlap, allowing maximal 1 mismatch or overhang
+        if overlap > config.END_OVERLAP and nt_count <= len(structure[0]) + overlap + 1 and "  " not in structure[1].lstrip(" "):
+            return True
     else:
         return False
 
@@ -182,7 +176,7 @@ def forms_dimer_or_overhangs(right_primer, left_primer, probe, ambiguous_consens
                 if dimer_result.tm >= config.PRIMER_MAX_DIMER_TMP:
                     forms_structure = True
                     break
-                if check_end_overlap(dimer_result, oligo2):
+                if check_end_overlap(dimer_result):
                     forms_structure = True
                     break
             # break all loops because we found an unwanted structure in one of the permutations
