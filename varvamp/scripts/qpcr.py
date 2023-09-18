@@ -1,6 +1,7 @@
 """
 qPCR probe and amplicon design
 """
+import re
 
 # LIBS
 import seqfold
@@ -10,6 +11,7 @@ import multiprocessing
 # varVAMP
 from varvamp.scripts import config
 from varvamp.scripts import primers
+from varvamp.scripts import reporting
 
 def choose_probe_direction(seq):
     """
@@ -18,10 +20,9 @@ def choose_probe_direction(seq):
     """
     c_count = seq.count("c")
     g_count = seq.count("g")
+    direction = "-+"
     if c_count < g_count:
         direction = "-"
-    if c_count == g_count:
-        direction = "-+"
     if c_count > g_count:
         direction = "+"
 
@@ -103,7 +104,7 @@ def flanking_primer_subset(primer_list, primer_direction, probe):
     if primer_direction == "+":
         window_start = probe[1] - config.QAMPLICON_LENGTH[1] + len(probe[0])
         window_stop = probe[1]
-    elif primer_direction == "-":
+    else:
         window_start = probe[2]
         window_stop = probe[2] + config.QAMPLICON_LENGTH[1] - len(probe[0])
     for primer in primer_list:
@@ -131,22 +132,61 @@ def hardfilter_amplicon(majority_consensus, left_primer, right_primer):
     )
 
 
-def forms_dimer(right_primer, left_primer, probe):
+def check_end_overlap(dimer_result):
     """
-    checks if combinations of primers/probe form dimers
+    checks if two oligos overlap at their ends (pretty rare)
+    Example:
+        xxxxxxxxtagc-------
+        --------atcgxxxxxxx
+    """
+    if dimer_result.structure_found:
+        # clean structure
+        structure = [x[4:] for x in dimer_result.ascii_structure_lines]
+        # calc overlap and the cumulative len of the oligos
+        overlap = len(structure[1].replace(" ", ""))
+        nt_count = len(re.findall("[ATCG]", "".join(structure)))
+        # check for overlaps at the ends and the min overlap (allows for some amount of mismatches)
+        if overlap > config.END_OVERLAP and nt_count <= len(structure[0]) + overlap + 1 and "  " not in structure[1].lstrip(" "):
+            return True
+    else:
+        return False
+
+
+def forms_dimer_or_overhangs(right_primer, left_primer, probe, ambiguous_consensus):
+    """
+    checks if combinations of primers/probe form dimers or overhangs
     """
 
-    forms_dimer = False
+    forms_structure = False
 
-    for combination in [(right_primer[0], left_primer[0]), (right_primer[0], probe[0]), (left_primer[0], probe[0])]:
-        if primers.calc_dimer(combination[0], combination[1]).tm > config.PRIMER_MAX_DIMER_TMP:
-            forms_dimer = True
+    # first check if there are dimers between the two flanking primers
+    if primers.calc_dimer(left_primer[0], right_primer[0]).tm > config.PRIMER_MAX_DIMER_TMP:
+        return True
+    # for the probe check all permutations and possible overhangs to ensure
+    # that none of the primers could cause unspecific probe binding.
+    # first get all permutations
+    probe_per = reporting.get_permutations(ambiguous_consensus[probe[1]:probe[2]])
+    left_per = reporting.get_permutations(ambiguous_consensus[left_primer[1]:left_primer[2]])
+    right_per = reporting.get_permutations(ambiguous_consensus[right_primer[1]:right_primer[2]])
+    # then check all permutations
+    for combination in [(probe_per, left_per), (probe_per, right_per)]:
+        for oligo1 in combination[0]:
+            for oligo2 in combination[1]:
+                dimer_result = primers.calc_dimer(oligo1, oligo2, structure=True)
+                if dimer_result.tm >= config.PRIMER_MAX_DIMER_TMP or check_end_overlap(dimer_result):
+                    forms_structure = True
+                    break
+            # break all loops because we found an unwanted structure in one of the permutations
+            # (either dimer formation or a too long overlap at the ends of the primer)
+            if forms_structure:
+                break
+        if forms_structure:
             break
 
-    return forms_dimer
+    return forms_structure
 
 
-def assess_amplicons(left_subset, right_subset, qpcr_probes, probe, majority_consensus):
+def assess_amplicons(left_subset, right_subset, qpcr_probes, probe, majority_consensus, ambiguous_consensus):
     """
     assess if a potential amplicon is a qPCR scheme for a specific probe and return the best scoring
     """
@@ -182,8 +222,8 @@ def assess_amplicons(left_subset, right_subset, qpcr_probes, probe, majority_con
             probe_temp = primers.calc_temp(qpcr_probes[probe][0])
             if not all([config.QPROBE_TEMP_DIFF[0] <= probe_temp-x <= config.QPROBE_TEMP_DIFF[1] for x in primer_temps]):
                 continue
-            # .... all combination of oligos do not form dimers.
-            if forms_dimer(right_primer, left_primer, qpcr_probes[probe]):
+            # .... all combination of oligos do not form dimers or overhangs.
+            if forms_dimer_or_overhangs(right_primer, left_primer, qpcr_probes[probe], ambiguous_consensus):
                 continue
             # append to list and break as this is the lowest scoring primer combi (primers are sorted by score)
             amplicon_found = True
@@ -196,7 +236,7 @@ def assess_amplicons(left_subset, right_subset, qpcr_probes, probe, majority_con
     return primer_combinations
 
 
-def find_qcr_schemes(qpcr_probes, left_primer_candidates, right_primer_candidates, majority_consensus):
+def find_qcr_schemes(qpcr_probes, left_primer_candidates, right_primer_candidates, majority_consensus, ambiguous_consensus):
     """
     this finds the final qPCR schemes. it slices for primers flanking a probe and
     test all left/right combinations whether they are potential amplicons. as primers
@@ -218,7 +258,7 @@ def find_qcr_schemes(qpcr_probes, left_primer_candidates, right_primer_candidate
         # consider if there are primers flanking the probe ...
         if not left_subset or not right_subset:
             continue
-        primer_combination = assess_amplicons(left_subset, right_subset, qpcr_probes, probe, majority_consensus)
+        primer_combination = assess_amplicons(left_subset, right_subset, qpcr_probes, probe, majority_consensus, ambiguous_consensus)
         # ... a combi has been found, ...
         if not primer_combination:
             continue

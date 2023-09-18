@@ -225,9 +225,10 @@ def check_alignment_length(preprocessed_alignment, log_file):
     # (otherwise varvamp will report very small differences).
     smaller_warning, larger_warning = [], []
     for name, length in zip(all_names, all_seq_length):
-        if length <= mean_len-3*mean_std and length <= mean_len-mean_len*0.01:
+        # consider variation of sequence lengths and check if it is at least 2 % deviation
+        if length <= mean_len-3*mean_std and length <= mean_len-mean_len*0.02:
             smaller_warning.append(f"{name} ({length} nt)\n")
-        elif length >= mean_len+3*mean_std and length >= mean_len+mean_len*0.01:
+        elif length >= mean_len+3*mean_std and length >= mean_len+mean_len*0.02:
             larger_warning.append(f"{name} ({length} nt)\n")
     # raise warning for non-empty lists
     for warning, length_type in zip([larger_warning, smaller_warning], ["larger", "smaller"]):
@@ -235,7 +236,7 @@ def check_alignment_length(preprocessed_alignment, log_file):
             continue
         warning = "".join(warning)
         raise_error(
-            f"The following sequences are considerably {length_type} than the alignment mean ({round(mean_len)} nt) and might cause signigicant trimming:\n{warning}",
+            f"The following sequences are considerably {length_type} than the alignment mean ({round(mean_len)} nt) and might cause alignment trimming:\n{warning}",
             log_file,
             exit=False
         )
