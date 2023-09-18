@@ -134,7 +134,7 @@ def hardfilter_amplicon(majority_consensus, left_primer, right_primer):
 
 def check_end_overlap(dimer_result):
     """
-    checks if two oligos overlap at their ends
+    checks if two oligos overlap at their ends (pretty rare)
     Example:
         xxxxxxxxtagc-------
         --------atcgxxxxxxx
@@ -142,10 +142,10 @@ def check_end_overlap(dimer_result):
     if dimer_result.structure_found:
         # clean structure
         structure = [x[4:] for x in dimer_result.ascii_structure_lines]
-        # calc overlap and the cummulative len of the oligos
+        # calc overlap and the cumulative len of the oligos
         overlap = len(structure[1].replace(" ", ""))
         nt_count = len(re.findall("[ATCG]", "".join(structure)))
-        # check for overlaps at the ends and the min overlap, allowing maximal 1 mismatch or overhang
+        # check for overlaps at the ends and the min overlap (allows for some amount of mismatches)
         if overlap > config.END_OVERLAP and nt_count <= len(structure[0]) + overlap + 1 and "  " not in structure[1].lstrip(" "):
             return True
     else:
@@ -173,10 +173,7 @@ def forms_dimer_or_overhangs(right_primer, left_primer, probe, ambiguous_consens
         for oligo1 in combination[0]:
             for oligo2 in combination[1]:
                 dimer_result = primers.calc_dimer(oligo1, oligo2, structure=True)
-                if dimer_result.tm >= config.PRIMER_MAX_DIMER_TMP:
-                    forms_structure = True
-                    break
-                if check_end_overlap(dimer_result):
+                if dimer_result.tm >= config.PRIMER_MAX_DIMER_TMP or check_end_overlap(dimer_result):
                     forms_structure = True
                     break
             # break all loops because we found an unwanted structure in one of the permutations
