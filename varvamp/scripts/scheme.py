@@ -118,7 +118,7 @@ def create_amplicon_graph(amplicons, min_overlap):
             # the current amplicon and if its non-overlapping part is large
             # enough to ensure space for a primer and the min overlap of the
             # following amplicon.
-            if not all((start <= next_amplicon[0] <= stop, next_amplicon[1] > current_amplicon[1] + next_amplicon[4]/2)):
+            if not all([start <= next_amplicon[0] <= stop, next_amplicon[1] > current_amplicon[1] + next_amplicon[4]/2]):
                 continue
             if current not in amplicon_graph:
                 amplicon_graph[current] = {next_amp: next_amplicon[5]}

@@ -491,9 +491,8 @@ def main(sysargs=sys.argv[1:]):
     start_time = datetime.datetime.now()
     results_dir, data_dir, log_file = logging.create_dir_structure(args.input[1])
     # check if blast is installed
-    if args.mode == "tiled" or args.mode == "sanger":
-        if args.database is not None:
-            blast.check_BLAST_installation(log_file)
+    if args.database is not None:
+        blast.check_BLAST_installation(log_file)
 
     # mode unspecific part of the workflow
     alignment_cleaned, majority_consensus, ambiguous_consensus, primer_regions, left_primer_candidates, right_primer_candidates = shared_workflow(args, log_file)
