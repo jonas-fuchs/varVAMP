@@ -4,6 +4,7 @@ amplicon search
 
 # BUILT-INS
 import heapq
+import math
 
 # varVAMP
 from varvamp.scripts import config, primers
@@ -78,7 +79,7 @@ def find_amplicons(all_primers, opt_len, max_len):
                 continue
             # calculate length dependend amplicon costs as the cumulative primer
             # score multiplied by the fold length of the optimal length.
-            amplicon_costs = (right_primer[3] + left_primer[3])*(amplicon_length/opt_len)
+            amplicon_costs = (right_primer[3] + left_primer[3])*math.exp(amplicon_length/opt_len)
             amplicon_name = "amplicon_"+str(amplicon_number)
             amplicon_dict[amplicon_name] = [
                 left_primer[1],  # start
@@ -111,8 +112,8 @@ def create_amplicon_graph(amplicons, min_overlap):
         current_amplicon = amplicons[current]
         start = current_amplicon[0] + current_amplicon[4]/2
         stop = current_amplicon[1] - min_overlap
-        for next in amplicons:
-            next_amplicon = amplicons[next]
+        for next_amp in amplicons:
+            next_amplicon = amplicons[next_amp]
             # check if the next amplicon lies within the start/stop range of
             # the current amplicon and if its non-overlapping part is large
             # enough to ensure space for a primer and the min overlap of the
@@ -120,9 +121,9 @@ def create_amplicon_graph(amplicons, min_overlap):
             if not all((start <= next_amplicon[0] <= stop, next_amplicon[1] > current_amplicon[1] + next_amplicon[4]/2)):
                 continue
             if current not in amplicon_graph:
-                amplicon_graph[current] = {next: next_amplicon[5]}
+                amplicon_graph[current] = {next_amp: next_amplicon[5]}
             else:
-                amplicon_graph[current][next] = next_amplicon[5]
+                amplicon_graph[current][next_amp] = next_amplicon[5]
 
     # return a graph object
     return Graph(nodes, amplicon_graph)

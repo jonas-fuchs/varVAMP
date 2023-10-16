@@ -557,6 +557,11 @@ def per_base_mismatch_plot(dir, amplicon_scheme, threshold, mode="SANGER/TILED")
                 ax[idx].xaxis.set_ticklabels(x, rotation=45)
                 ax[idx].set_ylabel(ylabel="freq of sequences")
                 ax[idx].set_xlabel("position")
-                ax[idx].set_ylim(0, 1-threshold)
+                # set yaxis lims reasonably
+                if threshold <= 0.9:
+                    ax[idx].set_ylim(0, 1-threshold)
+                else:
+                    ax[idx].set_ylim(0, 0.1)
             # - to pdf
             pdf.savefig(fig, bbox_inches='tight')
+            plt.close()
