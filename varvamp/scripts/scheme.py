@@ -78,7 +78,7 @@ def find_amplicons(all_primers, opt_len, max_len):
             if primers.calc_dimer(left_primer[0], right_primer[0]).tm > config.PRIMER_MAX_DIMER_TMP:
                 continue
             # calculate length dependend amplicon costs as the cumulative primer
-            # score multiplied by the fold length of the optimal length.
+            # score multiplied by the e^(fold length of the optimal length).
             amplicon_costs = (right_primer[3] + left_primer[3])*math.exp(amplicon_length/opt_len)
             amplicon_name = "amplicon_"+str(amplicon_number)
             amplicon_dict[amplicon_name] = [
@@ -316,8 +316,7 @@ def get_overlapping_primers(dimer, left_primer_candidates, right_primer_candidat
     for primer in dimer:
         overlapping_primers_temp = []
         # check in which list to look for them
-        overlap_range = range(primer[3][1], primer[3][2]+1)
-        overlap_set = set(overlap_range)
+        overlap_set = set(range(primer[3][1], math.ceil((primer[3][1]+primer[3][2])/2+1)))
         if "RIGHT" in primer[2]:
             primers_to_test = right_primer_candidates
         else:

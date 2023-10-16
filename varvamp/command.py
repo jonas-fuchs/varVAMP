@@ -285,7 +285,7 @@ def sanger_and_tiled_shared_workflow(args, left_primer_candidates, right_primer_
     logging.varvamp_progress(
         log_file,
         progress=0.7,
-        job="Considering non-overlapping low scoring primers.",
+        job="Considering low scoring primers.",
         progress_text=f"{len(all_primers['+'])} fw and {len(all_primers['-'])} rw primers"
     )
 
