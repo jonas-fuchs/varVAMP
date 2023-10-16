@@ -111,8 +111,8 @@ def flanking_primer_subset(primer_list, primer_direction, probe):
         if window_start < primer[1] and primer[2] < window_stop:
             subset.append(primer)
 
-    # sort by score
-    subset.sort(key=lambda x: x[3])
+    # sort by score and start if same score
+    subset.sort(key=lambda x: (x[3], x[1]))
 
     return subset
 

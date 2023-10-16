@@ -371,19 +371,22 @@ def find_best_primers(left_primer_candidates, right_primer_candidates):
     been covered by the left half of a better scoring primer candidate.
     This significantly reduces the amount of primers while retaining
     the best scoring ones.
+
     Example:
     ------------- (score 1) 1
         ------------ (score 0.8) 2
             -----------(score 0.9) 3
                    --------- (score 1) 4
+
     --> primer 2 would be retained and primer 1, 3 excluded, primer 4
     will however be considered in the next set of overlapping primers.
+
     """
     all_primers = {}
 
     for direction, primer_candidates in [("+", left_primer_candidates), ("-", right_primer_candidates)]:
-        # sort the primers for the best scoring
-        primer_candidates.sort(key=lambda x: x[3])
+        # sort the primers for the best scoring, and if same score by start
+        primer_candidates.sort(key=lambda x: (x[3], x[1]))
         # ini everything with the top scoring primer
         to_retain = [primer_candidates[0]]
         primer_ranges = list(range(primer_candidates[0][1], primer_candidates[0][2]+1))
@@ -391,7 +394,7 @@ def find_best_primers(left_primer_candidates, right_primer_candidates):
 
         for primer in primer_candidates:
             # mark the left side of the primers as used (right overlapping primers can be still considered)
-            primer_positions = list(range(primer[1], math.ceil((primer[1]+primer[2])/2+1)))
+            primer_positions = list(range(primer[1], int((primer[1]+primer[2])/2+1)))
             # check if none of the nucleotides of the next primer
             # are already covered by a better primer
             if not any(x in primer_positions for x in primer_set):
