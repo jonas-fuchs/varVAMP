@@ -491,6 +491,7 @@ def varvamp_plot(dir, alignment_cleaned, primer_regions, all_primers=None, ampli
 
     # save fig
     fig.savefig(out, bbox_inches='tight')
+    plt.close()
 
 
 def get_SANGER_TILED_primers_for_plot(amplicon_scheme):

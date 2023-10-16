@@ -178,7 +178,7 @@ def get_end_node(previous_nodes, shortest_path, amplicons):
     return min(possible_end_nodes.items(), key=lambda x: x[1])
 
 
-def get_min_path(previous_nodes, shortest_path, start_node, target_node):
+def get_min_path(previous_nodes, start_node, target_node):
     """
     get the min path from the start to stop node from the
     previosuly calculated shortest path
@@ -269,7 +269,7 @@ def find_best_covering_scheme(amplicons, amplicon_graph, all_primers):
             break
 
     if best_previous_nodes:
-        amplicon_scheme = get_min_path(best_previous_nodes, best_shortest_path, best_start_node, best_target_node)
+        amplicon_scheme = get_min_path(best_previous_nodes, best_start_node, best_target_node)
     else:
         # if no previous nodes are found but the single amplicon results in the largest
         # coverage - return as the best scheme

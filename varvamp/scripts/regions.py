@@ -69,14 +69,14 @@ def digest_seq(seq, kmer_size):
     """
     digest the sequence into kmers
     """
-    return[[seq[i:i+kmer_size], i, i+len(seq[i:i+kmer_size])] for i in range(len(seq)-kmer_size+1)]
+    return [[seq[i:i+kmer_size], i, i+len(seq[i:i+kmer_size])] for i in range(len(seq)-kmer_size+1)]
 
 
 def produce_kmers(primer_regions, consensus, sizes=config.PRIMER_SIZES):
     """
     produce kmers for all primer regions
     """
-    kmers = []
+    kmers = set()
 
     for region in primer_regions:
         sliced_seq = consensus[region[0]:region[1]]
@@ -87,8 +87,6 @@ def produce_kmers(primer_regions, consensus, sizes=config.PRIMER_SIZES):
                 kmer_temp[1] = kmer_temp[1]+region[0]
                 kmer_temp[2] = kmer_temp[2]+region[0]
                 # check if kmer is already in list (overlapping regions)
-                if kmer_temp in kmers:
-                    continue
-                kmers.append(kmer_temp)
+                kmers.add(tuple(kmer_temp))
 
     return kmers
