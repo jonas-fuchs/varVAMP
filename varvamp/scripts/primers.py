@@ -368,17 +368,17 @@ def find_best_primers(left_primer_candidates, right_primer_candidates):
     Primer candidates are likely overlapping. Here, the list of primers
     is sorted for the best to worst scoring. Then, the next best scoring
     is retained if it does not have any nucleotides that have already
-    been covered by the left half of a better scoring primer candidate.
+    been covered by the middle third of a better scoring primer candidate.
     This significantly reduces the amount of primers while retaining
     the best scoring ones.
 
     Example:
-    ------------- (score 1) 1
-        ------------ (score 0.8) 2
-            -----------(score 0.9) 3
-                   --------- (score 1) 4
+    -------- (score 1) 1
+        ------------- (score 1) 2
+            ------------ (score 0.8) 3
+                      ----------(score 0.9) 4
 
-    --> primer 2 would be retained and primer 1, 3 excluded, primer 4
+    --> primer 3 would be retained and primer 2 excluded, primer 4 and 1
     will however be considered in the next set of overlapping primers.
 
     """
