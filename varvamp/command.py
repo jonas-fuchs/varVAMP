@@ -345,7 +345,7 @@ def sanger_workflow(args, amplicons, all_primers, log_file):
     return amplicon_scheme
 
 
-def tiled_workflow(args, amplicons, left_primer_candidates, right_primer_candidates, all_primers, ambiguous_consensus, log_file):
+def tiled_workflow(args, amplicons, left_primer_candidates, right_primer_candidates, all_primers, ambiguous_consensus, log_file, results_dir):
     """
     part of the workflow specific for the tiled mode
     """
@@ -371,7 +371,7 @@ def tiled_workflow(args, amplicons, left_primer_candidates, right_primer_candida
             f"varVAMP found {len(dimers_not_solved)} primer dimers without replacements. Check the dimer file and perform the PCR for incomaptible amplicons in a sperate reaction.",
             log_file
         )
-        reporting.write_dimers(dir, dimers_not_solved)
+        reporting.write_dimers(results_dir, dimers_not_solved)
 
     # evaluate coverage
     percent_coverage = round(coverage/len(ambiguous_consensus)*100, 2)
@@ -527,7 +527,8 @@ def main(sysargs=sys.argv[1:]):
                 right_primer_candidates,
                 all_primers,
                 ambiguous_consensus,
-                log_file
+                log_file,
+                results_dir
             )
         if args.database is not None:
             blast.write_BLAST_warning(off_target_amplicons, amplicon_scheme, log_file)

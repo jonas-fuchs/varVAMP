@@ -18,36 +18,36 @@ from varvamp.scripts import primers
 from varvamp.scripts import config
 
 
-def write_fasta(dir, seq_id, seq):
+def write_fasta(path, seq_id, seq):
     """
     write fasta files
     """
     name = f"{seq_id}.fasta"
-    out = os.path.join(dir, name)
+    out = os.path.join(path, name)
     with open(out, 'w') as o:
         print(f">{seq_id}\n{seq}", file=o)
 
 
-def write_alignment(dir, alignment):
+def write_alignment(path, alignment):
     """
     write alignment to file
     """
     name = "alignment_cleaned.fasta"
-    out = os.path.join(dir, name)
+    out = os.path.join(path, name)
     with open(out, "w") as o:
         for seq in alignment:
             print(f">{seq[0]}\n{seq[1]}", file=o)
 
 
-def write_regions_to_bed(primer_regions, dir, mode=None):
+def write_regions_to_bed(primer_regions, path, mode=None):
     """
     write primer regions as bed file
     """
 
     if mode == "probe":
-        outfile = f"{dir}probe_regions.bed"
+        outfile = f"{path}probe_regions.bed"
     else:
-        outfile = f"{dir}primer_regions.bed"
+        outfile = f"{path}primer_regions.bed"
     counter = 0
 
     with open(outfile, 'w') as o:
@@ -80,11 +80,11 @@ def write_primers_to_bed(outfile, primer_name, primer_properties, direction):
         )
 
 
-def write_all_primers(dir, all_primers):
+def write_all_primers(path, all_primers):
     """
     write all primers that varVAMP designed as bed file
     """
-    outfile = f"{dir}all_primers.bed"
+    outfile = f"{path}all_primers.bed"
 
     for direction in all_primers:
         for primer in all_primers[direction]:
@@ -121,15 +121,15 @@ def calc_mean_stats(permutations):
     return round(gc/len(permutations), 1), round(temp/len(permutations), 1)
 
 
-def write_qpcr_to_files(dir, final_schemes, ambiguous_consensus):
+def write_qpcr_to_files(path, final_schemes, ambiguous_consensus):
     """
     write all relevant bed files and tsv file for the qPCR design
     """
 
-    tsv_file = os.path.join(dir, "qpcr_design.tsv")
-    tsv_file_2 = os.path.join(dir, "qpcr_primers.tsv")
-    primer_bed_file = os.path.join(dir, "primers.bed")
-    amplicon_bed_file = os.path.join(dir, "amplicons.bed")
+    tsv_file = os.path.join(path, "qpcr_design.tsv")
+    tsv_file_2 = os.path.join(path, "qpcr_primers.tsv")
+    primer_bed_file = os.path.join(path, "primers.bed")
+    amplicon_bed_file = os.path.join(path, "amplicons.bed")
 
     with open(tsv_file, "w") as tsv, open(tsv_file_2, "w") as tsv2, open(amplicon_bed_file, "w") as bed:
         print(
@@ -160,7 +160,7 @@ def write_qpcr_to_files(dir, final_schemes, ambiguous_consensus):
                 round(final_schemes[scheme]["score"], 1),
                 final_schemes[scheme]["deltaG"],
                 len(amplicon_seq),
-                amplicon_start,
+                amplicon_start + 1,
                 amplicon_stop,
                 amplicon_seq,
                 sep="\t",
@@ -183,7 +183,7 @@ def write_qpcr_to_files(dir, final_schemes, ambiguous_consensus):
                 print(
                     scheme,
                     type,
-                    final_schemes[scheme][type][1],
+                    final_schemes[scheme][type][1] + 1,
                     final_schemes[scheme][type][2],
                     seq,
                     len(seq),
@@ -204,14 +204,14 @@ def write_qpcr_to_files(dir, final_schemes, ambiguous_consensus):
                 )
 
 
-def write_scheme_to_files(dir, amplicon_scheme, ambiguous_consensus, mode):
+def write_scheme_to_files(path, amplicon_scheme, ambiguous_consensus, mode):
     """
     write all relevant bed files and a tsv file with all primer stats
     """
-    tsv_file = os.path.join(dir, "primers.tsv")
-    primer_bed_file = os.path.join(dir, "primers.bed")
-    amplicon_bed_file = os.path.join(dir, "amplicons.bed")
-    tabular_file = os.path.join(dir, "primer_to_amplicon_assignment.tabular")
+    tsv_file = os.path.join(path, "primers.tsv")
+    primer_bed_file = os.path.join(path, "primers.bed")
+    amplicon_bed_file = os.path.join(path, "amplicons.bed")
+    tabular_file = os.path.join(path, "primer_to_amplicon_assignment.tabular")
 
     counter = 0
 
@@ -219,7 +219,7 @@ def write_scheme_to_files(dir, amplicon_scheme, ambiguous_consensus, mode):
     with open(tsv_file, "w") as tsv, open(amplicon_bed_file, "w") as bed, open(tabular_file, "w") as tabular:
         # write header for primer tsv
         print(
-            "amlicon_name\tprimer_name\tpool\tstart\tstop\tseq\tsize\tgc_best\ttemp_best\tmean_gc\tmean_temp\tscore",
+            "amlicon_name\tamplicon_length\tprimer_name\tpool\tstart\tstop\tseq\tsize\tgc_best\ttemp_best\tmean_gc\tmean_temp\tscore",
             file=tsv
         )
         counter = 0
@@ -233,6 +233,7 @@ def write_scheme_to_files(dir, amplicon_scheme, ambiguous_consensus, mode):
                 primer_names = list(amplicon_scheme[pool][amp].keys())
                 left = (primer_names[0], amplicon_scheme[pool][amp][primer_names[0]])
                 right = (primer_names[1], amplicon_scheme[pool][amp][primer_names[1]])
+                amp_length = right[1][2] - left[1][1]
                 # write amplicon bed
                 if mode == "tiled":
                     bed_score = pool
@@ -265,9 +266,10 @@ def write_scheme_to_files(dir, amplicon_scheme, ambiguous_consensus, mode):
                     # write tsv file
                     print(
                         new_name,
+                        amp_length,
                         primer[0],
                         pool,
-                        primer[1][1],
+                        primer[1][1] + 1,
                         primer[1][2],
                         seq,
                         len(primer[1][0]),
@@ -288,24 +290,25 @@ def write_scheme_to_files(dir, amplicon_scheme, ambiguous_consensus, mode):
                     )
 
 
-def write_dimers(dir, not_solved):
+def write_dimers(path, primer_dimers):
     """
     write dimers for which no replacement was found to file
     """
-    tsv_file = os.path.join(dir, "unsolvable_primer_dimers.tsv")
-    print(
-        "pool\tprimer_name_1\tprimer_name_2\tdimer melting temp",
-        file=tsv_file
-    )
-    for dimers in not_solved:
+    tsv_file = os.path.join(path, "unsolvable_primer_dimers.tsv")
+    with open(tsv_file, "w") as tsv:
         print(
-            dimers[0][0],
-            dimers[0][2],
-            dimers[1][2],
-            round(primers.calc_dimer(dimers[0][3][0], dimers[1][3][0]).tm, 1),
-            sep="\t",
-            file=tsv_file
+            "pool\tprimer_name_1\tprimer_name_2\tdimer melting temp",
+            file=tsv
         )
+        for dimers in primer_dimers:
+            print(
+                dimers[0][0],
+                dimers[0][2],
+                dimers[1][2],
+                round(primers.calc_dimer(dimers[0][3][0], dimers[1][3][0]).tm, 1),
+                sep="\t",
+                file=tsv
+            )
 
 
 def entropy(pos, states):
@@ -455,7 +458,7 @@ def qpcr_subplot(ax, amplicon_scheme):
     ax[1].hlines(0.75, probe[1], probe[2], linewidth=5, color="darkgrey", label="probe")
 
 
-def varvamp_plot(dir, alignment_cleaned, primer_regions, all_primers=None, amplicon_scheme=None, probe_regions=None):
+def varvamp_plot(path, alignment_cleaned, primer_regions, all_primers=None, amplicon_scheme=None, probe_regions=None):
     """
     creates overview plot for the amplicon design
     and per base coverage plots
@@ -463,7 +466,7 @@ def varvamp_plot(dir, alignment_cleaned, primer_regions, all_primers=None, ampli
     # first plot: overview
     # create pdf name
     name = "amplicon_plot.pdf"
-    out = os.path.join(dir, name)
+    out = os.path.join(path, name)
     # ini figure
     fig, ax = plt.subplots(2, 1, figsize=[22, 6], squeeze=True, sharex=True, gridspec_kw={'height_ratios': [4, 1]})
     fig.subplots_adjust(hspace=0)
@@ -527,11 +530,11 @@ def get_QPCR_primers_for_plot(amplicon_schemes):
     return amplicon_primers
 
 
-def per_base_mismatch_plot(dir, amplicon_scheme, threshold, mode="SANGER/TILED"):
+def per_base_mismatch_plot(path, amplicon_scheme, threshold, mode="SANGER/TILED"):
     """
     per base pair mismatch multiplot
     """
-    out = os.path.join(dir, "per_base_mismatches.pdf")
+    out = os.path.join(path, "per_base_mismatches.pdf")
     if mode == "SANGER/TILED":
         amplicon_primers = get_SANGER_TILED_primers_for_plot(amplicon_scheme)
     elif mode == "QPCR":

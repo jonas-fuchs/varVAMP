@@ -130,7 +130,7 @@ def rev_complement(seq):
     """
     reverse complement a sequence
     """
-    return(str(Seq(seq).reverse_complement()))
+    return str(Seq(seq).reverse_complement())
 
 
 def calc_permutation_penalty(amb_seq):
@@ -393,8 +393,9 @@ def find_best_primers(left_primer_candidates, right_primer_candidates):
         primer_set = set(primer_ranges)
 
         for primer in primer_candidates:
-            # mark the left side of the primers as used (right overlapping primers can be still considered)
-            primer_positions = list(range(primer[1], int((primer[1]+primer[2])/2+1)))
+            # get the thirds of the primer, only consider the middle
+            thirds_len = int((primer[2] - primer[1])/3)
+            primer_positions = list(range(primer[1] + thirds_len, primer[2] - thirds_len + 1))
             # check if none of the nucleotides of the next primer
             # are already covered by a better primer
             if not any(x in primer_positions for x in primer_set):
