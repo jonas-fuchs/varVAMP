@@ -171,7 +171,7 @@ def clean_gaps(alignment, gaps_to_mask):
             stop = region[0]
             masked_seq_temp = sequence[1][start:stop]
             # check if the deletion is at the start
-            if len(masked_seq_temp) == 0:
+            if start == 0 and len(masked_seq_temp) == 0:
                 masked_seq = mask
             # check if deletion is not at start
             elif start == 0 and len(masked_seq_temp) != 0:
@@ -181,7 +181,7 @@ def clean_gaps(alignment, gaps_to_mask):
                 masked_seq = masked_seq + mask + masked_seq_temp
             start = region[1]+1
         if max(gaps_to_mask)[1] < len(sequence[1])-1:
-            # append the last gaps if it is not
+            # append the last seq if no gap is at
             # the end of the sequence
             start = max(gaps_to_mask)[1]
             stop = len(sequence[1])-1

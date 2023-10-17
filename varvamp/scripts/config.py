@@ -5,7 +5,7 @@ This contains all varVAMP parameters.
 # CAN BE CHANGED, DO NOT DELETE
 
 # basic primer parameters
-PRIMER_TMP = (57, 63, 60)  # melting temperatur (min, max, opt)
+PRIMER_TMP = (56, 63, 60)  # melting temperatur (min, max, opt)
 PRIMER_GC_RANGE = (35, 65, 50)  # gc (min, max, opt)
 PRIMER_SIZES = (18, 24, 21)  # size (min, max, opt)
 PRIMER_MAX_POLYX = 3  # max number of polyx repeats
@@ -40,7 +40,7 @@ PCR_DNA_CONC = 15  # primer concentration nM
 PRIMER_TM_PENALTY = 2  # temperature penalty
 PRIMER_GC_PENALTY = 0.2  # gc penalty
 PRIMER_SIZE_PENALTY = 0.5  # size penalty
-PRIMER_MAX_BASE_PENALTY = 8  # max base penalty for a primer
+PRIMER_MAX_BASE_PENALTY = 10  # max base penalty for a primer
 PRIMER_3_PENALTY = (32, 16, 8, 4, 2)  # penalties for 3' mismatches
 PRIMER_PERMUTATION_PENALTY = 0.1  # penalty for the number of permutations
 

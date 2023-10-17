@@ -5,6 +5,7 @@ primer creation and evaluation
 # LIBS
 from Bio.Seq import Seq
 import primer3 as p3
+import math
 
 # varVAMP
 from varvamp.scripts import config
@@ -129,7 +130,7 @@ def rev_complement(seq):
     """
     reverse complement a sequence
     """
-    return(str(Seq(seq).reverse_complement()))
+    return str(Seq(seq).reverse_complement())
 
 
 def calc_permutation_penalty(amb_seq):
@@ -367,21 +368,34 @@ def find_best_primers(left_primer_candidates, right_primer_candidates):
     Primer candidates are likely overlapping. Here, the list of primers
     is sorted for the best to worst scoring. Then, the next best scoring
     is retained if it does not have any nucleotides that have already
-    been covered by a better scoring primer candidate. This significantly
-    reduces the amount of primers while retaining the best scoring ones.
+    been covered by the middle third of a better scoring primer candidate.
+    This significantly reduces the amount of primers while retaining
+    the best scoring ones.
+
+    Example:
+    -------- (score 1) 1
+        ------------- (score 1) 2
+            ------------ (score 0.8) 3
+                      ----------(score 0.9) 4
+
+    --> primer 3 would be retained and primer 2 excluded, primer 4 and 1
+    will however be considered in the next set of overlapping primers.
+
     """
     all_primers = {}
 
     for direction, primer_candidates in [("+", left_primer_candidates), ("-", right_primer_candidates)]:
-        # sort the primers for the best scoring
-        primer_candidates.sort(key=lambda x: x[3])
+        # sort the primers for the best scoring, and if same score by start
+        primer_candidates.sort(key=lambda x: (x[3], x[1]))
         # ini everything with the top scoring primer
         to_retain = [primer_candidates[0]]
         primer_ranges = list(range(primer_candidates[0][1], primer_candidates[0][2]+1))
         primer_set = set(primer_ranges)
 
         for primer in primer_candidates:
-            primer_positions = list(range(primer[1], primer[2]+1))
+            # get the thirds of the primer, only consider the middle
+            thirds_len = int((primer[2] - primer[1])/3)
+            primer_positions = list(range(primer[1] + thirds_len, primer[2] - thirds_len + 1))
             # check if none of the nucleotides of the next primer
             # are already covered by a better primer
             if not any(x in primer_positions for x in primer_set):

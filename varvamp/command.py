@@ -285,7 +285,7 @@ def sanger_and_tiled_shared_workflow(args, left_primer_candidates, right_primer_
     logging.varvamp_progress(
         log_file,
         progress=0.7,
-        job="Considering non-overlapping low scoring primers.",
+        job="Considering low scoring primers.",
         progress_text=f"{len(all_primers['+'])} fw and {len(all_primers['-'])} rw primers"
     )
 
@@ -345,7 +345,7 @@ def sanger_workflow(args, amplicons, all_primers, log_file):
     return amplicon_scheme
 
 
-def tiled_workflow(args, amplicons, left_primer_candidates, right_primer_candidates, all_primers, ambiguous_consensus, log_file):
+def tiled_workflow(args, amplicons, left_primer_candidates, right_primer_candidates, all_primers, ambiguous_consensus, log_file, results_dir):
     """
     part of the workflow specific for the tiled mode
     """
@@ -371,7 +371,7 @@ def tiled_workflow(args, amplicons, left_primer_candidates, right_primer_candida
             f"varVAMP found {len(dimers_not_solved)} primer dimers without replacements. Check the dimer file and perform the PCR for incomaptible amplicons in a sperate reaction.",
             log_file
         )
-        reporting.write_dimers(dir, dimers_not_solved)
+        reporting.write_dimers(results_dir, dimers_not_solved)
 
     # evaluate coverage
     percent_coverage = round(coverage/len(ambiguous_consensus)*100, 2)
@@ -491,9 +491,8 @@ def main(sysargs=sys.argv[1:]):
     start_time = datetime.datetime.now()
     results_dir, data_dir, log_file = logging.create_dir_structure(args.input[1])
     # check if blast is installed
-    if args.mode == "tiled" or args.mode == "sanger":
-        if args.database is not None:
-            blast.check_BLAST_installation(log_file)
+    if args.database is not None:
+        blast.check_BLAST_installation(log_file)
 
     # mode unspecific part of the workflow
     alignment_cleaned, majority_consensus, ambiguous_consensus, primer_regions, left_primer_candidates, right_primer_candidates = shared_workflow(args, log_file)
@@ -528,7 +527,8 @@ def main(sysargs=sys.argv[1:]):
                 right_primer_candidates,
                 all_primers,
                 ambiguous_consensus,
-                log_file
+                log_file,
+                results_dir
             )
         if args.database is not None:
             blast.write_BLAST_warning(off_target_amplicons, amplicon_scheme, log_file)
