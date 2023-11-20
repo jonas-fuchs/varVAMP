@@ -310,28 +310,27 @@ def write_dimers(path, primer_dimers):
                 file=tsv
             )
 
-
-def entropy(pos, states):
-    """calculate the entropy on the basis of a string and a list of unique_chars"""
-    max_ent = -1/(math.log(1/float(states), 10))
-    # only a rough normalization factor, not needed, but gives more
-    # beautiful plots
-    unique_chars = list(set(pos))
-    ent = 0.0
-    if len(pos) < 2:
+def entropy(chars, states):
+    """
+    input is a list of characters or numbers.
+    calculate relative shannon's entropy. relative values are
+    achieved by using the number of possible states as the base
+    """
+    ent = 0
+    n_chars = len(chars)
+    # only one char is in the list
+    if n_chars <= 1:
         return ent
-    # calculate the entropy at the particular position
-    for char in unique_chars:
-        freq = pos.count(char)
-        if freq > 0:
-            freq = float(freq)/float(len(pos))
-            ent += freq*math.log(freq, 50)
-    if ent == 0:
+    # calculate the number of unique chars and their counts
+    value, counts = np.unique(chars, return_counts=True)
+    probs = counts/n_chars
+    if np.count_nonzero(probs) <= 1:
         return ent
-    else:
-        return -ent*max_ent
-        # max_ent is the normalization
 
+    for prob in probs:
+        ent -= prob*math.log(prob, states)
+
+    return ent
 
 def alignment_entropy(alignment_cleaned):
     """
@@ -367,7 +366,7 @@ def entropy_subplot(ax, alignment_cleaned):
     ax[0].plot(entropy_df["position"], entropy_df["average"], color="black", label="average entropy", linewidth=0.5)
     ax[0].set_ylim((0, 1))
     ax[0].set_xlim(0, max(entropy_df["position"]))
-    ax[0].set_ylabel("alignment entropy")
+    ax[0].set_ylabel("normalized Shannon's entropy")
     ax[0].set_title("final amplicon design")
     ax[0].spines['top'].set_visible(False)
     ax[0].spines['right'].set_visible(False)
@@ -488,7 +487,7 @@ def varvamp_plot(path, alignment_cleaned, primer_regions, all_primers=None, ampl
     ax[1].spines['left'].set_visible(False)
     ax[1].spines['bottom'].set_visible(False)
     ax[1].axes.get_yaxis().set_visible(False)
-    ax[1].set_xlabel("genome position")
+    ax[1].set_xlabel("alignment position")
     ax[1].set_ylim((0.5, 1))
     fig.legend(loc=(0.83, 0.7))
 
