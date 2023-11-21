@@ -366,17 +366,17 @@ def create_primer_dictionary(primer_candidates, direction):
 def find_best_primers(left_primer_candidates, right_primer_candidates):
     """
     Primer candidates are likely overlapping. Here, the list of primers
-    is sorted for the best to worst scoring. Then, the next best scoring
+    is sorted for the lowest to highest penalty. Then, the next lowest
     is retained if it does not have any nucleotides that have already
-    been covered by the middle third of a better scoring primer candidate.
+    been covered by the middle third of a better primer candidate.
     This significantly reduces the amount of primers while retaining
-    the best scoring ones.
+    the ones with the lowest penalties.
 
     Example:
-    -------- (score 1) 1
-        ------------- (score 1) 2
-            ------------ (score 0.8) 3
-                      ----------(score 0.9) 4
+    -------- (penalty 1) 1
+        ------------- (penalty 1) 2
+            ------------ (penalty 0.8) 3
+                      ----------(penalty 0.9) 4
 
     --> primer 3 would be retained and primer 2 excluded, primer 4 and 1
     will however be considered in the next set of overlapping primers.
@@ -385,9 +385,9 @@ def find_best_primers(left_primer_candidates, right_primer_candidates):
     all_primers = {}
 
     for direction, primer_candidates in [("+", left_primer_candidates), ("-", right_primer_candidates)]:
-        # sort the primers for the best scoring, and if same score by start
+        # sort the primers by penalty, and if same penalty by start
         primer_candidates.sort(key=lambda x: (x[3], x[1]))
-        # ini everything with the top scoring primer
+        # ini everything with the primer with the lowest penalty
         to_retain = [primer_candidates[0]]
         primer_ranges = list(range(primer_candidates[0][1], primer_candidates[0][2]+1))
         primer_set = set(primer_ranges)
@@ -401,7 +401,7 @@ def find_best_primers(left_primer_candidates, right_primer_candidates):
             if not any(x in primer_positions for x in primer_set):
                 # update the primer set
                 primer_set.update(primer_positions)
-                # append this primer as it is well scoring and not overlapping
+                # append this primer as it has a low penalty and is not overlapping
                 # with another already retained primer
                 to_retain.append(primer)
 

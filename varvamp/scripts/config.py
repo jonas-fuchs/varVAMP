@@ -57,7 +57,7 @@ BLAST_SETTINGS = {  # blast settings for query search
 }
 BLAST_MAX_DIFF = 0.5  # min percent match between primer and BLAST hit (coverage and/or mismatches)
 BLAST_SIZE_MULTI = 2  # multiplier for the max_amp size of off targets (in relation to max amp size)
-BLAST_PENALTY = 50  # amplicon score increase -> considered only if no other possibilities
+BLAST_PENALTY = 50  # amplicon penalty increase -> considered only if no other possibilities
 
 # nucleotide definitions, do NOT change
 NUCS = set("atcg")

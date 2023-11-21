@@ -21,7 +21,7 @@ class Graph(object):
 
     def construct_graph(self, nodes, init_graph):
         """
-        This method makes sure that the graph is symmetrical, but sets the score
+        This method makes sure that the graph is symmetrical, but sets the costs
         for nodes in the reverse direction to infinity to make sure dijkstra
         never goes to an amplicon that is in the wrong direction.
         """
@@ -78,7 +78,7 @@ def find_amplicons(all_primers, opt_len, max_len):
             if primers.calc_dimer(left_primer[0], right_primer[0]).tm > config.PRIMER_MAX_DIMER_TMP:
                 continue
             # calculate length dependend amplicon costs as the cumulative primer
-            # score multiplied by the e^(fold length of the optimal length).
+            # penalty multiplied by the e^(fold length of the optimal length).
             amplicon_costs = (right_primer[3] + left_primer[3])*math.exp(amplicon_length/opt_len)
             amplicon_name = "amplicon_"+str(amplicon_number)
             amplicon_dict[amplicon_name] = [
@@ -158,23 +158,22 @@ def dijkstra_algorithm(graph, start_node):
 
 def get_end_node(previous_nodes, shortest_path, amplicons):
     """
-    get the target node with the lowest score out of all
+    get the target node with the lowest penalty costs out of all
     nodes that have the same maximum end position
     """
-    stop_nucleotide = 0
+    stop_nucleotide, possible_end_nodes = 0, {}
 
     for node in previous_nodes.keys():
-        # check if an node has a larger stop -> empty dict and set new
+        # check if a node has a larger stop -> empty dict and set new
         # best stop nucleotide
         if amplicons[node][1] > stop_nucleotide:
-            possible_end_nodes = {}
-            possible_end_nodes[node] = shortest_path[node]
+            possible_end_nodes = {node: shortest_path[node]}
             stop_nucleotide = amplicons[node][1]
         # if nodes have the same stop nucleotide, add to dictionary
         elif amplicons[node][1] == stop_nucleotide:
             possible_end_nodes[node] = shortest_path[node]
 
-    # return the end node with the lowest score
+    # return the end node with the lowest penalty costs
     return min(possible_end_nodes.items(), key=lambda x: x[1])
 
 
@@ -222,10 +221,9 @@ def find_best_covering_scheme(amplicons, amplicon_graph, all_primers):
     coverage with the minimal costs is achieved.
     """
     # ini
-    coverage = 0
     best_coverage = 0
     max_stop = max(amplicons.items(), key=lambda x: x[1])[1][1]
-    best_score = float('infinity')
+    lowest_costs = float('infinity')
 
     for start_node in amplicons:
         # if the currently best coverage + start nucleotide of the currently tested amplicon
@@ -235,24 +233,22 @@ def find_best_covering_scheme(amplicons, amplicon_graph, all_primers):
             previous_nodes, shortest_path = dijkstra_algorithm(amplicon_graph, start_node)
             # only continue if there are previous_nodes
             if previous_nodes:
-                target_node, score = get_end_node(previous_nodes, shortest_path, amplicons)
+                target_node, costs = get_end_node(previous_nodes, shortest_path, amplicons)
                 coverage = amplicons[target_node][1] - amplicons[start_node][0]
                 # if the new coverage is larger, go for the larger coverage
                 if coverage > best_coverage:
                     best_start_node = start_node
                     best_target_node = target_node
                     best_previous_nodes = previous_nodes
-                    best_shortest_path = shortest_path
-                    best_score = score
+                    lowest_costs = costs
                     best_coverage = coverage
                 # if the coverages are identical, go for the lowest costs
                 elif coverage == best_coverage:
-                    if score < best_score:
+                    if costs < lowest_costs:
                         best_start_node = start_node
                         best_target_node = target_node
                         best_previous_nodes = previous_nodes
-                        best_shortest_path = shortest_path
-                        best_score = score
+                        lowest_costs = costs
                         best_coverage = coverage
             else:
                 # check if the single amplicon has the largest coverage so far
@@ -260,11 +256,10 @@ def find_best_covering_scheme(amplicons, amplicon_graph, all_primers):
                 if coverage > best_coverage:
                     best_start_node = start_node
                     best_previous_nodes = previous_nodes
-                    best_shortest_path = shortest_path
-                    best_score = amplicons[start_node][5]
+                    lowest_costs = amplicons[start_node][5]
                     best_coverage = coverage
         # no need to check more, the best covering amplicon scheme was found and
-        # has the minimal score compared to the schemes with the same coverage
+        # has the minimal costs compared to the schemes with the same coverage
         else:
             break
 
@@ -280,7 +275,7 @@ def find_best_covering_scheme(amplicons, amplicon_graph, all_primers):
 
 def test_scheme_for_dimers(amplicon_scheme):
     """
-    test the best scoring scheme for primer dimers
+    test the lowest-cost scheme for primer dimers
     """
 
     primer_dimers = []
@@ -341,8 +336,8 @@ def test_overlaps_for_dimers(overlapping_primers):
     """
     for first_overlap in overlapping_primers[0]:
         for second_overlap in overlapping_primers[1]:
-            # return the first match. primers are sorted by score.
-            # first pair that makes it has the lowest score
+            # return the first match. primers are sorted by penalty.
+            # first pair that makes it has the lowest penalty
             if primers.calc_dimer(first_overlap[3][0], second_overlap[3][0]).tm <= config.PRIMER_MAX_DIMER_TMP:
                 return [first_overlap, second_overlap]
 
@@ -387,7 +382,7 @@ def check_and_solve_heterodimers(amplicon_scheme, left_primer_candidates, right_
 
 def find_sanger_amplicons(amplicons, all_primers, n):
     """
-    find the best scoring non-overlapping amplicons
+    find non-overlapping amplicons with low penalties
     from all found amplicons. only for the SANGER mode.
     """
     # sort amplicons

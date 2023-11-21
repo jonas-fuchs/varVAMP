@@ -89,7 +89,7 @@ def get_qpcr_probes(kmers, ambiguous_consensus, alignment_cleaned):
                 three_prime_penalty = primers.calc_3_prime_penalty("-", per_base_mismatches)
                 probe_candidates[probe_name] = [primers.rev_complement(kmer[0]), kmer[1], kmer[2], base_penalty + permutation_penalty + three_prime_penalty, per_base_mismatches, direction]
                 probe_idx += 1
-    # sort by score
+    # sort by penalty
     probe_candidates = dict(sorted(probe_candidates.items(), key=lambda x: x[1][3]))
 
     return probe_candidates
@@ -97,7 +97,7 @@ def get_qpcr_probes(kmers, ambiguous_consensus, alignment_cleaned):
 
 def flanking_primer_subset(primer_list, primer_direction, probe):
     """
-    subset for primers flanking the probe and sort by score
+    subset for primers flanking the probe and sort by penalty
     """
     subset = []
 
@@ -111,7 +111,7 @@ def flanking_primer_subset(primer_list, primer_direction, probe):
         if window_start < primer[1] and primer[2] < window_stop:
             subset.append(primer)
 
-    # sort by score and start if same score
+    # sort by penalty and start if same penalty
     subset.sort(key=lambda x: (x[3], x[1]))
 
     return subset
@@ -188,7 +188,7 @@ def forms_dimer_or_overhangs(right_primer, left_primer, probe, ambiguous_consens
 
 def assess_amplicons(left_subset, right_subset, qpcr_probes, probe, majority_consensus, ambiguous_consensus):
     """
-    assess if a potential amplicon is a qPCR scheme for a specific probe and return the best scoring
+    assess if a potential amplicon is a qPCR scheme for a specific probe and return the one with the lowest penalty
     """
 
     primer_combinations = ()
@@ -225,7 +225,7 @@ def assess_amplicons(left_subset, right_subset, qpcr_probes, probe, majority_con
             # .... all combination of oligos do not form dimers or overhangs.
             if forms_dimer_or_overhangs(right_primer, left_primer, qpcr_probes[probe], ambiguous_consensus):
                 continue
-            # append to list and break as this is the lowest scoring primer combi (primers are sorted by score)
+            # append to list and break as this is the primer combi with the lowest penalty (primers are sorted by penalty)
             amplicon_found = True
             break
         # break also the outer loop
@@ -240,10 +240,10 @@ def find_qcr_schemes(qpcr_probes, left_primer_candidates, right_primer_candidate
     """
     this finds the final qPCR schemes. it slices for primers flanking a probe and
     test all left/right combinations whether they are potential amplicons. as primers
-    are sorted by score, only the very first match is considered as this has the
-    lowest score. however, probes are overlapping and there is a high chance that
+    are sorted by penalty, only the very first match is considered as this has the
+    lowest penalty. however, probes are overlapping and there is a high chance that
     left and right primers are found multiple times. to consider only one primer-
-    probe combination the probes are also sorted by score. therefore, if a primer
+    probe combination the probes are also sorted by penalty. therefore, if a primer
     combination has been found already the optimal probe was already selected and
     there is no need to consider this primer probe combination.
     """
@@ -262,20 +262,20 @@ def find_qcr_schemes(qpcr_probes, left_primer_candidates, right_primer_candidate
         # ... a combi has been found, ...
         if not primer_combination:
             continue
-        # ...and this combi is not already present for a probe with a better score.
+        # ...and this combi is not already present for a probe with a better penalty.
         if primer_combination in found_amplicons:
             continue
         # populate the primer dictionary:
         amplicon_nr += 1
         found_amplicons.append(primer_combination)
         qpcr_scheme_candidates[f"AMPLICON_{amplicon_nr}"] = {
-            "score": qpcr_probes[probe][3]+primer_combination[0][3]+primer_combination[1][3],
+            "penalty": qpcr_probes[probe][3]+primer_combination[0][3]+primer_combination[1][3],
             "probe": qpcr_probes[probe],
             "left": primer_combination[0],
             "right": primer_combination[1]
         }
-    # and again sort by total score (left + right + probe)
-    qpcr_scheme_candidates = dict(sorted(qpcr_scheme_candidates.items(), key=lambda x: x[1]["score"]))
+    # and again sort by total penalty (left + right + probe)
+    qpcr_scheme_candidates = dict(sorted(qpcr_scheme_candidates.items(), key=lambda x: x[1]["penalty"]))
 
     return qpcr_scheme_candidates
 
@@ -325,7 +325,7 @@ def test_amplicon_deltaG_parallel(qpcr_schemes_candidates, majority_consensus, n
             if any(x in amp_positions for x in amplicon_set):
                 continue
             # and if this passes cutoff make a dict entry and do not allow further
-            # amplicons in that region (they will have a lower score)
+            # amplicons in that region (they will have a lower penalty)
             if deltaG > deltaG_cutoff:
                 new_name = f"QPCR_SCHEME_{passed_counter}"
                 final_schemes[new_name] = qpcr_schemes_candidates[amp_name]

@@ -73,7 +73,7 @@ def write_primers_to_bed(outfile, primer_name, primer_properties, direction):
             primer_properties[1],  # start
             primer_properties[2],  # stop
             primer_name,
-            round(primer_properties[3], 1),  # score
+            round(primer_properties[3], 1),  # penalty
             direction,
             sep="\t",
             file=o
@@ -133,11 +133,11 @@ def write_qpcr_to_files(path, final_schemes, ambiguous_consensus):
 
     with open(tsv_file, "w") as tsv, open(tsv_file_2, "w") as tsv2, open(amplicon_bed_file, "w") as bed:
         print(
-            "qpcr_scheme\toligo_type\tstart\tstop\tseq\tsize\tgc_best\ttemp_best\tmean_gc\tmean_temp\tscore",
+            "qpcr_scheme\toligo_type\tstart\tstop\tseq\tsize\tgc_best\ttemp_best\tmean_gc\tmean_temp\tpenalty",
             file=tsv2
         )
         print(
-            "qpcr_scheme\tscore\tdeltaG\tlength\tstart\tstop\tseq",
+            "qpcr_scheme\tpenalty\tdeltaG\tlength\tstart\tstop\tseq",
             file=tsv
         )
         for scheme in final_schemes:
@@ -147,7 +147,7 @@ def write_qpcr_to_files(path, final_schemes, ambiguous_consensus):
                 final_schemes[scheme]["left"][1],
                 final_schemes[scheme]["right"][2],
                 scheme,
-                round(final_schemes[scheme]["score"], 1),
+                round(final_schemes[scheme]["penalty"], 1),
                 sep="\t",
                 file=bed
             )
@@ -157,7 +157,7 @@ def write_qpcr_to_files(path, final_schemes, ambiguous_consensus):
             amplicon_seq = ambiguous_consensus[amplicon_start:amplicon_stop]
             print(
                 scheme,
-                round(final_schemes[scheme]["score"], 1),
+                round(final_schemes[scheme]["penalty"], 1),
                 final_schemes[scheme]["deltaG"],
                 len(amplicon_seq),
                 amplicon_start + 1,
@@ -168,7 +168,7 @@ def write_qpcr_to_files(path, final_schemes, ambiguous_consensus):
             )
             # write tsv2
             for type in final_schemes[scheme]:
-                if type == "score" or type == "deltaG":
+                if type == "penalty" or type == "deltaG":
                     continue
                 seq = ambiguous_consensus[final_schemes[scheme][type][1]:final_schemes[scheme][type][2]]
                 if type == "right" or all([type == "probe", final_schemes[scheme]["probe"][5] == "-"]):
@@ -219,7 +219,7 @@ def write_scheme_to_files(path, amplicon_scheme, ambiguous_consensus, mode):
     with open(tsv_file, "w") as tsv, open(amplicon_bed_file, "w") as bed, open(tabular_file, "w") as tabular:
         # write header for primer tsv
         print(
-            "amlicon_name\tamplicon_length\tprimer_name\tpool\tstart\tstop\tseq\tsize\tgc_best\ttemp_best\tmean_gc\tmean_temp\tscore",
+            "amlicon_name\tamplicon_length\tprimer_name\tpool\tstart\tstop\tseq\tsize\tgc_best\ttemp_best\tmean_gc\tmean_temp\tpenalty",
             file=tsv
         )
         counter = 0
@@ -521,7 +521,7 @@ def get_QPCR_primers_for_plot(amplicon_schemes):
 
     for scheme in amplicon_schemes:
         for type in amplicon_schemes[scheme]:
-            if type == "score" or type == "deltaG":
+            if type == "penalty" or type == "deltaG":
                 continue
             primer_name = f"{scheme}_{type}"
             amplicon_primers.append((primer_name, amplicon_schemes[scheme][type]))
