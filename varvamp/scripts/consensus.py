@@ -13,8 +13,8 @@ def determine_nucleotide_counts(alignment, idx):
     """
     count the number of each nucleotides at
     an idx of the alignment. return sorted dic.
-    handels ambiguous nucleotides in sequences.
-    also handels gaps.
+    handles ambiguous nucleotides in sequences.
+    also handles gaps.
     """
     nucleotide_list = []
 
@@ -39,7 +39,7 @@ def determine_nucleotide_counts(alignment, idx):
         if nucleotide == "-":
             to_delete.append(nucleotide)
 
-    # drop ambiguous entrys and add adjusted freqs to
+    # drop ambiguous entries and add adjusted freqs to
     if to_delete:
         for i in to_delete:
             counter.pop(i)

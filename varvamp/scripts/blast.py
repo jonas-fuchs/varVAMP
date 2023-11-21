@@ -114,7 +114,7 @@ def parse_and_filter_BLAST_output(blast_out):
     # removes tabular output
     os.remove(blast_out)
 
-    return(blast_df)
+    return blast_df
 
 
 def check_off_targets(df_amp_primers_sorted, max_length, primers):

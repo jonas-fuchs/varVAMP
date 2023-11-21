@@ -40,7 +40,7 @@ def varvamp_progress(log_file, mode=None, start_time=None, progress=0, job="", p
     progress bar, main progress logging and folder creation
     """
     barLength = 40
-    block = int(round(barLength*progress))
+    block = int(round(barLength * progress))
 
     if progress == 0:
         print(
@@ -55,7 +55,8 @@ def varvamp_progress(log_file, mode=None, start_time=None, progress=0, job="", p
             progress_text = f"all done \n\n\rvarVAMP {__version__} finished in {stop_time.total_seconds()} sec!\n{datetime.datetime.now()}"
             job = "Finalizing output."
         print(
-            "\rJob:\t\t " + job + "\nProgress: \t [{0}] {1}%".format("█"*block + "-"*(barLength-block), progress*100) + "\t" + progress_text,
+            "\rJob:\t\t " + job + "\nProgress: \t [{0}] {1}%".format("█" * block + "-" * (barLength - block),
+                                                                     progress * 100) + "\t" + progress_text,
             flush=True
         )
         with open(log_file, 'a') as f:
@@ -151,7 +152,7 @@ def raise_arg_errors(args, log_file):
                 "small overlaps might hinder downstream analyses. Consider increasing.",
                 log_file
             )
-        if args.overlap > args.max_length/2 - config.PRIMER_SIZES[1]:
+        if args.overlap > args.max_length / 2 - config.PRIMER_SIZES[1]:
             raise_error(
                 "min overlap must be lower than half of your maximum length - maximum primer length. To achieve optimal results reduce it to at least half of your optimal length",
                 log_file,
@@ -163,7 +164,7 @@ def raise_arg_errors(args, log_file):
                 log_file,
                 exit=True
             )
-        if args.overlap > args.opt_length/2:
+        if args.overlap > args.opt_length / 2:
             raise_error(
                 "your intended overlap is higher than half of your optimal length. This reduces how well varvamps will find overlapping amplicons. Consider decreasing.",
                 log_file
@@ -226,9 +227,9 @@ def check_alignment_length(preprocessed_alignment, log_file):
     smaller_warning, larger_warning = [], []
     for name, length in zip(all_names, all_seq_length):
         # consider variation of sequence lengths and check if it is at least 2 % deviation
-        if length <= mean_len-3*mean_std and length <= mean_len-mean_len*0.02:
+        if length <= mean_len - 3 * mean_std and length <= mean_len - mean_len * 0.02:
             smaller_warning.append(f"{name} ({length} nt)\n")
-        elif length >= mean_len+3*mean_std and length >= mean_len+mean_len*0.02:
+        elif length >= mean_len + 3 * mean_std and length >= mean_len + mean_len * 0.02:
             larger_warning.append(f"{name} ({length} nt)\n")
     # raise warning for non-empty lists
     for warning, length_type in zip([larger_warning, smaller_warning], ["larger", "smaller"]):
@@ -309,7 +310,9 @@ def confirm_config(args, log_file):
             exit=True
         )
     # confirm tuples with 3 elements
-    for tup_type, tup in [("primer temp", config.PRIMER_TMP), ("primer gc", config.PRIMER_GC_RANGE), ("primer size", config.PRIMER_SIZES), ("probe temp", config.QPROBE_TMP), ("probe size", config.QPROBE_SIZES), ("probe gc", config.QPROBE_GC_RANGE)]:
+    for tup_type, tup in [("primer temp", config.PRIMER_TMP), ("primer gc", config.PRIMER_GC_RANGE),
+                          ("primer size", config.PRIMER_SIZES), ("probe temp", config.QPROBE_TMP),
+                          ("probe size", config.QPROBE_SIZES), ("probe gc", config.QPROBE_GC_RANGE)]:
         if len(tup) != 3:
             raise_error(
                 f"{tup_type} tuple has to have the form (min, max, opt)!",
@@ -341,7 +344,11 @@ def confirm_config(args, log_file):
             )
             error = True
     # confirm tuples with two elements
-    for tup_type, tup in [("primer gc at the 3'", config.PRIMER_GC_END), ("probe and primer temp diff", config.QPROBE_TEMP_DIFF), ("distance probe to primer", config.QPROBE_DISTANCE), ("qpcr amplicon length", config.QAMPLICON_LENGTH), ("qpcr amplicon gc", config.QAMPLICON_GC), ("probe gc at the 3'", config.PRIMER_GC_END)]:
+    for tup_type, tup in [("primer gc at the 3'", config.PRIMER_GC_END),
+                          ("probe and primer temp diff", config.QPROBE_TEMP_DIFF),
+                          ("distance probe to primer", config.QPROBE_DISTANCE),
+                          ("qpcr amplicon length", config.QAMPLICON_LENGTH), ("qpcr amplicon gc", config.QAMPLICON_GC),
+                          ("probe gc at the 3'", config.PRIMER_GC_END)]:
         if len(tup) != 2:
             raise_error(
                 f"{tup_type} tuple has to have the form (min, max)!",
@@ -534,6 +541,7 @@ def confirm_config(args, log_file):
                 print(f"{var} = {var_dic[var]}", file=f)
         print("\nPROGRESS", file=f)
 
+
 def goodbye_message():
     """
     This is what happens when I am bored...
@@ -558,4 +566,3 @@ def goodbye_message():
         "Never gonna give you up, never gonna let you down.",
     ]
     print(f"\n{random.choice(messages)}")
-    

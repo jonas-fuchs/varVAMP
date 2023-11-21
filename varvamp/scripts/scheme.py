@@ -10,6 +10,26 @@ import math
 from varvamp.scripts import config, primers
 
 
+def construct_graph(nodes, init_graph):
+    """
+    This method makes sure that the graph is symmetrical, but sets the costs
+    for nodes in the reverse direction to infinity to make sure dijkstra
+    never goes to an amplicon that is in the wrong direction.
+    """
+    graph = {}
+    for node in nodes:
+        graph[node] = {}
+
+    graph.update(init_graph)
+
+    for node, neighbors in graph.items():
+        for neighbor in neighbors.keys():
+            if graph[neighbor].get(node, False) is False:
+                graph[neighbor][node] = float("infinity")
+
+    return graph
+
+
 class Graph(object):
     """
     a graph class
@@ -17,26 +37,7 @@ class Graph(object):
 
     def __init__(self, nodes, init_graph):
         self.nodes = nodes
-        self.graph = self.construct_graph(nodes, init_graph)
-
-    def construct_graph(self, nodes, init_graph):
-        """
-        This method makes sure that the graph is symmetrical, but sets the costs
-        for nodes in the reverse direction to infinity to make sure dijkstra
-        never goes to an amplicon that is in the wrong direction.
-        """
-        graph = {}
-        for node in nodes:
-            graph[node] = {}
-
-        graph.update(init_graph)
-
-        for node, neighbors in graph.items():
-            for neighbor in neighbors.keys():
-                if graph[neighbor].get(node, False) is False:
-                    graph[neighbor][node] = float("infinity")
-
-        return graph
+        self.graph = construct_graph(nodes, init_graph)
 
     def get_nodes(self):
         """

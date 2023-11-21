@@ -6,7 +6,7 @@ estimate varVAMP threshold and max n of ambiguous bases if none are given
 from varvamp.scripts import config
 
 
-def calculate_frequencys(preprocessed_alignment):
+def calculate_frequencies(preprocessed_alignment):
     """
     calculate the max nucleotide freq at each pos
     """
@@ -58,7 +58,7 @@ def get_parameters(preprocessed_alignment, args, log_file):
     # set coverage to max
     coverage = 1
     # read in the alignment and calc freqs
-    frequencies = calculate_frequencys(preprocessed_alignment)
+    frequencies = calculate_frequencies(preprocessed_alignment)
     # if no args for both threshold and n_ambig are given
     # set the n_ambig to 2 and optimize threshold
     if args.threshold is None:
