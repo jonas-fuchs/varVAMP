@@ -149,7 +149,7 @@ BLAST_SETTINGS = {  # blast settings for query search
 }
 BLAST_MAX_DIFF = 0.8  # allowed % differences between primer and BLAST hit
 BLAST_SIZE_MULTI = 2  # multiplier for the max_amp size of off targets (in relation to max amp size)
-BLAST_PENALTY = 50  # amplicon score increase -> considered only if no other possibilities
+BLAST_PENALTY = 50  # amplicon penalty increase -> considered only if no other possibilities
 ```
 To apply these new settings just repeat the installation procedure in the varVAMP dir:
 ```shell
