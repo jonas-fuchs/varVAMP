@@ -309,54 +309,54 @@ def confirm_config(args, log_file):
             exit=True
         )
     # confirm tuples with 3 elements
-    for type, tup in [("primer temp", config.PRIMER_TMP), ("primer gc", config.PRIMER_GC_RANGE), ("primer size", config.PRIMER_SIZES), ("probe temp", config.QPROBE_TMP), ("probe size", config.QPROBE_SIZES), ("probe gc", config.QPROBE_GC_RANGE)]:
+    for tup_type, tup in [("primer temp", config.PRIMER_TMP), ("primer gc", config.PRIMER_GC_RANGE), ("primer size", config.PRIMER_SIZES), ("probe temp", config.QPROBE_TMP), ("probe size", config.QPROBE_SIZES), ("probe gc", config.QPROBE_GC_RANGE)]:
         if len(tup) != 3:
             raise_error(
-                f"{type} tuple has to have the form (min, max, opt)!",
+                f"{tup_type} tuple has to have the form (min, max, opt)!",
                 log_file
             )
             error = True
         if tup[0] > tup[1]:
             raise_error(
-                f"min {type} should not exeed max {type}!",
+                f"min {tup_type} should not exeed max {tup_type}!",
                 log_file
             )
             error = True
         if tup[0] > tup[2]:
             raise_error(
-                f"min {type} should not exeed opt {type}!",
+                f"min {tup_type} should not exeed opt {tup_type}!",
                 log_file
             )
             error = True
         if tup[2] > tup[1]:
             raise_error(
-                f"opt {type} should not exeed max {type}!",
+                f"opt {tup_type} should not exeed max {tup_type}!",
                 log_file
             )
             error = True
         if any(map(lambda var: var < 0, tup)):
             raise_error(
-                f"{type} can not contain negative values!",
+                f"{tup_type} can not contain negative values!",
                 log_file
             )
             error = True
     # confirm tuples with two elements
-    for type, tup in [("primer gc at the 3'", config.PRIMER_GC_END), ("probe and primer temp diff", config.QPROBE_TEMP_DIFF), ("distance probe to primer", config.QPROBE_DISTANCE), ("qpcr amplicon length", config.QAMPLICON_LENGTH), ("qpcr amplicon gc", config.QAMPLICON_GC), ("probe gc at the 3'", config.PRIMER_GC_END)]:
+    for tup_type, tup in [("primer gc at the 3'", config.PRIMER_GC_END), ("probe and primer temp diff", config.QPROBE_TEMP_DIFF), ("distance probe to primer", config.QPROBE_DISTANCE), ("qpcr amplicon length", config.QAMPLICON_LENGTH), ("qpcr amplicon gc", config.QAMPLICON_GC), ("probe gc at the 3'", config.PRIMER_GC_END)]:
         if len(tup) != 2:
             raise_error(
-                f"{type} tuple has to have the form (min, max)!",
+                f"{tup_type} tuple has to have the form (min, max)!",
                 log_file
             )
             error = True
         if tup[0] > tup[1]:
             raise_error(
-                f"min {type} should not exeed max {type}!",
+                f"min {tup_type} should not exeed max {tup_type}!",
                 log_file
             )
             error = True
         if any(map(lambda var: var < 0, tup)):
             raise_error(
-                f"{type} can not contain negative values!",
+                f"{tup_type} can not contain negative values!",
                 log_file
             )
             error = True
@@ -379,10 +379,10 @@ def confirm_config(args, log_file):
         ("multiplier of the maximum length for non-specific amplicons", config.BLAST_SIZE_MULTI),
         ("blast penalty for off targets", config.BLAST_PENALTY)
     ]
-    for type, var in non_negative_var:
+    for var_type, var in non_negative_var:
         if var < 0:
             raise_error(
-                f"{type} can not be negative!",
+                f"{var_type} can not be negative!",
                 log_file
             )
             error = True

@@ -208,9 +208,9 @@ def create_scheme_dic(amplicon_scheme, amplicons, all_primers):
     for pool in (0, 1):
         for amp in amplicon_scheme[pool::2]:
             scheme_dictionary[pool][amp] = {}
-            primers = [amplicons[amp][2], amplicons[amp][3]]
-            scheme_dictionary[pool][amp][primers[0]] = all_primers["+"][primers[0]]
-            scheme_dictionary[pool][amp][primers[1]] = all_primers["-"][primers[1]]
+            primer_pair = [amplicons[amp][2], amplicons[amp][3]]
+            scheme_dictionary[pool][amp][primer_pair[0]] = all_primers["+"][primer_pair[0]]
+            scheme_dictionary[pool][amp][primer_pair[1]] = all_primers["-"][primer_pair[1]]
 
     return scheme_dictionary
 
