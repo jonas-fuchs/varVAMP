@@ -185,7 +185,7 @@ def write_qpcr_to_files(path, final_schemes, ambiguous_consensus):
                     type,
                     final_schemes[scheme][type][1] + 1,
                     final_schemes[scheme][type][2],
-                    seq,
+                    seq.upper(),
                     len(seq),
                     round(primers.calc_gc(final_schemes[scheme][type][0]), 1),
                     round(primers.calc_temp(final_schemes[scheme][type][0]), 1),
@@ -219,75 +219,82 @@ def write_scheme_to_files(path, amplicon_scheme, ambiguous_consensus, mode):
     with open(tsv_file, "w") as tsv, open(amplicon_bed_file, "w") as bed, open(tabular_file, "w") as tabular:
         # write header for primer tsv
         print(
-            "amlicon_name\tamplicon_length\tprimer_name\tpool\tstart\tstop\tseq\tsize\tgc_best\ttemp_best\tmean_gc\tmean_temp\tpenalty",
+            "amlicon_name\tamplicon_length\tprimer_name\talternate_primer_name\tpool\tstart\tstop\tseq\tsize\tgc_best\ttemp_best\tmean_gc\tmean_temp\tpenalty",
             file=tsv
         )
-        counter = 0
 
         for pool in amplicon_scheme:
-            for amp in amplicon_scheme[pool]:
-                # give a new amplicon name
-                new_name = f"amplicon_{str(counter)}"
-                counter += 1
-                # get left and right primers and their names
-                primer_names = list(amplicon_scheme[pool][amp].keys())
-                left = (primer_names[0], amplicon_scheme[pool][amp][primer_names[0]])
-                right = (primer_names[1], amplicon_scheme[pool][amp][primer_names[1]])
-                amp_length = right[1][2] - left[1][1]
-                # write amplicon bed
-                if mode == "tiled":
-                    bed_score = pool
-                elif mode == "sanger":
-                    bed_score = round(left[1][3] + right[1][3], 1)
-                print(
-                    "ambiguous_consensus",
-                    left[1][1],
-                    right[1][2],
-                    new_name,
-                    bed_score,
-                    sep="\t",
-                    file=bed
-                )
-                # write primer assignments tabular file
-                print(
-                    left[0],
-                    right[0],
-                    sep="\t",
-                    file=tabular
-                )
-                # write primer tsv and primer bed
-                for direction, primer in [("+", left), ("-", right)]:
-                    seq = ambiguous_consensus[primer[1][1]:primer[1][2]]
-                    if direction == "-":
-                        seq = primers.rev_complement(seq)
-                    # calc primer parameters for all permutations
-                    permutations = get_permutations(seq)
-                    gc, temp = calc_mean_stats(permutations)
-                    # write tsv file
+            primer_fasta_file = os.path.join(path, f"primers_pool_{pool}.fasta")
+            with open(primer_fasta_file, "w") as primer_fasta:
+                for amp in amplicon_scheme[pool]:
+                    # give a new amplicon name
+                    new_name = f"amplicon_{str(counter)}"
+                    counter += 1
+                    # get left and right primers and their names
+                    primer_names = list(amplicon_scheme[pool][amp].keys())
+                    left = (primer_names[0], amplicon_scheme[pool][amp][primer_names[0]])
+                    right = (primer_names[1], amplicon_scheme[pool][amp][primer_names[1]])
+                    amp_length = right[1][2] - left[1][1]
+                    # write amplicon bed
+                    if mode == "tiled":
+                        bed_score = pool
+                    elif mode == "sanger":
+                        bed_score = round(left[1][3] + right[1][3], 1)
                     print(
+                        "ambiguous_consensus",
+                        left[1][1],
+                        right[1][2],
                         new_name,
-                        amp_length,
-                        primer[0],
-                        pool,
-                        primer[1][1] + 1,
-                        primer[1][2],
-                        seq,
-                        len(primer[1][0]),
-                        round(primers.calc_gc(primer[1][0]), 1),
-                        round(primers.calc_temp(primer[1][0]), 1),
-                        gc,
-                        temp,
-                        round(primer[1][3], 1),
+                        bed_score,
                         sep="\t",
-                        file=tsv
+                        file=bed
                     )
-                    # write primer bed file
-                    write_primers_to_bed(
-                        primer_bed_file,
-                        primer[0],
-                        primer[1],
-                        direction
+                    # write primer assignments tabular file
+                    print(
+                        left[0],
+                        right[0],
+                        sep="\t",
+                        file=tabular
                     )
+                    # write primer tsv and primer bed
+                    for direction, primer in [("+", left), ("-", right)]:
+                        seq = ambiguous_consensus[primer[1][1]:primer[1][2]]
+                        if direction == "-":
+                            seq = primers.rev_complement(seq)
+                            primer_name = f"{new_name}_RW"
+                        else:
+                            primer_name = f"{new_name}_FW"
+                        # write primers to fasta pool file
+                        print(f">{primer_name}\n{seq.upper()}", file=primer_fasta)
+                        # calc primer parameters for all permutations
+                        permutations = get_permutations(seq)
+                        gc, temp = calc_mean_stats(permutations)
+                        # write tsv file
+                        print(
+                            new_name,
+                            amp_length,
+                            primer_name,
+                            primer[0],
+                            pool,
+                            primer[1][1] + 1,
+                            primer[1][2],
+                            seq.upper(),
+                            len(primer[1][0]),
+                            round(primers.calc_gc(primer[1][0]), 1),
+                            round(primers.calc_temp(primer[1][0]), 1),
+                            gc,
+                            temp,
+                            round(primer[1][3], 1),
+                            sep="\t",
+                            file=tsv
+                        )
+                        # write primer bed file
+                        write_primers_to_bed(
+                            primer_bed_file,
+                            primer[0],
+                            primer[1],
+                            direction
+                        )
 
 
 def write_dimers(path, primer_dimers):
