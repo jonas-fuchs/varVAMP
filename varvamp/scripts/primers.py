@@ -64,13 +64,13 @@ def calc_max_polyx(seq):
     """
     calculate maximum polyx of a seq
     """
-    previous_nuc, counter, max_polyx = seq[0], 0, 0
+    previous_nuc, counter, max_polyx = seq[0], 1, 1
 
     for nuc in seq[1:]:
         if nuc == previous_nuc:
             counter += 1
         else:
-            counter = 0
+            counter = 1
             previous_nuc = nuc
         if counter > max_polyx:
             max_polyx = counter
@@ -80,20 +80,19 @@ def calc_max_polyx(seq):
 
 def calc_max_dinuc_repeats(seq):
     """
-    calculate the amount of repeating
-    di-nucleotides in a sequence
+    calculate maximum polyxy of a seq
     """
     for s in [seq, seq[1:]]:
         previous_dinuc = s[0:2]
-        max_dinuc = 0
-        counter = 0
+        max_dinuc = 1
+        counter = 1
         for i in range(2, len(s), 2):
             if s[i:i+2] == previous_dinuc:
                 counter += 1
             else:
                 if counter > max_dinuc:
                     max_dinuc = counter
-                counter = 0
+                counter = 1
                 previous_dinuc = s[i:i+2]
 
     return max_dinuc

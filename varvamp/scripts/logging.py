@@ -321,13 +321,13 @@ def confirm_config(args, log_file):
             error = True
         if tup[0] > tup[1]:
             raise_error(
-                f"min {tup_type} should not exeed max {tup_type}!",
+                f"min {tup_type} should not exceed max {tup_type}!",
                 log_file
             )
             error = True
         if tup[0] > tup[2]:
             raise_error(
-                f"min {tup_type} should not exeed opt {tup_type}!",
+                f"min {tup_type} should not exceed opt {tup_type}!",
                 log_file
             )
             error = True
@@ -357,7 +357,7 @@ def confirm_config(args, log_file):
             error = True
         if tup[0] > tup[1]:
             raise_error(
-                f"min {tup_type} should not exeed max {tup_type}!",
+                f"min {tup_type} should not exceed max {tup_type}!",
                 log_file
             )
             error = True
@@ -369,13 +369,11 @@ def confirm_config(args, log_file):
             error = True
     # check single values that cannot be negative
     non_negative_var = [
-        ("max polyx repeats", config.PRIMER_MAX_POLYX),
-        ("max dinucleotide repeats", config.PRIMER_MAX_DINUC_REPEATS),
         ("min number of 3 prime nucleotides without ambiguous nucleotides", config.PRIMER_MIN_3_WITHOUT_AMB),
         ("monovalent cation concentration", config.PCR_MV_CONC),
         ("divalent cation concentration", config.PCR_DV_CONC),
         ("dNTP concentration", config.PCR_DNTP_CONC),
-        ("primer temperatur penalty", config.PRIMER_TM_PENALTY),
+        ("primer temperature penalty", config.PRIMER_TM_PENALTY),
         ("primer gc penalty", config.PRIMER_GC_PENALTY),
         ("primer size penalty", config.PRIMER_SIZE_PENALTY),
         ("max base penalty", config.PRIMER_MAX_BASE_PENALTY),
@@ -407,6 +405,16 @@ def confirm_config(args, log_file):
             exit=True
         )
     # specific warnings
+    if config.PRIMER_MAX_POLYX > 5:
+        raise_error(
+            "max polyx > 5 is not recommended.",
+            log_file,
+        )
+    if config.PRIMER_MAX_DINUC_REPEATS > 5:
+        raise_error(
+            "max di-nucleotide repeats > 5 is not recommended.",
+            log_file,
+        )
     if config.PRIMER_HAIRPIN < 0:
         raise_error(
             "decreasing hairpin melting temp to negative values "
@@ -432,6 +440,19 @@ def confirm_config(args, log_file):
         raise_error(
             "only the last 5 nucleotides of the 3' end are considered for GC 3'end calculation.",
             log_file
+        )
+    # specific errors
+    if config.PRIMER_MAX_POLYX < 1:
+        raise_error(
+            "max polyx cannot be lower than 1.",
+            log_file,
+            exit=True
+        )
+    if config.PRIMER_MAX_DINUC_REPEATS < 1:
+        raise_error(
+            "max di-nucleotide repeats cannot be lower than 1.",
+            log_file,
+            exit=True
         )
     if config.BLAST_MAX_DIFF > 1:
         raise_error(
@@ -551,6 +572,7 @@ def goodbye_message():
         "Thank you. Come again.",
         ">Placeholder for your advertisement<",
         "Make primers great again!",
+        "Ciao cacao!"
         "And now lets pray to the PCR gods.",
         "**bibobibobop** task finished",
         "Thank you for traveling with varVAMP.",

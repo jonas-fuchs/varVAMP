@@ -8,8 +8,8 @@ This contains all varVAMP parameters.
 PRIMER_TMP = (56, 63, 60)  # melting temperatur (min, max, opt)
 PRIMER_GC_RANGE = (35, 65, 50)  # gc (min, max, opt)
 PRIMER_SIZES = (18, 24, 21)  # size (min, max, opt)
-PRIMER_MAX_POLYX = 3  # max number of polyx repeats
-PRIMER_MAX_DINUC_REPEATS = 3  # max number of dinucleotide repeats
+PRIMER_MAX_POLYX = 4  # max number of polyX
+PRIMER_MAX_DINUC_REPEATS = 4  # max number of polyXY
 PRIMER_HAIRPIN = 47  # max melting temp for secondary structure
 PRIMER_GC_END = (1, 3)  # min/max GCs in the last 5 bases of the 3' end
 PRIMER_MIN_3_WITHOUT_AMB = 3  # min len of 3' without ambiguous charaters
