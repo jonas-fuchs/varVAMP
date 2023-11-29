@@ -130,8 +130,9 @@ def write_qpcr_to_files(path, final_schemes, ambiguous_consensus):
     tsv_file_2 = os.path.join(path, "qpcr_primers.tsv")
     primer_bed_file = os.path.join(path, "primers.bed")
     amplicon_bed_file = os.path.join(path, "amplicons.bed")
+    primer_fasta_file = os.path.join(path, "oligos.fasta")
 
-    with open(tsv_file, "w") as tsv, open(tsv_file_2, "w") as tsv2, open(amplicon_bed_file, "w") as bed:
+    with open(tsv_file, "w") as tsv, open(tsv_file_2, "w") as tsv2, open(amplicon_bed_file, "w") as bed, open(primer_fasta_file, "w") as fasta:
         print(
             "qpcr_scheme\toligo_type\tstart\tstop\tseq\tsize\tgc_best\ttemp_best\tmean_gc\tmean_temp\tpenalty",
             file=tsv2
@@ -202,6 +203,8 @@ def write_qpcr_to_files(path, final_schemes, ambiguous_consensus):
                     final_schemes[scheme][type],
                     direction
                 )
+                # write fasta
+                print(f">{scheme}_{type}\n{seq.upper()}", file=fasta)
 
 
 def write_scheme_to_files(path, amplicon_scheme, ambiguous_consensus, mode):
@@ -224,7 +227,10 @@ def write_scheme_to_files(path, amplicon_scheme, ambiguous_consensus, mode):
         )
 
         for pool in amplicon_scheme:
-            primer_fasta_file = os.path.join(path, f"primers_pool_{pool}.fasta")
+            if mode == "sanger":
+                primer_fasta_file = os.path.join(path, "primers.fasta")
+            else:
+                primer_fasta_file = os.path.join(path, f"primers_pool_{pool}.fasta")
             with open(primer_fasta_file, "w") as primer_fasta:
                 for amp in amplicon_scheme[pool]:
                     # give a new amplicon name
