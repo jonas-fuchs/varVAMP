@@ -83,7 +83,7 @@ def get_args(sysargs):
         )
         par.add_argument(
             "-th",
-            "--n-threads",
+            "--threads",
             help="number of threads",
             metavar="1",
             type=int,
@@ -201,7 +201,7 @@ def shared_workflow(args, log_file):
     alignment_cleaned, gaps_to_mask = alignment.process_alignment(
         preprocessed_alignment,
         args.threshold,
-        args.n_threads
+        args.threads
     )
     logging.varvamp_progress(
         log_file,
@@ -285,7 +285,7 @@ def sanger_and_tiled_shared_workflow(args, left_primer_candidates, right_primer_
     logging.varvamp_progress(
         log_file,
         progress=0.7,
-        job="Considering low scoring primers.",
+        job="Considering primers with low penalties.",
         progress_text=f"{len(all_primers['+'])} fw and {len(all_primers['-'])} rw primers"
     )
 
@@ -319,7 +319,7 @@ def sanger_and_tiled_shared_workflow(args, left_primer_candidates, right_primer_
             query_path,
             amplicons,
             args.max_length,
-            args.n_threads,
+            args.threads,
             log_file,
             mode="sanger_tiled"
         )
@@ -338,8 +338,8 @@ def sanger_workflow(args, amplicons, all_primers, log_file):
     logging.varvamp_progress(
         log_file,
         progress=0.9,
-        job="Finding low scoring amplicons.",
-        progress_text=f"{len(amplicon_scheme[0])} low scoring amplicons."
+        job="Finding amplicons with low penalties.",
+        progress_text=f"{len(amplicon_scheme[0])} amplicons."
     )
 
     return amplicon_scheme
@@ -430,7 +430,7 @@ def qpcr_workflow(args, data_dir, alignment_cleaned, ambiguous_consensus, majori
         progress_text=f"{len(qpcr_probes)} potential qPCR probes"
     )
 
-    # find unique high scoring amplicons with internal probe
+    # find unique amplicons with a low penalty and an internal probe
     qpcr_scheme_candidates = qpcr.find_qcr_schemes(qpcr_probes, left_primer_candidates, right_primer_candidates, majority_consensus, ambiguous_consensus)
     if not qpcr_scheme_candidates:
         logging.raise_error(
@@ -455,12 +455,12 @@ def qpcr_workflow(args, data_dir, alignment_cleaned, ambiguous_consensus, majori
             query_path,
             qpcr_scheme_candidates,
             config.QAMPLICON_LENGTH[1],
-            args.n_threads,
+            args.threads,
             log_file,
             mode="qpcr"
         )
     # test amplicons for deltaG
-    final_schemes = qpcr.test_amplicon_deltaG_parallel(qpcr_scheme_candidates, majority_consensus, args.test_n, args.deltaG, args.n_threads)
+    final_schemes = qpcr.test_amplicon_deltaG_parallel(qpcr_scheme_candidates, majority_consensus, args.test_n, args.deltaG, args.threads)
     if not final_schemes:
         logging.raise_error(
             "no qPCR amplicon passed the deltaG threshold\n",

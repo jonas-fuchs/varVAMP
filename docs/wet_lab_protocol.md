@@ -10,7 +10,7 @@ The QIAmp Viral RNA Kit was used to isolate RNA out of viral supernatant followi
 
     • Elute in 60 µl Buffer AVE
 
-Thanks to Mathias Schmmerer for providing HepE infected cell cultures.
+Thanks to Mathias Schemmerer for providing HepE infected cell cultures.
 
 ## Amplicon Generation by SuperScript-IV One-Step-PCR
 The RNA amplification was performed with the following approach and PCR protocol for every single amplicon. 

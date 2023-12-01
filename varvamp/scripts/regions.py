@@ -13,9 +13,7 @@ def find_regions(consensus_amb, allowed_ambiguous):
     sequence length
     """
 
-    current_window = []
-    primer_regions = []
-    last_amb = 0
+    current_window, primer_regions, all_previous_ambiguous_pos, last_amb = [], [], [], 0
 
     # append one N so the last window is closed
     seq = str(consensus_amb) + "N"
@@ -59,9 +57,11 @@ def mean(primer_regions, consensus):
     that cover the consensus sequence
     """
     covered_set = set()
+
     for region in primer_regions:
         pos_list = list(range(region[0], region[1]))
         [covered_set.add(x) for x in pos_list]
+
     return round(len(covered_set)/len(consensus)*100, 1)
 
 

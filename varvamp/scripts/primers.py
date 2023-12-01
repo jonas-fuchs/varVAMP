@@ -46,7 +46,7 @@ def calc_hairpin(seq):
 
 def calc_dimer(seq1, seq2, structure=False):
     """
-    Calculate the heterodimerization thermodynamics of two DNA sequences.
+    Calculate the hetero-dimerization thermodynamics of two DNA sequences.
     Return primer3 thermo object.
     """
     return p3.calc_heterodimer(
@@ -64,37 +64,37 @@ def calc_max_polyx(seq):
     """
     calculate maximum polyx of a seq
     """
-    previous_nuc = seq[0]
-    counter = 0
-    max_polyx = 0
+    previous_nuc, counter, max_polyx = seq[0], 1, 1
+
     for nuc in seq[1:]:
         if nuc == previous_nuc:
             counter += 1
         else:
-            counter = 0
+            counter = 1
             previous_nuc = nuc
         if counter > max_polyx:
             max_polyx = counter
-    return(max_polyx)
+
+    return max_polyx
 
 
 def calc_max_dinuc_repeats(seq):
     """
-    calculate the amount of repeating
-    dinucleotides in a sequence
+    calculate maximum polyxy of a seq
     """
     for s in [seq, seq[1:]]:
         previous_dinuc = s[0:2]
-        max_dinuc = 0
-        counter = 0
+        max_dinuc = 1
+        counter = 1
         for i in range(2, len(s), 2):
             if s[i:i+2] == previous_dinuc:
                 counter += 1
             else:
                 if counter > max_dinuc:
                     max_dinuc = counter
-                counter = 0
+                counter = 1
                 previous_dinuc = s[i:i+2]
+
     return max_dinuc
 
 
@@ -111,17 +111,13 @@ def is_three_prime_ambiguous(amb_seq):
     """
     determine if a sequence contains an ambiguous char at the 3'prime
     """
-    len_3_prime = config.PRIMER_MIN_3_WITHOUT_AMB
+    len_3_prime, is_amb = config.PRIMER_MIN_3_WITHOUT_AMB, False
 
     if len_3_prime != 0:
         for nuc in amb_seq[len(amb_seq)-len_3_prime:]:
             if nuc not in config.NUCS:
                 is_amb = True
                 break
-            else:
-                is_amb = False
-    else:
-        is_amb = False
 
     return is_amb
 
@@ -249,15 +245,16 @@ def calc_3_prime_penalty(direction, mismatches):
     the higher the penalty. uses the previously calculated
     mismatch list.
     """
+
+    penalty = 0
+
     if config.PRIMER_3_PENALTY:
         if direction == "-":
             penalty = sum([m * p for m, p in zip(mismatches[0:len(config.PRIMER_3_PENALTY)], config.PRIMER_3_PENALTY)])
         elif direction == "+":
             penalty = sum([m * p for m, p in zip(mismatches[::-1][0:len(config.PRIMER_3_PENALTY)], config.PRIMER_3_PENALTY)])
-    else:
-        penalty = 0
 
-    return(penalty)
+    return penalty
 
 
 def filter_kmer_direction_independent(seq, primer_temps=config.PRIMER_TMP, gc_range=config.PRIMER_GC_RANGE, primer_sizes=config.PRIMER_SIZES):
@@ -288,7 +285,7 @@ def filter_kmer_direction_dependend(direction, kmer, ambiguous_consensus):
         kmer_seq = rev_complement(kmer[0])
         amb_kmer_seq = rev_complement(ambiguous_consensus[kmer[1]:kmer[2]])
     # filter kmer
-    return(
+    return (
         (calc_hairpin(kmer_seq).tm <= config.PRIMER_HAIRPIN)
         and (config.PRIMER_GC_END[0] <= calc_end_gc(kmer_seq) <= config.PRIMER_GC_END[1])
         and not is_three_prime_ambiguous(amb_kmer_seq)
@@ -309,7 +306,7 @@ def find_primers(kmers, ambiguous_consensus, alignment):
             continue
         # calc base penalty
         base_penalty = calc_base_penalty(kmer[0],config.PRIMER_TMP, config.PRIMER_GC_RANGE, config.PRIMER_SIZES)
-        # calcualte per base mismatches
+        # calculate per base mismatches
         per_base_mismatches = calc_per_base_mismatches(
                                 kmer,
                                 alignment,
@@ -366,17 +363,17 @@ def create_primer_dictionary(primer_candidates, direction):
 def find_best_primers(left_primer_candidates, right_primer_candidates):
     """
     Primer candidates are likely overlapping. Here, the list of primers
-    is sorted for the best to worst scoring. Then, the next best scoring
+    is sorted for the lowest to highest penalty. Then, the next lowest
     is retained if it does not have any nucleotides that have already
-    been covered by the middle third of a better scoring primer candidate.
+    been covered by the middle third of a better primer candidate.
     This significantly reduces the amount of primers while retaining
-    the best scoring ones.
+    the ones with the lowest penalties.
 
     Example:
-    -------- (score 1) 1
-        ------------- (score 1) 2
-            ------------ (score 0.8) 3
-                      ----------(score 0.9) 4
+    -------- (penalty 1) 1
+        ------------- (penalty 1) 2
+            ------------ (penalty 0.8) 3
+                      ----------(penalty 0.9) 4
 
     --> primer 3 would be retained and primer 2 excluded, primer 4 and 1
     will however be considered in the next set of overlapping primers.
@@ -385,9 +382,9 @@ def find_best_primers(left_primer_candidates, right_primer_candidates):
     all_primers = {}
 
     for direction, primer_candidates in [("+", left_primer_candidates), ("-", right_primer_candidates)]:
-        # sort the primers for the best scoring, and if same score by start
+        # sort the primers by penalty, and if same penalty by start
         primer_candidates.sort(key=lambda x: (x[3], x[1]))
-        # ini everything with the top scoring primer
+        # ini everything with the primer with the lowest penalty
         to_retain = [primer_candidates[0]]
         primer_ranges = list(range(primer_candidates[0][1], primer_candidates[0][2]+1))
         primer_set = set(primer_ranges)
@@ -401,7 +398,7 @@ def find_best_primers(left_primer_candidates, right_primer_candidates):
             if not any(x in primer_positions for x in primer_set):
                 # update the primer set
                 primer_set.update(primer_positions)
-                # append this primer as it is well scoring and not overlapping
+                # append this primer as it has a low penalty and is not overlapping
                 # with another already retained primer
                 to_retain.append(primer)
 

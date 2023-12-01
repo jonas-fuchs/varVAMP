@@ -18,7 +18,7 @@ In your case varVAMP could not find suitable replacement primers in the TILED mo
 
 4. **I have multiple hits after SANGER/QPCR mode. Which should I use?**
 
-varVAMP sorts all amplicons and qpcr designs by score and always assigns the lowest number to the best one of non-overlapping amplicons/qpcr schemes. If you are not interested in a specific gene region, amplicon_0 or qpcr_scheme_0  are your best candidates!
+varVAMP sorts all amplicons and qpcr designs by their penalty and always assigns the lowest number to the one with the lowest penalty of the non-overlapping amplicons/qpcr schemes. If you are not interested in a specific gene region, amplicon_0 or qpcr_scheme_0  are your best candidates!
 
 5. **What is deltaG reported for the QPCR mode?**
 

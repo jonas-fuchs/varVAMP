@@ -40,7 +40,7 @@ def varvamp_progress(log_file, mode=None, start_time=None, progress=0, job="", p
     progress bar, main progress logging and folder creation
     """
     barLength = 40
-    block = int(round(barLength*progress))
+    block = int(round(barLength * progress))
 
     if progress == 0:
         print(
@@ -55,7 +55,8 @@ def varvamp_progress(log_file, mode=None, start_time=None, progress=0, job="", p
             progress_text = f"all done \n\n\rvarVAMP {__version__} finished in {stop_time.total_seconds()} sec!\n{datetime.datetime.now()}"
             job = "Finalizing output."
         print(
-            "\rJob:\t\t " + job + "\nProgress: \t [{0}] {1}%".format("█"*block + "-"*(barLength-block), progress*100) + "\t" + progress_text,
+            "\rJob:\t\t " + job + "\nProgress: \t [{0}] {1}%".format("█" * block + "-" * (barLength - block),
+                                                                     progress * 100) + "\t" + progress_text,
             flush=True
         )
         with open(log_file, 'a') as f:
@@ -151,7 +152,7 @@ def raise_arg_errors(args, log_file):
                 "small overlaps might hinder downstream analyses. Consider increasing.",
                 log_file
             )
-        if args.overlap > args.max_length/2 - config.PRIMER_SIZES[1]:
+        if args.overlap > args.max_length / 2 - config.PRIMER_SIZES[1]:
             raise_error(
                 "min overlap must be lower than half of your maximum length - maximum primer length. To achieve optimal results reduce it to at least half of your optimal length",
                 log_file,
@@ -163,7 +164,7 @@ def raise_arg_errors(args, log_file):
                 log_file,
                 exit=True
             )
-        if args.overlap > args.opt_length/2:
+        if args.overlap > args.opt_length / 2:
             raise_error(
                 "your intended overlap is higher than half of your optimal length. This reduces how well varvamps will find overlapping amplicons. Consider decreasing.",
                 log_file
@@ -226,9 +227,9 @@ def check_alignment_length(preprocessed_alignment, log_file):
     smaller_warning, larger_warning = [], []
     for name, length in zip(all_names, all_seq_length):
         # consider variation of sequence lengths and check if it is at least 2 % deviation
-        if length <= mean_len-3*mean_std and length <= mean_len-mean_len*0.02:
+        if length <= mean_len - 3 * mean_std and length <= mean_len - mean_len * 0.02:
             smaller_warning.append(f"{name} ({length} nt)\n")
-        elif length >= mean_len+3*mean_std and length >= mean_len+mean_len*0.02:
+        elif length >= mean_len + 3 * mean_std and length >= mean_len + mean_len * 0.02:
             larger_warning.append(f"{name} ({length} nt)\n")
     # raise warning for non-empty lists
     for warning, length_type in zip([larger_warning, smaller_warning], ["larger", "smaller"]):
@@ -309,66 +310,70 @@ def confirm_config(args, log_file):
             exit=True
         )
     # confirm tuples with 3 elements
-    for type, tup in [("primer temp", config.PRIMER_TMP), ("primer gc", config.PRIMER_GC_RANGE), ("primer size", config.PRIMER_SIZES), ("probe temp", config.QPROBE_TMP), ("probe size", config.QPROBE_SIZES), ("probe gc", config.QPROBE_GC_RANGE)]:
+    for tup_type, tup in [("primer temp", config.PRIMER_TMP), ("primer gc", config.PRIMER_GC_RANGE),
+                          ("primer size", config.PRIMER_SIZES), ("probe temp", config.QPROBE_TMP),
+                          ("probe size", config.QPROBE_SIZES), ("probe gc", config.QPROBE_GC_RANGE)]:
         if len(tup) != 3:
             raise_error(
-                f"{type} tuple has to have the form (min, max, opt)!",
+                f"{tup_type} tuple has to have the form (min, max, opt)!",
                 log_file
             )
             error = True
         if tup[0] > tup[1]:
             raise_error(
-                f"min {type} should not exeed max {type}!",
+                f"min {tup_type} should not exceed max {tup_type}!",
                 log_file
             )
             error = True
         if tup[0] > tup[2]:
             raise_error(
-                f"min {type} should not exeed opt {type}!",
+                f"min {tup_type} should not exceed opt {tup_type}!",
                 log_file
             )
             error = True
         if tup[2] > tup[1]:
             raise_error(
-                f"opt {type} should not exeed max {type}!",
+                f"opt {tup_type} should not exeed max {tup_type}!",
                 log_file
             )
             error = True
         if any(map(lambda var: var < 0, tup)):
             raise_error(
-                f"{type} can not contain negative values!",
+                f"{tup_type} can not contain negative values!",
                 log_file
             )
             error = True
     # confirm tuples with two elements
-    for type, tup in [("primer gc at the 3'", config.PRIMER_GC_END), ("probe and primer temp diff", config.QPROBE_TEMP_DIFF), ("distance probe to primer", config.QPROBE_DISTANCE), ("qpcr amplicon length", config.QAMPLICON_LENGTH), ("qpcr amplicon gc", config.QAMPLICON_GC), ("probe gc at the 3'", config.PRIMER_GC_END)]:
+    for tup_type, tup in [("primer gc at the 3'", config.PRIMER_GC_END),
+                          ("probe and primer temp diff", config.QPROBE_TEMP_DIFF),
+                          ("distance probe to primer", config.QPROBE_DISTANCE),
+                          ("qpcr amplicon length", config.QAMPLICON_LENGTH), ("qpcr amplicon gc", config.QAMPLICON_GC),
+                          ("probe gc at the 3'", config.PRIMER_GC_END)]:
         if len(tup) != 2:
             raise_error(
-                f"{type} tuple has to have the form (min, max)!",
+                f"{tup_type} tuple has to have the form (min, max)!",
                 log_file
             )
             error = True
         if tup[0] > tup[1]:
             raise_error(
-                f"min {type} should not exeed max {type}!",
+                f"min {tup_type} should not exceed max {tup_type}!",
                 log_file
             )
             error = True
         if any(map(lambda var: var < 0, tup)):
             raise_error(
-                f"{type} can not contain negative values!",
+                f"{tup_type} can not contain negative values!",
                 log_file
             )
             error = True
     # check single values that cannot be negative
     non_negative_var = [
-        ("max polyx repeats", config.PRIMER_MAX_POLYX),
-        ("max dinucleotide repeats", config.PRIMER_MAX_DINUC_REPEATS),
         ("min number of 3 prime nucleotides without ambiguous nucleotides", config.PRIMER_MIN_3_WITHOUT_AMB),
         ("monovalent cation concentration", config.PCR_MV_CONC),
         ("divalent cation concentration", config.PCR_DV_CONC),
         ("dNTP concentration", config.PCR_DNTP_CONC),
-        ("primer temperatur penalty", config.PRIMER_TM_PENALTY),
+        ("primer temperature penalty", config.PRIMER_TM_PENALTY),
         ("primer gc penalty", config.PRIMER_GC_PENALTY),
         ("primer size penalty", config.PRIMER_SIZE_PENALTY),
         ("max base penalty", config.PRIMER_MAX_BASE_PENALTY),
@@ -379,10 +384,10 @@ def confirm_config(args, log_file):
         ("multiplier of the maximum length for non-specific amplicons", config.BLAST_SIZE_MULTI),
         ("blast penalty for off targets", config.BLAST_PENALTY)
     ]
-    for type, var in non_negative_var:
+    for var_type, var in non_negative_var:
         if var < 0:
             raise_error(
-                f"{type} can not be negative!",
+                f"{var_type} can not be negative!",
                 log_file
             )
             error = True
@@ -400,6 +405,16 @@ def confirm_config(args, log_file):
             exit=True
         )
     # specific warnings
+    if config.PRIMER_MAX_POLYX > 5:
+        raise_error(
+            "max polyx > 5 is not recommended.",
+            log_file,
+        )
+    if config.PRIMER_MAX_DINUC_REPEATS > 5:
+        raise_error(
+            "max di-nucleotide repeats > 5 is not recommended.",
+            log_file,
+        )
     if config.PRIMER_HAIRPIN < 0:
         raise_error(
             "decreasing hairpin melting temp to negative values "
@@ -425,6 +440,19 @@ def confirm_config(args, log_file):
         raise_error(
             "only the last 5 nucleotides of the 3' end are considered for GC 3'end calculation.",
             log_file
+        )
+    # specific errors
+    if config.PRIMER_MAX_POLYX < 1:
+        raise_error(
+            "max polyx cannot be lower than 1.",
+            log_file,
+            exit=True
+        )
+    if config.PRIMER_MAX_DINUC_REPEATS < 1:
+        raise_error(
+            "max di-nucleotide repeats cannot be lower than 1.",
+            log_file,
+            exit=True
         )
     if config.BLAST_MAX_DIFF > 1:
         raise_error(
@@ -534,6 +562,7 @@ def confirm_config(args, log_file):
                 print(f"{var} = {var_dic[var]}", file=f)
         print("\nPROGRESS", file=f)
 
+
 def goodbye_message():
     """
     This is what happens when I am bored...
@@ -543,6 +572,7 @@ def goodbye_message():
         "Thank you. Come again.",
         ">Placeholder for your advertisement<",
         "Make primers great again!",
+        "Ciao cacao!"
         "And now lets pray to the PCR gods.",
         "**bibobibobop** task finished",
         "Thank you for traveling with varVAMP.",

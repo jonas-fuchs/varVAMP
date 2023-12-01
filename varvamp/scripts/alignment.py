@@ -30,7 +30,7 @@ def read_alignment(alignment_path):
 def preprocess(alignment_path):
     """
     force nucleotides to lower and
-    back transcripe if its RNA
+    back transcribe if its RNA
     """
 
     preprocessed_alignment = []
@@ -68,7 +68,7 @@ def find_internal_gaps(unique_gaps, gap):
             intersection = unique_set.intersection(current_range)
             if not intersection:
                 continue
-            if min(intersection) == unique_gap[0] and max(intersection)+1 == unique_gap[1]:
+            if min(intersection) == unique_gap[0] and max(intersection) + 1 == unique_gap[1]:
                 overlapping_gaps.append(unique_gap)
 
     return overlapping_gaps
@@ -110,7 +110,6 @@ def create_gap_dictionary(unique_gaps, all_gaps, n_threads):
     return gap_dict
 
 
-
 def find_gaps_to_mask(gap_dict, cutoff):
     """
     filters gaps for their freq cutoff.
@@ -136,7 +135,7 @@ def find_gaps_to_mask(gap_dict, cutoff):
         if opened_region:
             # write the opened region if the start of the current region
             # > opened_region[stop] and the last still opened region
-            if region[0] > opened_region[1] or i == len(potential_gaps)-1:
+            if region[0] > opened_region[1] or i == len(potential_gaps) - 1:
                 gaps_to_mask.append(opened_region)
                 opened_region = region
             else:
@@ -163,7 +162,7 @@ def clean_gaps(alignment, gaps_to_mask):
         masked_seq = str()
         for region in gaps_to_mask:
             # check if it is three bases or more and mask with 2 Ns
-            if region[1]-region[0] >= config.QAMPLICON_DEL_CUTOFF:
+            if region[1] - region[0] >= config.QAMPLICON_DEL_CUTOFF:
                 mask = "NN"
             # or mask with one N (small deletion)
             else:
@@ -179,12 +178,12 @@ def clean_gaps(alignment, gaps_to_mask):
             # else we are in the middle of the alignment
             else:
                 masked_seq = masked_seq + mask + masked_seq_temp
-            start = region[1]+1
-        if max(gaps_to_mask)[1] < len(sequence[1])-1:
+            start = region[1] + 1
+        if max(gaps_to_mask)[1] < len(sequence[1]) - 1:
             # append the last seq if no gap is at
             # the end of the sequence
             start = max(gaps_to_mask)[1]
-            stop = len(sequence[1])-1
+            stop = len(sequence[1]) - 1
             masked_seq_temp = sequence[1][start:stop]
             masked_seq = masked_seq + mask + masked_seq_temp
         else:
@@ -202,7 +201,7 @@ def process_alignment(preprocessed_alignment, threshold, n_threads):
     """
     all_gaps = []
 
-    gap_cutoff = len(preprocessed_alignment)*(1-threshold)
+    gap_cutoff = len(preprocessed_alignment) * (1 - threshold)
     for seq in preprocessed_alignment:
         # find all gaps for all sequences with regular expression -{min}
         all_gaps.append(

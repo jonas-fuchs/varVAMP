@@ -114,7 +114,7 @@ def parse_and_filter_BLAST_output(blast_out):
     # removes tabular output
     os.remove(blast_out)
 
-    return(blast_df)
+    return blast_df
 
 
 def check_off_targets(df_amp_primers_sorted, max_length, primers):
@@ -201,7 +201,7 @@ def predict_non_specific_amplicons(amplicons, blast_df, max_length, mode, n_thre
         if mode == "sanger_tiled":
             amplicons[off_target][5] = amplicons[off_target][5] + config.BLAST_PENALTY
         elif mode == "qpcr":
-            amplicons[off_target]["score"][0] = amplicons[off_target]["score"][0] + config.BLAST_PENALTY
+            amplicons[off_target]["penalty"][0] = amplicons[off_target]["penalty"][0] + config.BLAST_PENALTY
 
     return off_targets, amplicons
 
@@ -227,7 +227,7 @@ def primer_blast(data_dir, db, query_path, amplicons, max_length, n_threads, log
         mode,
         n_threads
     )
-    success_text = f"varVAMP successfully predicted non-specific amplicons:\n\t> {len(off_target_amplicons)}/{len(amplicons)} amplicons could produce amplicons with the blast db.\n\t> raised their amplicon score by {config.BLAST_PENALTY}"
+    success_text = f"varVAMP successfully predicted non-specific amplicons:\n\t> {len(off_target_amplicons)}/{len(amplicons)} amplicons could produce amplicons with the blast db.\n\t> raised their amplicon penalty by {config.BLAST_PENALTY}"
     print(success_text)
     with open(log_file, 'a') as f:
         print(
