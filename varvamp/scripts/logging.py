@@ -113,7 +113,7 @@ def raise_arg_errors(args, log_file):
                 log_file,
                 exit=True
             )
-    if args.mode in ("tiled", "sanger"):
+    if args.mode in ("tiled", "single"):
         if args.opt_length > args.max_length:
             raise_error(
                 "optimal length can not be higher than the maximum amplicon length.",
@@ -126,8 +126,8 @@ def raise_arg_errors(args, log_file):
                 log_file,
                 exit=True
             )
-    # SANGER specific warnings
-    if args.mode == "sanger":
+    # SINGLE specific warnings
+    if args.mode == "single":
         if args.report_n < 1:
             raise_error(
                 "number of reported amplicons cannot be below 1.",
@@ -252,7 +252,7 @@ def confirm_config(args, log_file):
 
     # check if all variables exists
     all_vars = [
-        # arg independent TILED, SANGER mode
+        # arg independent TILED, SINGLE mode
         (
             "PRIMER_TMP",
             "PRIMER_GC_RANGE",
@@ -512,7 +512,7 @@ def confirm_config(args, log_file):
             sep="\n",
             file=f
         )
-        if args.mode in ("tiled", "sanger"):
+        if args.mode in ("tiled", "single"):
             print(
                 f"AMPLICON_OPT_LENGTH = {args.opt_length}",
                 f"AMPLICON_MAX_LENGTH = {args.max_length}",
@@ -532,7 +532,7 @@ def confirm_config(args, log_file):
                 sep="\n",
                 file=f
             )
-        if args.mode == "sanger":
+        if args.mode == "single":
             print(
                 f"REPORT_N_AMPLICONS = {args.report_n}",
                 sep="\n",
@@ -553,7 +553,7 @@ def confirm_config(args, log_file):
         )
         for var in all_vars[0]:
             print(f"{var} = {var_dic[var]}", file=f)
-        if args.mode in ("tiled", "sanger"):
+        if args.mode in ("tiled", "single"):
             if args.database is not None:
                 for var in all_vars[2]:
                     print(f"{var} = {var_dic[var]}", file=f)

@@ -23,7 +23,7 @@ varVAMP searches for potential primer regions as defined by a user-defined numbe
 varVAMP uses [`primer3-py`](https://pypi.org/project/primer3-py/) to search for potential primers. Some of the evaluation process, determining if primers match certain criteria, was adapted from [`primalscheme`](www.github.com/aresti/primalscheme). The primer search contains multiple steps:
 1. Digest the primer regions into kmers with the min and max length of primers. This is performed on a consensus sequence that does not contain ambiguous characters but is just the majority consensus of the alignment. Therefore, primer parameters will be later calculated for the best fitting primer.
 2. Evaluate if these kmers are potential primers independent of their orientation (temperature, GC, size, poly-x repeats and poly dinucleotide repeats) and dependent on their orientation (secondary structure, GC clamp, number of GCs in the last 5 bases of the 3' end and min 3' nucleotides without an ambiguous base). Filter for kmers that satisfy all constraints and calculate their penalties (explained in the last section).
-3. Sanger and tiled mode: Find primer with the lowest penalty. varVAMP sorts the primers by their penalty and always takes one with the lowest penalty if middle third of the primer has not been covered by a primer with a lower penalty. This greatly reduces the complexity of the later amplicon search while only retaining the best primer of a set of overlapping primers.
+3. Single and tiled mode: Find primer with the lowest penalty. varVAMP sorts the primers by their penalty and always takes one with the lowest penalty if middle third of the primer has not been covered by a primer with a lower penalty. This greatly reduces the complexity of the later amplicon search while only retaining the best primer of a set of overlapping primers.
 
 ### Amplicon search
 
@@ -37,7 +37,7 @@ To search for the best amplicon, varVAMP uses a graph based approach.
 6. Repeat steps 3-5 for each start node until the best coverage is reached. Voila! We have the best amplicon scheme with the lowest cumulative primer penalties in respect to the amplicon length!
 7. Lastly, the best scheme is evaluated for primer dimers in their respective pools. If a primer dimer pair is found, varVAMP evaluates for each primer their overlapping and previously not considered primers (primer search step 2) and again minimizes the penalty. The scheme and all primers are updated. If no alternative primers can be found, varVAMP issues a warning and reports the unsolvable primer dimers.
 
-#### Sanger sequencing
+#### Single amplicons
 1. varVAMP sorts all amplicons by their penalties and takes the non-overlapping amplicon with the lowest penalty!
 2. As varVAMP gives a size penalty to amplicons, varVAMP automatically finds amplicons with low primer penalties close to your optimal length (if possible).
 

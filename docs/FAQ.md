@@ -16,7 +16,7 @@ The most easy way is to set the number of ambiguous characters you can tolerate 
 
 In your case varVAMP could not find suitable replacement primers in the TILED mode. You can either rerun varVAMP and try different settings or you can perform a third pool that contains a amplicon that has one of the conflicting dimers. Notably, varVAMP also reports the dimer melting temperature. If it is still reasonable low, using a hot start polymerase might still lead to successful PCR amplification.
 
-4. **I have multiple hits after SANGER/QPCR mode. Which should I use?**
+4. **I have multiple hits after SINGLE/QPCR mode. Which should I use?**
 
 varVAMP sorts all amplicons and qpcr designs by their penalty and always assigns the lowest number to the one with the lowest penalty of the non-overlapping amplicons/qpcr schemes. If you are not interested in a specific gene region, amplicon_0 or qpcr_scheme_0  are your best candidates!
 

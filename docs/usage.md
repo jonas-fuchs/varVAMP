@@ -26,15 +26,15 @@ optional arguments:
   -v, --version         show program's version number and exit
 
 varvamp mode:
-  {sanger,tiled,qpcr}
-    sanger              design primers for sanger sequencing
+  {single,tiled,qpcr}
+    single              design primers for single amplicons
     tiled               design primers for whole genome sequencing
     qpcr                design qPCR primers
 
 ```
-**sanger** mode:
+**single** mode:
 ```shell
-usage: varvamp sanger [optional arguments] <alignment> <output dir>
+usage: varvamp single [optional arguments] <alignment> <output dir>
 ```
 ```
 optional arguments:
