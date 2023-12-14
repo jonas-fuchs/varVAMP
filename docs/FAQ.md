@@ -16,7 +16,7 @@ The most easy way is to set the number of ambiguous characters you can tolerate 
 
 In your case varVAMP could not find suitable replacement primers in the TILED mode. You can either rerun varVAMP and try different settings or you can perform a third pool that contains a amplicon that has one of the conflicting dimers. Notably, varVAMP also reports the dimer melting temperature. If it is still reasonable low, using a hot start polymerase might still lead to successful PCR amplification.
 
-4. **I have multiple hits after SANGER/QPCR mode. Which should I use?**
+4. **I have multiple hits after SINGLE/QPCR mode. Which should I use?**
 
 varVAMP sorts all amplicons and qpcr designs by their penalty and always assigns the lowest number to the one with the lowest penalty of the non-overlapping amplicons/qpcr schemes. If you are not interested in a specific gene region, amplicon_0 or qpcr_scheme_0  are your best candidates!
 
@@ -38,7 +38,7 @@ The coverage is estimated on an alignment that still has gaps. If there are a lo
 
 9. **How fast is varVAMP?**
 
-varVAMP is pretty fast given the complexity of the problem. Running time is depended on the alignment length, number of sequences and the running mode. While the TILED is rather slow, qPCR and SANGER can be faster. An alignment with a few hundred sequences and with a genome size of 10 kb will likely run in under a minute for the TILED mode. For large e.g. DNA viruses (200 kb) it takes considerably longer, but should still finish in minutes. Running time optimizations are planned.
+varVAMP is pretty fast given the complexity of the problem. Running time is depended on the alignment length, number of sequences and the running mode. While the TILED is rather slow, qPCR and SINGLE can be faster. An alignment with a few hundred sequences and with a genome size of 10 kb will likely run in under a minute for the TILED mode. For large e.g. DNA viruses (200 kb) it takes considerably longer, but should still finish in minutes. Running time optimizations are planned.
 
 10. **Can I contribute?**
 

@@ -227,7 +227,7 @@ def write_scheme_to_files(path, amplicon_scheme, ambiguous_consensus, mode):
         )
 
         for pool in amplicon_scheme:
-            if mode == "sanger":
+            if mode == "single":
                 primer_fasta_file = os.path.join(path, "primers.fasta")
             else:
                 primer_fasta_file = os.path.join(path, f"primers_pool_{pool}.fasta")
@@ -244,7 +244,7 @@ def write_scheme_to_files(path, amplicon_scheme, ambiguous_consensus, mode):
                     # write amplicon bed
                     if mode == "tiled":
                         bed_score = pool
-                    elif mode == "sanger":
+                    elif mode == "single":
                         bed_score = round(left[1][3] + right[1][3], 1)
                     print(
                         "ambiguous_consensus",
@@ -509,9 +509,9 @@ def varvamp_plot(path, alignment_cleaned, primer_regions, all_primers=None, ampl
     plt.close()
 
 
-def get_SANGER_TILED_primers_for_plot(amplicon_scheme):
+def get_SINGLE_TILED_primers_for_plot(amplicon_scheme):
     """
-    get the primers for per base pair plot (sanger, tiled)
+    get the primers for per base pair plot (single, tiled)
     """
     amplicon_primers = []
 
@@ -542,13 +542,13 @@ def get_QPCR_primers_for_plot(amplicon_schemes):
     return amplicon_primers
 
 
-def per_base_mismatch_plot(path, amplicon_scheme, threshold, mode="SANGER/TILED"):
+def per_base_mismatch_plot(path, amplicon_scheme, threshold, mode="SINGLE/TILED"):
     """
     per base pair mismatch multiplot
     """
     out = os.path.join(path, "per_base_mismatches.pdf")
-    if mode == "SANGER/TILED":
-        amplicon_primers = get_SANGER_TILED_primers_for_plot(amplicon_scheme)
+    if mode == "SINGLE/TILED":
+        amplicon_primers = get_SINGLE_TILED_primers_for_plot(amplicon_scheme)
     elif mode == "QPCR":
         amplicon_primers = get_QPCR_primers_for_plot(amplicon_scheme)
     # ini multi pdf

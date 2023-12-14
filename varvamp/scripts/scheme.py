@@ -381,10 +381,10 @@ def check_and_solve_heterodimers(amplicon_scheme, left_primer_candidates, right_
     return primer_dimers
 
 
-def find_sanger_amplicons(amplicons, all_primers, n):
+def find_single_amplicons(amplicons, all_primers, n):
     """
     find non-overlapping amplicons with low penalties
-    from all found amplicons. only for the SANGER mode.
+    from all found amplicons. only for the SINGLE mode.
     """
     # sort amplicons
     sorted_amplicons = sorted(amplicons.items(), key=lambda x: x[1][5])

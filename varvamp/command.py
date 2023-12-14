@@ -36,10 +36,10 @@ def get_args(sysargs):
         title="varvamp mode",
         dest="mode",
     )
-    SANGER_parser = mode_parser.add_parser(
-        "sanger",
-        help="design primers for sanger sequencing",
-        usage="varvamp sanger [optional arguments] <alignment> <output dir>"
+    SINGLE_parser = mode_parser.add_parser(
+        "single",
+        help="design primers for single amplicons",
+        usage="varvamp single [optional arguments] <alignment> <output dir>"
     )
     TILED_parser = mode_parser.add_parser(
         "tiled",
@@ -56,7 +56,7 @@ def get_args(sysargs):
         nargs=2,
         help="alignment file and dir to write results"
     )
-    for par in (SANGER_parser, TILED_parser, QPCR_parser):
+    for par in (SINGLE_parser, TILED_parser, QPCR_parser):
         par.add_argument(
             "-t",
             "--threshold",
@@ -89,7 +89,7 @@ def get_args(sysargs):
             type=int,
             default=1
         )
-    for par in (SANGER_parser, TILED_parser):
+    for par in (SINGLE_parser, TILED_parser):
         par.add_argument(
             "-ol",
             "--opt-length",
@@ -114,7 +114,7 @@ def get_args(sysargs):
         default=100,
         help="min overlap of the amplicons"
     )
-    SANGER_parser.add_argument(
+    SINGLE_parser.add_argument(
         "-n",
         "--report-n",
         type=int,
@@ -275,9 +275,9 @@ def shared_workflow(args, log_file):
     return alignment_cleaned, majority_consensus, ambiguous_consensus, primer_regions, left_primer_candidates, right_primer_candidates
 
 
-def sanger_and_tiled_shared_workflow(args, left_primer_candidates, right_primer_candidates, data_dir, log_file):
+def single_and_tiled_shared_workflow(args, left_primer_candidates, right_primer_candidates, data_dir, log_file):
     """
-    part of the workflow shared by the sanger and tiled mode
+    part of the workflow shared by the single and tiled mode
     """
 
     # find best primers and create primer dict
@@ -321,7 +321,7 @@ def sanger_and_tiled_shared_workflow(args, left_primer_candidates, right_primer_
             args.max_length,
             args.threads,
             log_file,
-            mode="sanger_tiled"
+            mode="single_tiled"
         )
     else:
         off_target_amplicons = []
@@ -329,12 +329,12 @@ def sanger_and_tiled_shared_workflow(args, left_primer_candidates, right_primer_
     return all_primers, amplicons, off_target_amplicons
 
 
-def sanger_workflow(args, amplicons, all_primers, log_file):
+def single_workflow(args, amplicons, all_primers, log_file):
     """
-    workflow part specific for sanger mode
+    workflow part specific for single mode
     """
 
-    amplicon_scheme = scheme.find_sanger_amplicons(amplicons, all_primers, args.report_n)
+    amplicon_scheme = scheme.find_single_amplicons(amplicons, all_primers, args.report_n)
     logging.varvamp_progress(
         log_file,
         progress=0.9,
@@ -503,17 +503,17 @@ def main(sysargs=sys.argv[1:]):
     reporting.write_fasta(data_dir, "majority_consensus", majority_consensus)
     reporting.write_fasta(results_dir, "ambiguous_consensus", ambiguous_consensus)
 
-    # SANGER/TILED mode
-    if args.mode == "tiled" or args.mode == "sanger":
-        all_primers, amplicons, off_target_amplicons = sanger_and_tiled_shared_workflow(
+    # SINGLE/TILED mode
+    if args.mode == "tiled" or args.mode == "single":
+        all_primers, amplicons, off_target_amplicons = single_and_tiled_shared_workflow(
             args,
             left_primer_candidates,
             right_primer_candidates,
             data_dir,
             log_file
         )
-        if args.mode == "sanger":
-            amplicon_scheme = sanger_workflow(
+        if args.mode == "single":
+            amplicon_scheme = single_workflow(
                 args,
                 amplicons,
                 all_primers,
