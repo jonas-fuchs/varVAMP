@@ -17,9 +17,9 @@ For a lot of virus genera it is difficult to design pan-specific primers. varVAM
 
 <img src="https://github.com/jonas-fuchs/varVAMP/blob/master/docs/varvamp.png" alt="varVAMP logo" />
 
-**SANGER**: varVAMP searches for the very best primers and reports back non-overlapping amplicons which can be used for PCR-based screening approaches.
+**SINGLE**: varVAMP searches for the very best primers and reports back non-overlapping amplicons which can be used for PCR-based screening approaches.
 
-<img src="https://github.com/jonas-fuchs/varVAMP/blob/master/docs/sanger.png" alt="sanger" />
+<img src="https://github.com/jonas-fuchs/varVAMP/blob/master/docs/single.png" alt="single" />
 
 **TILED**: varVAMP uses a graph based approach to design overlapping amplicons that tile the entire viral genome. This designs amplicons that are suitable for Oxford Nanopore or Illumina based full-genome sequencing.
 

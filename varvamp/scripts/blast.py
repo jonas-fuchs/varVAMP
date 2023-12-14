@@ -31,7 +31,7 @@ def check_BLAST_installation(log_file):
 
 def create_BLAST_query(all_primers, amplicons, data_dir):
     """
-    create a query for the BLAST search (tiled, sanger mode)
+    create a query for the BLAST search (tiled, single mode)
     """
     already_written = []
 
@@ -168,7 +168,7 @@ def predict_non_specific_amplicons_worker(amp, blast_df, max_length, mode):
     """
     name, data = amp
     # get correct primers
-    if mode == "sanger_tiled":
+    if mode == "single_tiled":
         primers = [data[2], data[3]]
     elif mode == "qpcr":
         primers = []
@@ -198,7 +198,7 @@ def predict_non_specific_amplicons(amplicons, blast_df, max_length, mode, n_thre
         if off_target is None:
             continue
         off_targets.append(off_target)
-        if mode == "sanger_tiled":
+        if mode == "single_tiled":
             amplicons[off_target][5] = amplicons[off_target][5] + config.BLAST_PENALTY
         elif mode == "qpcr":
             amplicons[off_target]["penalty"][0] = amplicons[off_target]["penalty"][0] + config.BLAST_PENALTY
@@ -208,7 +208,7 @@ def predict_non_specific_amplicons(amplicons, blast_df, max_length, mode, n_thre
 
 def primer_blast(data_dir, db, query_path, amplicons, max_length, n_threads, log_file, mode):
     """
-    performs the blast search for the sanger or tiled workflow
+    performs the blast search for the single or tiled workflow
     """
     print("\n#### Starting varVAMP primerBLAST. ####\n")
     print("Running BLASTN...")
