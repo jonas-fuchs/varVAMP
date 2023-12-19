@@ -29,8 +29,6 @@ For a lot of virus genera it is difficult to design pan-specific primers. varVAM
 
 <img src="https://github.com/jonas-fuchs/varVAMP/blob/master/docs/qpcr.png" alt="qpcr" />
 
-This program is currently being developed and in an alpha state. You are welcome to use this software. If you successfully design primers, drop me a mail. It might be possible to collaborate! Ideas and suggestions are highly welcome.
-
 # Documentation
 
 * [Installation](https://github.com/jonas-fuchs/varVAMP/blob/master/docs/installation.md)
