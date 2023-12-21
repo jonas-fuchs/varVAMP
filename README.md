@@ -39,6 +39,20 @@ For a lot of virus genera it is difficult to design pan-specific primers. varVAM
 * [How it works](https://github.com/jonas-fuchs/varVAMP/blob/master/docs/how_varvamp_works.md)
 * [FAQ](https://github.com/jonas-fuchs/varVAMP/blob/master/docs/FAQ.md)
 
+# Already established primer schemes
+
+We, in collaboration with specialists for the respective viruses, have already designed and wet-lab evaluated primer schemes for various viral pathogens. All the input data and varVAMP outputs are freely available [here](https://github.com/jonas-fuchs/ViralPrimerSchemes). 
+
+If you design primers for a particular pathogen, we will be happy to include them in this repo and make it freely available. Just contribute via an issue or pull request!
+
+# Citing varVAMP
+
+Please cite with the respective DOI of the version you used:
+
+**varVAMP: automated pan-specific primer design for tiled full genome sequencing and qPCR of highly diverse viral pathogens.**
+
+(paper currently under preparation)
+
 ---
 
 **Important disclaimer:**
