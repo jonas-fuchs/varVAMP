@@ -1,6 +1,6 @@
 ## UseGalaxy implementation (coming soon)
 
-If you are unfamiliar with command-line programs, do not fear. varVAMP is also available at the community-driven web-based analysis platform [UseGalaxy](usegalaxy.eu).
+If you are unfamiliar with command-line programs, do not fear. varVAMP is also available at the community-driven web-based analysis platform [UseGalaxy](https://usegalaxy.eu).
 
 ## Requirements
 varVAMP runs on UNIX Systems, MacOSX and Windows with Python3 >=3.9 installed.
@@ -16,7 +16,7 @@ pip install varvamp
 ### CONDA:
 
 ```shell
- conda install -c bioconda varvamp
+conda install -c bioconda varvamp
 ```
 
 ### DOCKER:
