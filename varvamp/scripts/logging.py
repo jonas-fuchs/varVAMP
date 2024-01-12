@@ -107,7 +107,7 @@ def raise_arg_errors(args, log_file):
             log_file
         )
     if args.database is not None:
-        if args.n_threads < 1:
+        if args.threads < 1:
             raise_error(
                 "number of threads cannot be smaller than 1.",
                 log_file,
@@ -522,7 +522,7 @@ def confirm_config(args, log_file):
             if args.database is not None:
                 print(
                     f"BLAST_DATABASE = {args.database}",
-                    f"N_THREADS = {args.n_threads}",
+                    f"N_THREADS = {args.threads}",
                     sep="\n",
                     file=f
                 )
