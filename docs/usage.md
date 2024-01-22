@@ -82,79 +82,47 @@ optional arguments:
 
 ## Further customization (advanced)
 
-Although we believe that this will be in the most cases not necessary, you can customize all settings for varVAMP that are not specified via commands in the `config.py`. Here are also all default parameters stored if no optional arguments are given for your data. [To fully customize varVAMP, install it directly from this GitHub repository](./installation.md)
+Although we believe that this will in most cases not be necessary, you can customize all settings for varVAMP that are not specified via command line options in the form of a custom config file.
 
-Go to the configs location:
-```shell
-cd varVAMP/varvamp/scripts/
-```
-And open the `config.py` with a text editor, e.g.:
-```shell
-gedit config.py
-```
-Here you can adjust various settings including primer parameters and penalties.
+### Format of a custom config file
+
+Custom config files need to follow the format of varVAMP's [default config file](https://github.com/jonas-fuchs/varVAMP/blob/master/varvamp/scripts/default_config.py), which you may want to use as a starting point for modifications, but they do not require an `__all__` list of all existing parameters and may provide new settings for only some of the existing parameters.
+
+If all you want to do is, for example, to change the preferred primer size to 22 nts (from 21), a look into the default config file reveals the setting:
 
 ```python
-# CAN BE CHANGED, DO NOT DELETE
-# basic primer parameters
-PRIMER_TMP = (57, 63, 60)  # melting temperatur (min, max, opt)
-PRIMER_GC_RANGE = (35, 65, 50)  # gc (min, max, opt)
 PRIMER_SIZES = (18, 24, 21)  # size (min, max, opt)
-PRIMER_MAX_POLYX = 3  # max number of polyx repeats
-PRIMER_MAX_DINUC_REPEATS = 3  # max number of dinucleotide repeats
-PRIMER_HAIRPIN = 47  # max melting temp for secondary structure
-PRIMER_GC_END = (0, 4)  # min/max GCs in the last 5 bases of the 3' end
-PRIMER_MIN_3_WITHOUT_AMB = 3  # min len of 3' without ambiguous charaters
-PRIMER_MAX_DIMER_TMP = 47  # max melting temp for dimers (homo- or heterodimers)
-
-# QPCR parameters
-# basic probe parameters
-QPROBE_TMP = (64, 70, 67)  # mean 7°C higher than the primer temp
-QPROBE_SIZES = (20, 30, 25)
-QPROBE_GC_RANGE = (40, 80, 60)
-QPROBE_GC_END = (0, 4)
-# constraints for amplicon design
-QPRIMER_DIFF = 2  # maximal temperature diff of qPCR primers
-QPROBE_TEMP_DIFF = (5, 10)  # min/max temp diff between probe and primers
-QPROBE_DISTANCE = (4, 15)  # min/max distance to the primer on the same strand
-END_OVERLAP = 5  # maximum allowed nt overlap between the ends of probe and primer
-QAMPLICON_LENGTH = (70, 200)  # min/max length of the qPCR amplicon
-QAMPLICON_GC = (40, 60)  # GC min/max of the qPCR amplicon
-QAMPLICON_DEL_CUTOFF = 4  # consider regions of the alignment for deltaG calculation if they have smaller deletions than cutoff
-
-# PCR parameters
-PCR_MV_CONC = 100  # monovalent cations mM
-PCR_DV_CONC = 2  # divalent cations mM
-PCR_DNTP_CONC = 0.8  # dntp concentration mM
-PCR_DNA_CONC = 15  # primer concentration nM
-
-# multipliers for primer and qpcr probe penalties
-PRIMER_TM_PENALTY = 2  # temperature penalty
-PRIMER_GC_PENALTY = 0.2  # gc penalty
-PRIMER_SIZE_PENALTY = 0.5  # size penalty
-PRIMER_MAX_BASE_PENALTY = 8  # max base penalty for a primer
-PRIMER_3_PENALTY = (32, 16, 8, 4, 2)  # penalties for 3' mismatches
-PRIMER_PERMUTATION_PENALTY = 0.1  # penalty for the number of permutations
-
-# BLAST parameters (ref: PrimerBLAST (YE, Jian, et al. Primer-BLAST: a tool to design
-# target-specific primers for polymerase chain reaction. BMC bioinformatics, 2012, 13.
-# Jg., S. 1-11.)
-BLAST_SETTINGS = {  # blast settings for query search
-    "outfmt": "6 qseqid sseqid qlen length mismatch gapopen sstart send",  # do NOT change
-    "evalue": 5000,
-    "reward": 1,
-    "penalty": -1,
-    "gapopen": 2,
-    "gapextend": 1
-}
-BLAST_MAX_DIFF = 0.8  # allowed % differences between primer and BLAST hit
-BLAST_SIZE_MULTI = 2  # multiplier for the max_amp size of off targets (in relation to max amp size)
-BLAST_PENALTY = 50  # amplicon penalty increase -> considered only if no other possibilities
 ```
-To apply these new settings just repeat the installation procedure in the varVAMP dir:
-```shell
-pip install .
+
+and your single-line custom config file could look like this (everything following a `#` on a line is a comment:
+```python
+PRIMER_SIZES = (18, 24, 22)  # size (min, max, opt); changed opt from 21 to prefer somewhat longer primers
 ```
-If you did everything right, varVAMP's config check passes. Otherwise it will produce an error. If that happens you can simply perform a git pull or adjust the settings that produced a warning. Please use the [GitHub issues](https://github.com/jonas-fuchs/varVAMP/issues) to report any problems and bugs.
+
+### Passing a custom config file via a shell variable
+
+Now to pass this custom config file to varVAMP and have the single new parameter definition overwrite the one in the default config file, you can run any varvamp command line like this:
+
+`VARVAMP_CONFIG=<path/to/custom_config> varvamp ...`
+
+Let's assume you have saved your custom config file under the name `custom_config.py` in the same folder as you are running your varvamp command from, and that command read `varvamp qpcr input_alignment.fasta my_results`, you would run it now with:
+
+`VARVAMP_CONFIG=custom_config.py varvamp qpcr input_alignment.fasta my_results`
+
+If, as another example, you have several custom config files, each optimized for a specific use case, stored in a folder `/home/me/my varvamp configs`, you might want to run:
+
+`VARVAMP_CONFIG="/home/me/my varvamp configs/sars-cov-2_config.py" varvamp tiled ncov_alignment.fasta my_results`
+
+Note that, in this example, the quotes around the config file path are necessary to treat it as a single path despite the spaces in the folder name.
+
+### Custom config file priority rules
+
+Any parameter setting(s) defined in a custom config file will always overwrite the corresponding default config settings.
+
+Any parameters not defined in a custom config file, will be taken from the default config instead.
+
+If you screwed up a custom config file by, e.g., breaking the format or mistyping a parameter name, varVAMP will likely let you know in the form of an error message, but it's good practice to examine the run logs carefully when you use a custom config file for the first time to see if all your parameter changes took effect.
+
+Please use the [GitHub issues](https://github.com/jonas-fuchs/varVAMP/issues) to report any problems and bugs.
 
 #### [Previous: Data preparation](./preparing_the_data.md)&emsp;&emsp;[Next: Output](./output.md)
