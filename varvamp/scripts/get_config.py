@@ -54,6 +54,8 @@ def load_custom_config(custom_config_path):
     VarVAMPConfig object.
     """
 
+    # based on this stdlib test example:
+    # https://github.com/python/cpython/blob/33c1907de2710e7449a38aa27e7b55f274792342/Lib/test/test_asdl_parser.py#L28-L32
     loader = importlib.machinery.SourceFileLoader(
         'custom_config', custom_config_path
     )
