@@ -82,32 +82,39 @@ optional arguments:
 
 ## Further customization (advanced)
 
-Although we believe that this will in most cases not be necessary, you can customize all settings for varVAMP that are not specified via command line options in the form of a custom config file.
+Although we believe that this will in most cases not be necessary, you can customize all settings for varVAMP that are not specified via command line options in the form of a **custom config file**.
 
 ### Format of a custom config file
 
 Custom config files need to follow the format of varVAMP's [default config file](https://github.com/jonas-fuchs/varVAMP/blob/master/varvamp/scripts/default_config.py), which you may want to use as a starting point for modifications, but they do not require an `__all__` list of all existing parameters and may provide new settings for only some of the existing parameters.
 
-If all you want to do is, for example, to change the preferred primer size to 22 nts (from 21), a look into the default config file reveals the setting:
+If all you want to do, for example, is to change the preferred primer size to 22 nts (from 21), a look into the default config file reveals the setting:
 
 ```python
 PRIMER_SIZES = (18, 24, 21)  # size (min, max, opt)
 ```
 
-and your single-line custom config file could look like this (everything following a `#` on a line is a comment:
+and your single-line custom config file could look like this (everything following a `#` on a line serves as a comment and will be ignored by varVAMP:
+
 ```python
 PRIMER_SIZES = (18, 24, 22)  # size (min, max, opt); changed opt from 21 to prefer somewhat longer primers
 ```
 
 ### Passing a custom config file via a shell variable
 
-Now to pass this custom config file to varVAMP and have the single new parameter definition overwrite the one in the default config file, you can run any varvamp command line as `VARVAMP_CONFIG=<path/to/custom_config> varvamp ...`
+Now to pass this custom config file to varVAMP and have the single new parameter definition overwrite the one in the default config file, you can prepend `VARVAMP_CONFIG=<path/to/custom_config>` to any regular varvamp command line.
 
-Let's assume you have saved your custom config file under the name `custom_config.py` in the same folder as you are running your varvamp command from, and that command read `varvamp qpcr input_alignment.fasta my_results`, you would run it now with:
+Let's assume you have
+- saved your custom config file under the name `custom_config.py` in the same folder as you are running your varvamp command from, and
+- the basic command you want to run is `varvamp qpcr input_alignment.fasta my_results`.
+
+Then with
 
 ```shell
 VARVAMP_CONFIG=custom_config.py varvamp qpcr input_alignment.fasta my_results
 ```
+
+you run the command with the parameter change applied.
 
 If, as another example, you have several custom config files, each optimized for a specific use case, stored in a folder `/home/me/my varvamp configs`, you might want to run:
 
