@@ -101,17 +101,19 @@ PRIMER_SIZES = (18, 24, 22)  # size (min, max, opt); changed opt from 21 to pref
 
 ### Passing a custom config file via a shell variable
 
-Now to pass this custom config file to varVAMP and have the single new parameter definition overwrite the one in the default config file, you can run any varvamp command line like this:
-
-`VARVAMP_CONFIG=<path/to/custom_config> varvamp ...`
+Now to pass this custom config file to varVAMP and have the single new parameter definition overwrite the one in the default config file, you can run any varvamp command line as `VARVAMP_CONFIG=<path/to/custom_config> varvamp ...`
 
 Let's assume you have saved your custom config file under the name `custom_config.py` in the same folder as you are running your varvamp command from, and that command read `varvamp qpcr input_alignment.fasta my_results`, you would run it now with:
 
-`VARVAMP_CONFIG=custom_config.py varvamp qpcr input_alignment.fasta my_results`
+```shell
+VARVAMP_CONFIG=custom_config.py varvamp qpcr input_alignment.fasta my_results
+```
 
 If, as another example, you have several custom config files, each optimized for a specific use case, stored in a folder `/home/me/my varvamp configs`, you might want to run:
 
-`VARVAMP_CONFIG="/home/me/my varvamp configs/sars-cov-2_config.py" varvamp tiled ncov_alignment.fasta my_results`
+```shell
+VARVAMP_CONFIG="/home/me/my varvamp configs/sars-cov-2_config.py" varvamp tiled ncov_alignment.fasta my_results
+```
 
 Note that, in this example, the quotes around the config file path are necessary to treat it as a single path despite the spaces in the folder name.
 
