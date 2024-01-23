@@ -44,7 +44,7 @@ varVAMP is pretty fast given the complexity of the problem. Running time is depe
 
 Yes, please. Give feedback to code or settings or also if you have successfully used this to design primers that make your life easier in the lab!
 
-11. **Do I have to adapt the bed file if I want to trim primer sequences in my NGS analysis pipeline?"**
+11. **Do I have to adapt the bed file if I want to trim primer sequences in my NGS analysis pipeline?**
 
 You can try to use varVAMP's consensus sequence for mapping. However, if you want to map to a different reference, you will need to adapt the primer's start and stop positions in the bed file to your new reference sequence. You can do this for example with the [varVAMP helper script developed by Namuun](https://github.com/rki-mf1/update-varvamp-bed/).
 
