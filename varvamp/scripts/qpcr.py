@@ -90,7 +90,7 @@ def get_qpcr_probes(kmers, ambiguous_consensus, alignment_cleaned):
                 probe_idx += 1
         if "-" in direction:
             if filter_probe_direction_dependent(primers.rev_complement(kmer[0])):
-                probe_name = f"PROBE_{probe_idx}_RW"
+                probe_name = f"PROBE_{probe_idx}_RV"
                 three_prime_penalty = primers.calc_3_prime_penalty("-", per_base_mismatches)
                 probe_candidates[probe_name] = [primers.rev_complement(kmer[0]), kmer[1], kmer[2],
                                                 base_penalty + permutation_penalty + three_prime_penalty,
@@ -214,7 +214,7 @@ def assess_amplicons(left_subset, right_subset, qpcr_probes, probe, majority_con
                         left_primer[2] + config.QPROBE_DISTANCE[1] + 1
                 ):
                     continue
-            elif "RW" in probe:
+            elif "RV" in probe:
                 if not right_primer[1] in range(
                         qpcr_probes[probe][2] + config.QPROBE_DISTANCE[0],
                         qpcr_probes[probe][2] + config.QPROBE_DISTANCE[1] + 1
@@ -281,9 +281,9 @@ def find_qcr_schemes(qpcr_probes, left_primer_candidates, right_primer_candidate
         found_amplicons.append(primer_combination)
         qpcr_scheme_candidates[f"AMPLICON_{amplicon_nr}"] = {
             "penalty": qpcr_probes[probe][3] + primer_combination[0][3] + primer_combination[1][3],
-            "probe": qpcr_probes[probe],
-            "left": primer_combination[0],
-            "right": primer_combination[1]
+            "PROBE": qpcr_probes[probe],
+            "LEFT": primer_combination[0],
+            "RIGHT": primer_combination[1]
         }
     # and again sort by total penalty (left + right + probe)
     qpcr_scheme_candidates = dict(sorted(qpcr_scheme_candidates.items(), key=lambda x: x[1]["penalty"]))
@@ -297,16 +297,16 @@ def process_single_amplicon_deltaG(amplicon, majority_consensus):
     This function will be called concurrently by multiple threads.
     """
     name, data = amplicon
-    start = data["left"][1]
-    stop = data["right"][2]
+    start = data["LEFT"][1]
+    stop = data["RIGHT"][2]
     seq = majority_consensus[start:stop]
     seq = seq.replace("N", "")
     seq = seq.replace("n", "")
     amp_positions = list(range(start, stop + 1))
     # check if the amplicon overlaps with an amplicon that was previously
     # found and had a high enough deltaG
-    min_temp = min((primers.calc_temp(data["left"][0]),
-                    primers.calc_temp(data["right"][0])))
+    min_temp = min((primers.calc_temp(data["LEFT"][0]),
+                    primers.calc_temp(data["RIGHT"][0])))
     # calculate deltaG at the minimal primer temp
     deltaG = seqfold.dg(seq, min_temp)
 

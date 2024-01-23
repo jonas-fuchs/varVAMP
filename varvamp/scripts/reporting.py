@@ -56,7 +56,7 @@ def write_regions_to_bed(primer_regions, path, mode=None):
                 "ambiguous_consensus",
                 region[0],
                 region[1],
-                "region_"+str(counter),
+                "REGION_"+str(counter),
                 sep="\t",
                 file=o
             )
@@ -145,16 +145,16 @@ def write_qpcr_to_files(path, final_schemes, ambiguous_consensus):
             # write bed amplicon file
             print(
                 "ambiguous_consensus",
-                final_schemes[scheme]["left"][1],
-                final_schemes[scheme]["right"][2],
+                final_schemes[scheme]["LEFT"][1],
+                final_schemes[scheme]["RIGHT"][2],
                 scheme,
                 round(final_schemes[scheme]["penalty"], 1),
                 sep="\t",
                 file=bed
             )
             # write tsv
-            amplicon_start = final_schemes[scheme]["left"][1]
-            amplicon_stop = final_schemes[scheme]["right"][2]
+            amplicon_start = final_schemes[scheme]["LEFT"][1]
+            amplicon_stop = final_schemes[scheme]["RIGHT"][2]
             amplicon_seq = ambiguous_consensus[amplicon_start:amplicon_stop]
             print(
                 scheme,
@@ -168,11 +168,11 @@ def write_qpcr_to_files(path, final_schemes, ambiguous_consensus):
                 file=tsv
             )
             # write tsv2
-            for type in final_schemes[scheme]:
-                if type == "penalty" or type == "deltaG":
+            for oligo_type in final_schemes[scheme]:
+                if oligo_type == "penalty" or oligo_type == "deltaG":
                     continue
-                seq = ambiguous_consensus[final_schemes[scheme][type][1]:final_schemes[scheme][type][2]]
-                if type == "right" or all([type == "probe", final_schemes[scheme]["probe"][5] == "-"]):
+                seq = ambiguous_consensus[final_schemes[scheme][oligo_type][1]:final_schemes[scheme][oligo_type][2]]
+                if oligo_type == "RIGHT" or all([oligo_type == "PROBE", final_schemes[scheme]["PROBE"][5] == "-"]):
                     seq = primers.rev_complement(seq)
                     direction = "-"
                 else:
@@ -183,28 +183,28 @@ def write_qpcr_to_files(path, final_schemes, ambiguous_consensus):
 
                 print(
                     scheme,
-                    type,
-                    final_schemes[scheme][type][1] + 1,
-                    final_schemes[scheme][type][2],
+                    oligo_type,
+                    final_schemes[scheme][oligo_type][1] + 1,
+                    final_schemes[scheme][oligo_type][2],
                     seq.upper(),
                     len(seq),
-                    round(primers.calc_gc(final_schemes[scheme][type][0]), 1),
-                    round(primers.calc_temp(final_schemes[scheme][type][0]), 1),
+                    round(primers.calc_gc(final_schemes[scheme][oligo_type][0]), 1),
+                    round(primers.calc_temp(final_schemes[scheme][oligo_type][0]), 1),
                     gc,
                     temp,
-                    round(final_schemes[scheme][type][3], 1),
+                    round(final_schemes[scheme][oligo_type][3], 1),
                     sep="\t",
                     file=tsv2
                 )
                 # write primer bed file
                 write_primers_to_bed(
                     primer_bed_file,
-                    f"{scheme}_{type}",
-                    final_schemes[scheme][type],
+                    f"{scheme}_{oligo_type}",
+                    final_schemes[scheme][oligo_type],
                     direction
                 )
                 # write fasta
-                print(f">{scheme}_{type}\n{seq.upper()}", file=fasta)
+                print(f">{scheme}_{oligo_type}\n{seq.upper()}", file=fasta)
 
 
 def write_scheme_to_files(path, amplicon_scheme, ambiguous_consensus, mode):
@@ -234,7 +234,7 @@ def write_scheme_to_files(path, amplicon_scheme, ambiguous_consensus, mode):
             with open(primer_fasta_file, "w") as primer_fasta:
                 for amp in amplicon_scheme[pool]:
                     # give a new amplicon name
-                    new_name = f"amplicon_{str(counter)}"
+                    new_name = f"AMPLICON_{str(counter)}"
                     counter += 1
                     # get left and right primers and their names
                     primer_names = list(amplicon_scheme[pool][amp].keys())
@@ -257,8 +257,8 @@ def write_scheme_to_files(path, amplicon_scheme, ambiguous_consensus, mode):
                     )
                     # write primer assignments tabular file
                     print(
-                        left[0],
-                        right[0],
+                        f"{new_name}_LEFT",
+                        f"{new_name}_RIGHT",
                         sep="\t",
                         file=tabular
                     )
@@ -267,9 +267,9 @@ def write_scheme_to_files(path, amplicon_scheme, ambiguous_consensus, mode):
                         seq = ambiguous_consensus[primer[1][1]:primer[1][2]]
                         if direction == "-":
                             seq = primers.rev_complement(seq)
-                            primer_name = f"{new_name}_RW"
+                            primer_name = f"{new_name}_RIGHT"
                         else:
-                            primer_name = f"{new_name}_FW"
+                            primer_name = f"{new_name}_LEFT"
                         # write primers to fasta pool file
                         print(f">{primer_name}\n{seq.upper()}", file=primer_fasta)
                         # calc primer parameters for all permutations
@@ -297,7 +297,7 @@ def write_scheme_to_files(path, amplicon_scheme, ambiguous_consensus, mode):
                         # write primer bed file
                         write_primers_to_bed(
                             primer_bed_file,
-                            primer[0],
+                            primer_name,
                             primer[1],
                             direction
                         )
@@ -450,9 +450,9 @@ def qpcr_subplot(ax, amplicon_scheme):
     counter = 0
 
     for scheme in amplicon_scheme:
-        left = amplicon_scheme[scheme]["left"]
-        right = amplicon_scheme[scheme]["right"]
-        probe = amplicon_scheme[scheme]["probe"]
+        left = amplicon_scheme[scheme]["LEFT"]
+        right = amplicon_scheme[scheme]["RIGHT"]
+        probe = amplicon_scheme[scheme]["PROBE"]
         # amplicons
         ax[1].hlines(0.8, left[1], right[2], linewidth=5)
         # text
