@@ -37,9 +37,7 @@ You should see the current varVAMP version.
 If you want to use varVAMPs blast module to predict off-targets, make sure that you have installed [BLASTN](https://blast.ncbi.nlm.nih.gov/doc/blast-help/downloadblastdata.html#downloadblastdata) and created a local blast database containing sequences of potential off-targets.
 
 
-## Installation for advanced customization or development
-
-All varVAMP options (such as temperature, size, penalties) can be customized in the `config.py`. However, to do this you will have to install varVAMP not from the PyPI repository, but directly from this GitHub repository.
+## Installation for development
 
 ### - via pip (recommended)
 

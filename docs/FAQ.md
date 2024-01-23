@@ -34,11 +34,11 @@ The coverage is estimated on an alignment that still has gaps. If there are a lo
 
 8. **Can I customize all parameters (e.g. primer temperature)**
 
-[Yes you can!](./usage.md) Just edit the config file as explained. If you want to use your pip installation, you have to make it [editable](https://setuptools.pypa.io/en/latest/userguide/development_mode.html).
+Yes you can! By means of a [custom config file](./usage.md#further-customization-advanced).
 
 9. **How fast is varVAMP?**
 
-varVAMP is pretty fast given the complexity of the problem. Running time is depended on the alignment length, number of sequences and the running mode. While the TILED is rather slow, qPCR and SINGLE can be faster. An alignment with a few hundred sequences and with a genome size of 10 kb will likely run in under a minute for the TILED mode. For large e.g. DNA viruses (200 kb) it takes considerably longer, but should still finish in minutes. Running time optimizations are planned.
+varVAMP is pretty fast given the complexity of the problem. Running time is dependent on the alignment length, number of sequences and the running mode. While the TILED is rather slow, qPCR and SINGLE can be faster. An alignment with a few hundred sequences and with a genome size of 10 kb will likely run in under a minute for the TILED mode. For large e.g. DNA viruses (200 kb) it takes considerably longer, but should still finish in minutes. Running time optimizations are planned.
 
 10. **Can I contribute?**
 
