@@ -38,13 +38,13 @@ def create_BLAST_query(all_primers, amplicons, data_dir):
     query_path = os.path.join(data_dir, "BLAST_query.fasta")
     with open(query_path, "w") as query:
         for amp in amplicons:
-            fw_primer, rw_primer = amplicons[amp][2], amplicons[amp][3]
+            fw_primer, rv_primer = amplicons[amp][2], amplicons[amp][3]
             if fw_primer not in already_written:
                 print(f">{fw_primer}\n{all_primers['+'][fw_primer][0]}", file=query)
                 already_written.append(fw_primer)
-            if rw_primer not in already_written:
-                print(f">{rw_primer}\n{all_primers['-'][rw_primer][0]}", file=query)
-                already_written.append(rw_primer)
+            if rv_primer not in already_written:
+                print(f">{rv_primer}\n{all_primers['-'][rv_primer][0]}", file=query)
+                already_written.append(rv_primer)
 
     return query_path
 
@@ -152,12 +152,12 @@ def check_off_targets(df_amp_primers_sorted, max_length, primers):
             # check if any two primers in scheme bind different directions
             for combi in combinations:
                 direction_fw = set(possible_off_targets[possible_off_targets["query"] == combi[0]]["strand"])
-                direction_rw = set(possible_off_targets[possible_off_targets["query"] == combi[1]]["strand"])
+                direction_rv = set(possible_off_targets[possible_off_targets["query"] == combi[1]]["strand"])
                 # do we have one primer in subset that binds both directions or are the
                 # direction sets different? --> 2 different primers bind on the same chrom,
                 # are close enough and are in opposite direction ->[seq]<-
                 # >this classifies as an off-target<
-                if len(direction_fw) > 1 or len(direction_rw) > 1 or direction_fw != direction_rw:
+                if len(direction_fw) > 1 or len(direction_rv) > 1 or direction_fw != direction_rv:
                     return True
     return False
 

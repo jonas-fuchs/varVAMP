@@ -81,7 +81,7 @@ def find_amplicons(all_primers, opt_len, max_len):
             # calculate length dependend amplicon costs as the cumulative primer
             # penalty multiplied by the e^(fold length of the optimal length).
             amplicon_costs = (right_primer[3] + left_primer[3])*math.exp(amplicon_length/opt_len)
-            amplicon_name = "amplicon_"+str(amplicon_number)
+            amplicon_name = "AMPLICON_"+str(amplicon_number)
             amplicon_dict[amplicon_name] = [
                 left_primer[1],  # start
                 right_primer[2],  # stop

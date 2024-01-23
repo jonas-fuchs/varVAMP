@@ -269,7 +269,7 @@ def shared_workflow(args, log_file):
         log_file,
         progress=0.6,
         job="Filtering for primers.",
-        progress_text=f"{len(left_primer_candidates)} fw and {len(right_primer_candidates)} rw potential primers"
+        progress_text=f"{len(left_primer_candidates)} fw and {len(right_primer_candidates)} rv potential primers"
     )
 
     return alignment_cleaned, majority_consensus, ambiguous_consensus, primer_regions, left_primer_candidates, right_primer_candidates
@@ -286,7 +286,7 @@ def single_and_tiled_shared_workflow(args, left_primer_candidates, right_primer_
         log_file,
         progress=0.7,
         job="Considering primers with low penalties.",
-        progress_text=f"{len(all_primers['+'])} fw and {len(all_primers['-'])} rw primers"
+        progress_text=f"{len(all_primers['+'])} fw and {len(all_primers['-'])} rv primers"
     )
 
     # find all possible amplicons
