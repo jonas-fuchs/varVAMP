@@ -87,7 +87,7 @@ def run_BLAST(query, blast_db, data_dir, n_threads):
         args.append('-' + k)
         args.append(str(v))
     # run BLAST
-    proc = subprocess.run(args, capture_output=True, check=True)
+    subprocess.run(args, capture_output=True, check=True)
 
     return blast_out
 
