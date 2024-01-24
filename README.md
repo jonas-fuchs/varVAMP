@@ -39,7 +39,7 @@ For a lot of virus genera it is difficult to design pan-specific primers. varVAM
 * [How it works](https://github.com/jonas-fuchs/varVAMP/blob/master/docs/how_varvamp_works.md)
 * [FAQ](https://github.com/jonas-fuchs/varVAMP/blob/master/docs/FAQ.md)
 
-# Already established primer schemes (coming soon)
+# Already established primer schemes
 
 We, in collaboration with specialists for the respective viruses, have already designed and wet-lab evaluated primer schemes for various viral pathogens. All the input data and varVAMP outputs are freely available [here](https://github.com/jonas-fuchs/ViralPrimerSchemes). 
 
