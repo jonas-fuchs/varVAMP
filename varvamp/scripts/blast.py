@@ -5,14 +5,14 @@ produce off-target amplicons.
 """
 
 # BUILT-INS
-import os
 import itertools
 import multiprocessing
+import os
+import subprocess
 from shutil import which
 
 #LIBS
 import pandas as pd
-from Bio.Blast.Applications import NcbiblastnCommandline
 
 # varVAMP
 from varvamp.scripts import config
@@ -74,18 +74,20 @@ def run_BLAST(query, blast_db, data_dir, n_threads):
     basename = os.path.basename(os.path.normpath(query))
     blast_out = os.path.join(data_dir, f"{basename.strip('.fasta')}_result.tabular")
 
-    blast_command = NcbiblastnCommandline(
-        query=query,
-        db=blast_db,
-        out=blast_out,
-        task="blastn-short",
-        num_threads=n_threads,
-        **config.BLAST_SETTINGS
-        )
+    blast_command_options = {
+        "query": query,
+        "db": blast_db,
+        "out": blast_out,
+        "task": "blastn-short",
+        "num_threads": n_threads,
+    }
+    blast_command_options.update(config.BLAST_SETTINGS)
+    args = ['blastn']
+    for k, v in blast_command_options.items():
+        args.append('-' + k)
+        args.append(str(v))
     # run BLAST
-    stdout, stderr = blast_command()
-    # remove query input
-    os.remove(query)
+    proc = subprocess.run(args, capture_output=True, check=True)
 
     return blast_out
 
@@ -212,12 +214,27 @@ def primer_blast(data_dir, db, query_path, amplicons, max_length, n_threads, log
     """
     print("\n#### Starting varVAMP primerBLAST. ####\n")
     print("Running BLASTN...")
-    blast_out = run_BLAST(
-        query_path,
-        db,
-        data_dir,
-        n_threads
-    )
+    try:
+        blast_out = run_BLAST(
+            query_path,
+            db,
+            data_dir,
+            n_threads
+        )
+    except subprocess.CalledProcessError as e:
+        logging.raise_error(
+            "Failed to run BLAST! Error message: " + str(
+                e.stderr
+            ) + " Exit code: " + str(
+                e.returncode
+            ),
+            log_file,
+            exit=True
+        )
+    finally:
+        # remove query input
+        os.remove(query_path)
+
     blast_df = parse_and_filter_BLAST_output(blast_out)
     print("Predicting non-specific amplicons...")
     off_target_amplicons, amplicons = predict_non_specific_amplicons(
