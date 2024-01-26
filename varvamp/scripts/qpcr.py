@@ -82,7 +82,7 @@ def get_qpcr_probes(kmers, ambiguous_consensus, alignment_cleaned):
         # create probe dictionary
         if "+" in direction:
             if filter_probe_direction_dependent(kmer[0]):
-                probe_name = f"PROBE_{probe_idx}_FW"
+                probe_name = f"PROBE_{probe_idx}_LEFT"
                 three_prime_penalty = primers.calc_3_prime_penalty("+", per_base_mismatches)
                 probe_candidates[probe_name] = [kmer[0], kmer[1], kmer[2],
                                                 base_penalty + permutation_penalty + three_prime_penalty,
@@ -90,7 +90,7 @@ def get_qpcr_probes(kmers, ambiguous_consensus, alignment_cleaned):
                 probe_idx += 1
         if "-" in direction:
             if filter_probe_direction_dependent(primers.rev_complement(kmer[0])):
-                probe_name = f"PROBE_{probe_idx}_RV"
+                probe_name = f"PROBE_{probe_idx}_RIGHT"
                 three_prime_penalty = primers.calc_3_prime_penalty("-", per_base_mismatches)
                 probe_candidates[probe_name] = [primers.rev_complement(kmer[0]), kmer[1], kmer[2],
                                                 base_penalty + permutation_penalty + three_prime_penalty,
@@ -208,13 +208,13 @@ def assess_amplicons(left_subset, right_subset, qpcr_probes, probe, majority_con
             if not hardfilter_amplicon(majority_consensus, left_primer, right_primer):
                 continue
             # ... the probe is close enough to the primer on the same strand
-            if "FW" in probe:
+            if "LEFT" in probe:
                 if not qpcr_probes[probe][1] in range(
                         left_primer[2] + config.QPROBE_DISTANCE[0],
                         left_primer[2] + config.QPROBE_DISTANCE[1] + 1
                 ):
                     continue
-            elif "RV" in probe:
+            elif "RIGHT" in probe:
                 if not right_primer[1] in range(
                         qpcr_probes[probe][2] + config.QPROBE_DISTANCE[0],
                         qpcr_probes[probe][2] + config.QPROBE_DISTANCE[1] + 1

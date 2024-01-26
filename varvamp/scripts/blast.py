@@ -58,7 +58,7 @@ def create_BLAST_query_qpcr(qpcr_scheme_candidates, data_dir):
     query_path = os.path.join(data_dir, "BLAST_query.fasta")
     with open(query_path, "w") as query:
         for amp in qpcr_scheme_candidates:
-            for primer_type in ["probe", "left", "right"]:
+            for primer_type in ["PROBE", "LEFT", "RIGHT"]:
                 name = f"{primer_type}_{qpcr_scheme_candidates[amp][primer_type][1]}_{qpcr_scheme_candidates[amp][primer_type][2]}"
                 if name in already_written:
                     continue
@@ -174,7 +174,7 @@ def predict_non_specific_amplicons_worker(amp, blast_df, max_length, mode):
         primers = [data[2], data[3]]
     elif mode == "qpcr":
         primers = []
-        for primer_type in ["probe", "left", "right"]:
+        for primer_type in ["PROBE", "LEFT", "RIGHT"]:
             primers.append(f"{primer_type}_{data[primer_type][1]}_{data[primer_type][2]}")
     # subset df for primers
     df_amp_primers = blast_df[blast_df["query"].isin(primers)]
