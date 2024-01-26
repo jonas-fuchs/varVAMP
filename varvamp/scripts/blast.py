@@ -58,7 +58,7 @@ def create_BLAST_query_qpcr(qpcr_scheme_candidates, data_dir):
     query_path = os.path.join(data_dir, "BLAST_query.fasta")
     with open(query_path, "w") as query:
         for amp in qpcr_scheme_candidates:
-            for primer_type in ["probe", "left", "right"]:
+            for primer_type in ["PROBE", "LEFT", "RIGHT"]:
                 name = f"{primer_type}_{qpcr_scheme_candidates[amp][primer_type][1]}_{qpcr_scheme_candidates[amp][primer_type][2]}"
                 if name in already_written:
                     continue
