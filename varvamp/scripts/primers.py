@@ -350,9 +350,9 @@ def create_primer_dictionary(primer_candidates, direction):
 
     for primer in primer_candidates:
         if direction == "+":
-            direction_name = "FW"
+            direction_name = "LEFT"
         elif direction == "-":
-            direction_name = "RV"
+            direction_name = "RIGHT"
         primer_name = f"{direction_name}_{primer_idx}"
         primer_dict[primer_name] = primer
         primer_idx += 1
