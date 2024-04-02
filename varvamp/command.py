@@ -180,8 +180,11 @@ def shared_workflow(args, log_file):
     # estimate threshold or number of ambiguous bases if args were not supplied
     if args.threshold is None or args.n_ambig is None:
         args.threshold, args.n_ambig = param_estimation.get_parameters(preprocessed_alignment, args, log_file)
-    if args.mode == "qpcr" and args.n_ambig >= 1 and args.pn_ambig is None:
-        args.pn_ambig = args.n_ambig - 1
+    if args.mode == "qpcr" and args.pn_ambig is None:
+        if args.n_ambig == 0:
+            args.pn_ambig = 0
+        if args.n_ambig > 0:
+            args.pn_ambig = args.n_ambig - 1
         with open(log_file, "a") as f:
             print(f"Automatic parameter selection set -pa {args.pn_ambig}.", file=f)
 
