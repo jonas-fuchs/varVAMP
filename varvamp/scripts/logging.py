@@ -173,7 +173,7 @@ def raise_arg_errors(args, log_file):
     if args.mode == "qpcr":
         if args.pn_ambig < 0:
             raise_error(
-                "number of ambiguous characters in the qPCR probe cannot negative.",
+                "number of ambiguous characters in the qPCR probe cannot be negative.",
                 log_file,
                 exit=True
             )
