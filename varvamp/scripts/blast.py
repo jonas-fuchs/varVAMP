@@ -203,7 +203,7 @@ def predict_non_specific_amplicons(amplicons, blast_df, max_length, mode, n_thre
         if mode == "single_tiled":
             amplicons[off_target][5] = amplicons[off_target][5] + config.BLAST_PENALTY
         elif mode == "qpcr":
-            amplicons[off_target]["penalty"][0] = amplicons[off_target]["penalty"][0] + config.BLAST_PENALTY
+            amplicons[off_target]["penalty"] = amplicons[off_target]["penalty"] + config.BLAST_PENALTY
 
     return off_targets, amplicons
 
