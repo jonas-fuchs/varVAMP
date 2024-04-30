@@ -342,7 +342,7 @@ def single_workflow(args, amplicons, all_primers, log_file):
         log_file,
         progress=0.9,
         job="Finding amplicons with low penalties.",
-        progress_text=f"{len(amplicon_scheme[0])} amplicons."
+        progress_text=f"{len(amplicon_scheme)} amplicons."
     )
 
     return amplicon_scheme
@@ -359,8 +359,7 @@ def tiled_workflow(args, amplicons, left_primer_candidates, right_primer_candida
     # search for amplicon scheme
     coverage, amplicon_scheme = scheme.find_best_covering_scheme(
         amplicons,
-        amplicon_graph,
-        all_primers
+        amplicon_graph
     )
 
     # check for dimers
@@ -382,7 +381,7 @@ def tiled_workflow(args, amplicons, left_primer_candidates, right_primer_candida
         log_file,
         progress=0.9,
         job="Creating amplicon scheme.",
-        progress_text=f"{percent_coverage} % total coverage with {len(amplicon_scheme[0]) + len(amplicon_scheme[1])} amplicons"
+        progress_text=f"{percent_coverage} % total coverage with {len(amplicon_scheme)} amplicons"
     )
     if percent_coverage < 70:
         logging.raise_error(
@@ -452,7 +451,7 @@ def qpcr_workflow(args, data_dir, alignment_cleaned, ambiguous_consensus, majori
         # create blast query
         query_path = blast.create_BLAST_query_qpcr(qpcr_scheme_candidates, data_dir)
         # perform primer blast
-        amplicons, off_target_amplicons = blast.primer_blast(
+        qpcr_scheme_candidates, off_target_amplicons = blast.primer_blast(
             data_dir,
             args.database,
             query_path,
@@ -470,9 +469,6 @@ def qpcr_workflow(args, data_dir, alignment_cleaned, ambiguous_consensus, majori
             log_file,
             exit=True
         )
-    # report potential blast warnings
-    if args.database is not None:
-        blast.write_BLAST_warning(off_target_amplicons, final_schemes, log_file)
     logging.varvamp_progress(
         log_file,
         progress=0.9,
@@ -533,15 +529,15 @@ def main(sysargs=sys.argv[1:]):
                 log_file,
                 results_dir
             )
-        if args.database is not None:
-            blast.write_BLAST_warning(off_target_amplicons, amplicon_scheme, log_file)
         # write files
+        amplicon_scheme.sort(key=lambda x: x["LEFT"][1])
         reporting.write_all_primers(data_dir, all_primers)
         reporting.write_scheme_to_files(
             results_dir,
             amplicon_scheme,
             ambiguous_consensus,
-            args.mode
+            args.mode,
+            log_file
         )
         reporting.varvamp_plot(
             results_dir,
@@ -565,8 +561,9 @@ def main(sysargs=sys.argv[1:]):
             log_file
         )
         # write files
+        final_schemes.sort(key=lambda x: x["LEFT"][1])
         reporting.write_regions_to_bed(probe_regions, data_dir, "probe")
-        reporting.write_qpcr_to_files(results_dir, final_schemes, ambiguous_consensus)
+        reporting.write_qpcr_to_files(results_dir, final_schemes, ambiguous_consensus, log_file)
         reporting.varvamp_plot(
             results_dir,
             alignment_cleaned,

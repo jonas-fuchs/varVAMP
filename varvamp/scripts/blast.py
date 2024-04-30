@@ -33,19 +33,16 @@ def create_BLAST_query(all_primers, amplicons, data_dir):
     """
     create a query for the BLAST search (tiled, single mode)
     """
-    already_written = []
+    already_written = set()
 
     query_path = os.path.join(data_dir, "BLAST_query.fasta")
     with open(query_path, "w") as query:
         for amp in amplicons:
-            fw_primer, rv_primer = amplicons[amp][2], amplicons[amp][3]
-            if fw_primer not in already_written:
-                print(f">{fw_primer}\n{all_primers['+'][fw_primer][0]}", file=query)
-                already_written.append(fw_primer)
-            if rv_primer not in already_written:
-                print(f">{rv_primer}\n{all_primers['-'][rv_primer][0]}", file=query)
-                already_written.append(rv_primer)
-
+            for primer_type in ["LEFT", "RIGHT"]:
+                name = f"{primer_type}_{amp[primer_type][1]}_{amp[primer_type][2]}"
+                if name not in already_written:
+                    print(f">{name}\n{amp[primer_type][0]}", file=query)
+                    already_written.add(name)
     return query_path
 
 
@@ -53,17 +50,16 @@ def create_BLAST_query_qpcr(qpcr_scheme_candidates, data_dir):
     """
     create a query for the BLAST search (qpcr mode)
     """
-    already_written = []
+    already_written = set()
 
     query_path = os.path.join(data_dir, "BLAST_query.fasta")
     with open(query_path, "w") as query:
         for amp in qpcr_scheme_candidates:
             for primer_type in ["PROBE", "LEFT", "RIGHT"]:
-                name = f"{primer_type}_{qpcr_scheme_candidates[amp][primer_type][1]}_{qpcr_scheme_candidates[amp][primer_type][2]}"
-                if name in already_written:
-                    continue
-                print(f">{name}\n{qpcr_scheme_candidates[amp][primer_type][0]}", file=query)
-                already_written.append(name)
+                name = f"{primer_type}_{amp[primer_type][1]}_{amp[primer_type][2]}"
+                if name not in already_written:
+                    print(f">{name}\n{amp[primer_type][0]}", file=query)
+                    already_written.add(name)
     return query_path
 
 
@@ -168,21 +164,24 @@ def predict_non_specific_amplicons_worker(amp, blast_df, max_length, mode):
     """
     Worker function to predict unspecific targets for a single amplicon.
     """
-    name, data = amp
     # get correct primers
     if mode == "single_tiled":
-        primers = [data[2], data[3]]
+        primer_types = ["LEFT", "RIGHT"]
     elif mode == "qpcr":
-        primers = []
-        for primer_type in ["PROBE", "LEFT", "RIGHT"]:
-            primers.append(f"{primer_type}_{data[primer_type][1]}_{data[primer_type][2]}")
+        primer_types = ["PROBE", "LEFT", "RIGHT"]
+    primers = []
+    for primer_type in primer_types:
+        primers.append(f"{primer_type}_{amp[primer_type][1]}_{amp[primer_type][2]}")
     # subset df for primers
     df_amp_primers = blast_df[blast_df["query"].isin(primers)]
     # sort by reference and ref start
     df_amp_primers_sorted = df_amp_primers.sort_values(["ref", "ref_start"])
     # check for off-targets for specific primers
     if check_off_targets(df_amp_primers_sorted, max_length, primers):
-        return name
+        amp["off_targets"] = True
+    else:
+        amp["off_targets"] = False
+    return amp
 
 
 def predict_non_specific_amplicons(amplicons, blast_df, max_length, mode, n_threads):
@@ -190,22 +189,16 @@ def predict_non_specific_amplicons(amplicons, blast_df, max_length, mode, n_thre
     Main function to predict unspecific targets within a size range and give
     these primers a high penalty. Uses multiprocessing for parallelization.
     """
-    off_targets = []
     # process amplicons concurrently
     with multiprocessing.Pool(processes=n_threads) as pool:
-        amp_items = amplicons.items()
-        results = pool.starmap(predict_non_specific_amplicons_worker, [(amp, blast_df, max_length, mode) for amp in amp_items])
-    # check results
-    for off_target in results:
-        if off_target is None:
-            continue
-        off_targets.append(off_target)
-        if mode == "single_tiled":
-            amplicons[off_target][5] = amplicons[off_target][5] + config.BLAST_PENALTY
-        elif mode == "qpcr":
-            amplicons[off_target]["penalty"] = amplicons[off_target]["penalty"] + config.BLAST_PENALTY
-
-    return off_targets, amplicons
+        annotated_amps = [
+            result for result in pool.starmap(
+                predict_non_specific_amplicons_worker,
+                [(amp, blast_df, max_length, mode) for amp in amplicons]
+            ) if result is not None
+        ]
+    off_targets = {amp["id"] for amp in annotated_amps if amp["off_targets"]}
+    return off_targets, annotated_amps
 
 
 def primer_blast(data_dir, db, query_path, amplicons, max_length, n_threads, log_file, mode):
@@ -255,16 +248,3 @@ def primer_blast(data_dir, db, query_path, amplicons, max_length, n_threads, log
 
     return amplicons, off_target_amplicons
 
-
-def write_BLAST_warning(off_target_amplicons, amplicon_scheme, log_file):
-    """
-    for each primer pair that has potential unspecific amplicons
-    write warnings to file.
-    """
-    for amp in off_target_amplicons:
-        if amp in amplicon_scheme:
-            logging.raise_error(
-                f"{amp} could produce off-targets. No better amplicon in this area was found.",
-                log_file,
-                exit=False,
-            )

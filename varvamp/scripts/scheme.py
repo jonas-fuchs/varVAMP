@@ -67,7 +67,7 @@ def find_amplicons(all_primers, opt_len, max_len):
     finds all possible amplicons, creates a dictionary
     """
     amplicon_number = 0
-    amplicon_dict = {}
+    amplicons = []
 
     for left_name in all_primers["+"]:
         left_primer = all_primers["+"][left_name]
@@ -82,17 +82,17 @@ def find_amplicons(all_primers, opt_len, max_len):
             # penalty multiplied by the e^(fold length of the optimal length).
             amplicon_costs = (right_primer[3] + left_primer[3])*math.exp(amplicon_length/opt_len)
             amplicon_name = "AMPLICON_"+str(amplicon_number)
-            amplicon_dict[amplicon_name] = [
-                left_primer[1],  # start
-                right_primer[2],  # stop
-                left_name,  # name left primer
-                right_name,  # name right primer
-                amplicon_length,  # amplicon length
-                amplicon_costs  # costs
-            ]
+            amplicons.append(
+                {
+                    "id": amplicon_name,
+                    "penalty": amplicon_costs,
+                    "length": amplicon_length,
+                    "LEFT": left_primer + [left_name],
+                    "RIGHT": right_primer + [right_name],
+                }
+            )
             amplicon_number += 1
-
-    return amplicon_dict
+    return amplicons
 
 
 def create_amplicon_graph(amplicons, min_overlap):
@@ -107,24 +107,22 @@ def create_amplicon_graph(amplicons, min_overlap):
     # before the min overlap
     min_overlap = min_overlap + config.PRIMER_SIZES[2]
 
-    for current in amplicons:
+    for current_amplicon in amplicons:
         # remember all vertices
-        nodes.append(current)
-        current_amplicon = amplicons[current]
-        start = current_amplicon[0] + current_amplicon[4]/2
-        stop = current_amplicon[1] - min_overlap
-        for next_amp in amplicons:
-            next_amplicon = amplicons[next_amp]
+        amplicon_id = current_amplicon["id"]
+        nodes.append(amplicon_id)
+        start = current_amplicon["LEFT"][1] + current_amplicon["length"]/2
+        stop = current_amplicon["RIGHT"][2] - min_overlap
+        for next_amplicon in amplicons:
             # check if the next amplicon lies within the start/stop range of
             # the current amplicon and if its non-overlapping part is large
             # enough to ensure space for a primer and the min overlap of the
             # following amplicon.
-            if not all([start <= next_amplicon[0] <= stop, next_amplicon[1] > current_amplicon[1] + next_amplicon[4]/2]):
-                continue
-            if current not in amplicon_graph:
-                amplicon_graph[current] = {next_amp: next_amplicon[5]}
-            else:
-                amplicon_graph[current][next_amp] = next_amplicon[5]
+            if start <= next_amplicon["LEFT"][1] <= stop and next_amplicon["RIGHT"][2] > current_amplicon["RIGHT"][2] + next_amplicon["length"]/2:
+                if amplicon_id not in amplicon_graph:
+                    amplicon_graph[amplicon_id] = {next_amplicon["id"]: next_amplicon["penalty"]}
+                else:
+                    amplicon_graph[amplicon_id][next_amplicon["id"]] = next_amplicon["penalty"]
 
     # return a graph object
     return Graph(nodes, amplicon_graph)
@@ -167,11 +165,12 @@ def get_end_node(previous_nodes, shortest_path, amplicons):
     for node in previous_nodes.keys():
         # check if a node has a larger stop -> empty dict and set new
         # best stop nucleotide
-        if amplicons[node][1] > stop_nucleotide:
+        amplicon_stop = amplicons[node]["RIGHT"][2]
+        if amplicon_stop > stop_nucleotide:
             possible_end_nodes = {node: shortest_path[node]}
-            stop_nucleotide = amplicons[node][1]
+            stop_nucleotide = amplicon_stop
         # if nodes have the same stop nucleotide, add to dictionary
-        elif amplicons[node][1] == stop_nucleotide:
+        elif amplicon_stop == stop_nucleotide:
             possible_end_nodes[node] = shortest_path[node]
 
     # return the end node with the lowest penalty costs
@@ -196,49 +195,44 @@ def get_min_path(previous_nodes, start_node, target_node):
     return path[::-1]
 
 
-def create_scheme_dic(amplicon_scheme, amplicons, all_primers):
+def create_scheme_dic(amplicon_path, amplicons_by_id):
     """
     creates the final scheme dictionary
     """
-
-    scheme_dictionary = {
-        0: {},
-        1: {}
-    }
+    amplicon_scheme = []
 
     for pool in (0, 1):
-        for amp in amplicon_scheme[pool::2]:
-            scheme_dictionary[pool][amp] = {}
-            primer_pair = [amplicons[amp][2], amplicons[amp][3]]
-            scheme_dictionary[pool][amp][primer_pair[0]] = all_primers["+"][primer_pair[0]]
-            scheme_dictionary[pool][amp][primer_pair[1]] = all_primers["-"][primer_pair[1]]
+        for amp_id in amplicon_path[pool::2]:
+            amplicons_by_id[amp_id]["pool"] = pool
+            amplicon_scheme.append(amplicons_by_id[amp_id])
 
-    return scheme_dictionary
+    return amplicon_scheme
 
 
-def find_best_covering_scheme(amplicons, amplicon_graph, all_primers):
+def find_best_covering_scheme(amplicons, amplicon_graph):
     """
     this brute forces the amplicon scheme search until the largest
     coverage with the minimal costs is achieved.
     """
     # ini
     best_coverage = 0
-    max_stop = max(amplicons.items(), key=lambda x: x[1])[1][1]
+    max_stop = max(amplicons, key=lambda x: x["RIGHT"][2])["RIGHT"][2]
     lowest_costs = float('infinity')
-
-    for start_node in amplicons:
+    # a dit for fast access to amplicons by their ID
+    amps_by_id = {amp["id"]: amp for amp in amplicons}
+    for amplicon in amplicons:
         # if the currently best coverage + start nucleotide of the currently tested amplicon
         # is smaller than the maximal stop nucleotide there might be a better amplicon
         # scheme that covers more of the genome
-        if amplicons[start_node][0] + best_coverage <= max_stop:
-            previous_nodes, shortest_path = dijkstra_algorithm(amplicon_graph, start_node)
+        if amplicon["LEFT"][1] + best_coverage <= max_stop:
+            previous_nodes, shortest_path = dijkstra_algorithm(amplicon_graph, amplicon["id"])
             # only continue if there are previous_nodes
             if previous_nodes:
-                target_node, costs = get_end_node(previous_nodes, shortest_path, amplicons)
-                coverage = amplicons[target_node][1] - amplicons[start_node][0]
+                target_node, costs = get_end_node(previous_nodes, shortest_path, amps_by_id)
+                coverage = amps_by_id[target_node]["RIGHT"][2] - amplicon["LEFT"][1]
                 # if the new coverage is larger, go for the larger coverage
                 if coverage > best_coverage:
-                    best_start_node = start_node
+                    best_start_node = amplicon["id"]
                     best_target_node = target_node
                     best_previous_nodes = previous_nodes
                     lowest_costs = costs
@@ -246,18 +240,18 @@ def find_best_covering_scheme(amplicons, amplicon_graph, all_primers):
                 # if the coverages are identical, go for the lowest costs
                 elif coverage == best_coverage:
                     if costs < lowest_costs:
-                        best_start_node = start_node
+                        best_start_node = amplicon["id"]
                         best_target_node = target_node
                         best_previous_nodes = previous_nodes
                         lowest_costs = costs
                         best_coverage = coverage
             else:
                 # check if the single amplicon has the largest coverage so far
-                coverage = amplicons[start_node][1] - amplicons[start_node][0]
+                coverage = amplicon["length"]
                 if coverage > best_coverage:
-                    best_start_node = start_node
+                    best_start_node = amplicon["id"]
                     best_previous_nodes = previous_nodes
-                    lowest_costs = amplicons[start_node][5]
+                    lowest_costs = amplicon["penalty"]
                     best_coverage = coverage
         # no need to check more, the best covering amplicon scheme was found and
         # has the minimal costs compared to the schemes with the same coverage
@@ -265,13 +259,13 @@ def find_best_covering_scheme(amplicons, amplicon_graph, all_primers):
             break
 
     if best_previous_nodes:
-        amplicon_scheme = get_min_path(best_previous_nodes, best_start_node, best_target_node)
+        amplicon_path = get_min_path(best_previous_nodes, best_start_node, best_target_node)
     else:
         # if no previous nodes are found but the single amplicon results in the largest
         # coverage - return as the best scheme
-        amplicon_scheme = [best_start_node]
+        amplicon_path = [best_start_node]
 
-    return best_coverage, create_scheme_dic(amplicon_scheme, amplicons, all_primers)
+    return best_coverage, create_scheme_dic(amplicon_path, amps_by_id)
 
 
 def test_scheme_for_dimers(amplicon_scheme):
@@ -281,13 +275,13 @@ def test_scheme_for_dimers(amplicon_scheme):
 
     primer_dimers = []
 
-    for pool in amplicon_scheme:
+    for pool in [0, 1]:
         # test the primer dimers only within the respective pools
         tested_primers = []
-        for amp in amplicon_scheme[pool]:
-            for primer in amplicon_scheme[pool][amp]:
+        for amp in amplicon_scheme[pool::2]:
+            for primer in ["LEFT", "RIGHT"]:
                 # remember where the currrent primer was in the scheme
-                current_primer = (pool, amp, primer, amplicon_scheme[pool][amp][primer])
+                current_primer = (pool, amp, primer, amp[primer])
                 current_seq = current_primer[3][0]
                 for tested in tested_primers:
                     tested_seq = tested[3][0]
@@ -387,26 +381,23 @@ def find_single_amplicons(amplicons, all_primers, n):
     from all found amplicons. only for the SINGLE mode.
     """
     # sort amplicons
-    sorted_amplicons = sorted(amplicons.items(), key=lambda x: x[1][5])
-    to_retain = [sorted_amplicons[0]]
-    amplicon_range = list(range(sorted_amplicons[0][1][0], sorted_amplicons[0][1][1]+1))
-    amplicon_set = set(amplicon_range)
+    sorted_amplicons = sorted(amplicons, key=lambda x: (x.get("offset_targets"), x["penalty"]))
+    to_retain = []
+    retained_ranges = []
     # find lowest non-overlapping
     for amp in sorted_amplicons:
-        amp_positions = list(range(amp[1][0], amp[1][1]+1))
-        if not any(x in amp_positions for x in amplicon_set):
-            amplicon_set.update(amp_positions)
-            to_retain.append(amp)
-    # build the final dictionary
-    scheme_dictionary = {0: {}}
-    counter = 1
-    for amp in to_retain:
-        scheme_dictionary[0][amp[0]] = {}
-        scheme_dictionary[0][amp[0]][amp[1][2]] = all_primers["+"][amp[1][2]]
-        scheme_dictionary[0][amp[0]][amp[1][3]] = all_primers["-"][amp[1][3]]
-        if n != float("inf"):
-            if counter == n:
+        overlaps_retained = False
+        amp_range = range(amp["LEFT"][1], amp["RIGHT"][2]+1)
+        for r in retained_ranges:
+            if amp_range.start in r or amp_range.stop in r or r.start in amp_range or r.stop in amp_range:
+                overlaps_retained = True
                 break
-            counter += 1
+        if not overlaps_retained:
+            retained_ranges.append(
+                range(amp["LEFT"][1], amp["RIGHT"][2]+1)
+            )
+            to_retain.append(amp)
+            if len(to_retain) == n:
+                break
 
-    return scheme_dictionary
+    return to_retain

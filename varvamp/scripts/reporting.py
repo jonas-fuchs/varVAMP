@@ -16,6 +16,7 @@ from matplotlib.backends.backend_pdf import PdfPages
 # varVAMP
 from varvamp.scripts import primers
 from varvamp.scripts import config
+from varvamp.scripts import logging
 
 
 def write_fasta(path, seq_id, seq):
@@ -48,10 +49,9 @@ def write_regions_to_bed(primer_regions, path, mode=None):
         outfile = f"{path}probe_regions.bed"
     else:
         outfile = f"{path}primer_regions.bed"
-    counter = 0
 
     with open(outfile, 'w') as o:
-        for region in primer_regions:
+        for counter, region in enumerate(primer_regions):
             print(
                 "ambiguous_consensus",
                 region[0],
@@ -60,7 +60,6 @@ def write_regions_to_bed(primer_regions, path, mode=None):
                 sep="\t",
                 file=o
             )
-            counter += 1
 
 
 def write_primers_to_bed(outfile, primer_name, primer_properties, direction):
@@ -121,7 +120,7 @@ def calc_mean_stats(permutations):
     return round(gc/len(permutations), 1), round(temp/len(permutations), 1)
 
 
-def write_qpcr_to_files(path, final_schemes, ambiguous_consensus):
+def write_qpcr_to_files(path, final_schemes, ambiguous_consensus, log_file):
     """
     write all relevant bed files and tsv file for the qPCR design
     """
@@ -138,28 +137,38 @@ def write_qpcr_to_files(path, final_schemes, ambiguous_consensus):
             file=tsv2
         )
         print(
-            "qpcr_scheme\tpenalty\tdeltaG\tlength\tstart\tstop\tseq",
+            "qpcr_scheme\toff_target\tpenalty\tdeltaG\tlength\tstart\tstop\tseq",
             file=tsv
         )
-        for scheme in final_schemes:
+        for n, amp in enumerate(final_schemes):
+            amp_name = f"QPCR_SCHEME_{n}"
             # write bed amplicon file
             print(
                 "ambiguous_consensus",
-                final_schemes[scheme]["LEFT"][1],
-                final_schemes[scheme]["RIGHT"][2],
-                scheme,
-                round(final_schemes[scheme]["penalty"], 1),
+                amp["LEFT"][1],
+                amp["RIGHT"][2],
+                amp_name,
+                round(amp["penalty"], 1),
                 sep="\t",
                 file=bed
             )
             # write tsv
-            amplicon_start = final_schemes[scheme]["LEFT"][1]
-            amplicon_stop = final_schemes[scheme]["RIGHT"][2]
+            amplicon_start = amp["LEFT"][1]
+            amplicon_stop = amp["RIGHT"][2]
+            if "off_targets" in amp:
+                if amp["off_targets"]:
+                    amplicon_has_off_target = "Yes"
+                    write_BLAST_warning(amp_name, log_file)
+                else:
+                    amplicon_has_off_target = "No"
+            else:
+                amplicon_has_off_target = "NA"
             amplicon_seq = ambiguous_consensus[amplicon_start:amplicon_stop]
             print(
-                scheme,
-                round(final_schemes[scheme]["penalty"], 1),
-                final_schemes[scheme]["deltaG"],
+                amp_name,
+                amplicon_has_off_target,
+                round(amp["penalty"], 1),
+                amp["deltaG"],
                 len(amplicon_seq),
                 amplicon_start + 1,
                 amplicon_stop,
@@ -168,11 +177,11 @@ def write_qpcr_to_files(path, final_schemes, ambiguous_consensus):
                 file=tsv
             )
             # write tsv2
-            for oligo_type in final_schemes[scheme]:
+            for oligo_type in ["PROBE", "LEFT", "RIGHT"]:
                 if oligo_type == "penalty" or oligo_type == "deltaG":
                     continue
-                seq = ambiguous_consensus[final_schemes[scheme][oligo_type][1]:final_schemes[scheme][oligo_type][2]]
-                if oligo_type == "RIGHT" or all([oligo_type == "PROBE", final_schemes[scheme]["PROBE"][5] == "-"]):
+                seq = ambiguous_consensus[amp[oligo_type][1]:amp[oligo_type][2]]
+                if oligo_type == "RIGHT" or (oligo_type == "PROBE" and amp["PROBE"][5] == "-"):
                     seq = primers.rev_complement(seq)
                     direction = "-"
                 else:
@@ -182,32 +191,32 @@ def write_qpcr_to_files(path, final_schemes, ambiguous_consensus):
                 gc, temp = calc_mean_stats(permutations)
 
                 print(
-                    scheme,
+                    amp_name,
                     oligo_type,
-                    final_schemes[scheme][oligo_type][1] + 1,
-                    final_schemes[scheme][oligo_type][2],
+                    amp[oligo_type][1] + 1,
+                    amp[oligo_type][2],
                     seq.upper(),
                     len(seq),
-                    round(primers.calc_gc(final_schemes[scheme][oligo_type][0]), 1),
-                    round(primers.calc_temp(final_schemes[scheme][oligo_type][0]), 1),
+                    round(primers.calc_gc(amp[oligo_type][0]), 1),
+                    round(primers.calc_temp(amp[oligo_type][0]), 1),
                     gc,
                     temp,
-                    round(final_schemes[scheme][oligo_type][3], 1),
+                    round(amp[oligo_type][3], 1),
                     sep="\t",
                     file=tsv2
                 )
                 # write primer bed file
                 write_primers_to_bed(
                     primer_bed_file,
-                    f"{scheme}_{oligo_type}",
-                    final_schemes[scheme][oligo_type],
+                    f"{amp_name}_{oligo_type}",
+                    amp[oligo_type],
                     direction
                 )
                 # write fasta
-                print(f">{scheme}_{oligo_type}\n{seq.upper()}", file=fasta)
+                print(f">{amp_name}_{oligo_type}\n{seq.upper()}", file=fasta)
 
 
-def write_scheme_to_files(path, amplicon_scheme, ambiguous_consensus, mode):
+def write_scheme_to_files(path, amplicon_scheme, ambiguous_consensus, mode, log_file):
     """
     write all relevant bed files and a tsv file with all primer stats
     """
@@ -216,8 +225,6 @@ def write_scheme_to_files(path, amplicon_scheme, ambiguous_consensus, mode):
     amplicon_bed_file = os.path.join(path, "amplicons.bed")
     tabular_file = os.path.join(path, "primer_to_amplicon_assignment.tabular")
 
-    counter = 0
-
     # open files to write
     with open(tsv_file, "w") as tsv, open(amplicon_bed_file, "w") as bed, open(tabular_file, "w") as tabular:
         # write header for primer tsv
@@ -225,46 +232,47 @@ def write_scheme_to_files(path, amplicon_scheme, ambiguous_consensus, mode):
             "amlicon_name\tamplicon_length\tprimer_name\talternate_primer_name\tpool\tstart\tstop\tseq\tsize\tgc_best\ttemp_best\tmean_gc\tmean_temp\tpenalty",
             file=tsv
         )
-
-        for pool in amplicon_scheme:
+        amplicon_bed_records = []
+        primer_bed_records = []
+        primer_assignment_records = []
+        pools = {amp.get("pool", 0) for amp in amplicon_scheme}
+        for pool in pools:
             if mode == "single":
                 primer_fasta_file = os.path.join(path, "primers.fasta")
             else:
                 primer_fasta_file = os.path.join(path, f"primers_pool_{pool}.fasta")
             with open(primer_fasta_file, "w") as primer_fasta:
-                for amp in amplicon_scheme[pool]:
+                for counter, amp in enumerate(amplicon_scheme[pool::len(pools)]):
                     # give a new amplicon name
-                    new_name = f"AMPLICON_{str(counter)}"
-                    counter += 1
+                    amplicon_index = counter*len(pools) + pool
+                    new_name = f"AMPLICON_{amplicon_index}"
                     # get left and right primers and their names
-                    primer_names = list(amplicon_scheme[pool][amp].keys())
-                    left = (primer_names[0], amplicon_scheme[pool][amp][primer_names[0]])
-                    right = (primer_names[1], amplicon_scheme[pool][amp][primer_names[1]])
-                    amp_length = right[1][2] - left[1][1]
+                    amp_length = amp["RIGHT"][2] - amp["LEFT"][1]
+                    if amp.get("off_targets"):
+                        write_BLAST_warning(new_name, log_file)
                     # write amplicon bed
                     if mode == "tiled":
                         bed_score = pool
                     elif mode == "single":
-                        bed_score = round(left[1][3] + right[1][3], 1)
-                    print(
-                        "ambiguous_consensus",
-                        left[1][1],
-                        right[1][2],
-                        new_name,
-                        bed_score,
-                        sep="\t",
-                        file=bed
+                        bed_score = round(amp["LEFT"][3] + amp["RIGHT"][3], 1)
+                    amplicon_bed_records.append(
+                        (
+                            amp["LEFT"][1],
+                            amp["RIGHT"][2],
+                            new_name,
+                            bed_score
+                        )
                     )
-                    # write primer assignments tabular file
-                    print(
-                        f"{new_name}_LEFT",
-                        f"{new_name}_RIGHT",
-                        sep="\t",
-                        file=tabular
+                    primer_assignment_records.append(
+                        (
+                            # will need amplicon_index for sorting
+                            amplicon_index,
+                            (f"{new_name}_LEFT", f"{new_name}_RIGHT")
+                        )
                     )
                     # write primer tsv and primer bed
-                    for direction, primer in [("+", left), ("-", right)]:
-                        seq = ambiguous_consensus[primer[1][1]:primer[1][2]]
+                    for direction, primer in [("+", amp["LEFT"]), ("-", amp["RIGHT"])]:
+                        seq = ambiguous_consensus[primer[1]:primer[2]]
                         if direction == "-":
                             seq = primers.rev_complement(seq)
                             primer_name = f"{new_name}_RIGHT"
@@ -280,27 +288,48 @@ def write_scheme_to_files(path, amplicon_scheme, ambiguous_consensus, mode):
                             new_name,
                             amp_length,
                             primer_name,
-                            primer[0],
+                            primer[-1],
                             pool,
-                            primer[1][1] + 1,
-                            primer[1][2],
+                            primer[1] + 1,
+                            primer[2],
                             seq.upper(),
-                            len(primer[1][0]),
-                            round(primers.calc_gc(primer[1][0]), 1),
-                            round(primers.calc_temp(primer[1][0]), 1),
+                            len(primer[0]),
+                            round(primers.calc_gc(primer[0]), 1),
+                            round(primers.calc_temp(primer[0]), 1),
                             gc,
                             temp,
-                            round(primer[1][3], 1),
+                            round(primer[3], 1),
                             sep="\t",
                             file=tsv
                         )
-                        # write primer bed file
-                        write_primers_to_bed(
-                            primer_bed_file,
-                            primer_name,
-                            primer[1],
-                            direction
+                        primer_bed_records.append(
+                            (
+                                # will need amplicon_index for sorting
+                                amplicon_index,
+                                (primer_name, primer, direction)
+                            )
                         )
+        # write amplicon bed with amplicons sorted by start position
+        for record in sorted(amplicon_bed_records, key=lambda x: x[0]):
+            print(
+                "ambiguous_consensus",
+                *record,
+                sep="\t",
+                file=bed
+            )
+        # use sorting by amplicon index for primer assignment file
+        for record in sorted(primer_assignment_records):
+            print(
+                *record[1],
+                sep="\t",
+                file=tabular
+            )
+        # same for primer bed
+        for record in sorted(primer_bed_records):
+            write_primers_to_bed(
+                primer_bed_file,
+                *record[1]
+            )
 
 
 def write_dimers(path, primer_dimers):
@@ -418,26 +447,23 @@ def amplicon_subplot(ax, amplicon_scheme):
     """
     creates the amplicon subplot
     """
-    counter = 0
-    for pool in amplicon_scheme:
-        for amp in amplicon_scheme[pool]:
-            if pool == 0:
-                position_amp = 0.7
-                position_text = 0.6
-            elif pool == 1:
-                position_amp = 0.6
-                position_text = 0.65
-            primer_names = [i for i in amplicon_scheme[pool][amp]]
-            left = amplicon_scheme[pool][amp][primer_names[0]]
-            right = amplicon_scheme[pool][amp][primer_names[1]]
-            # amplicons
-            ax[1].hlines(position_amp, left[1], right[2], linewidth=5)
-            # text
-            ax[1].text(right[2] - (right[2]-left[1])/2, position_text, str(counter), fontsize=8)
-            # primers
-            ax[1].hlines(position_amp, left[1], left[2], linewidth=5, color="red")
-            ax[1].hlines(position_amp, right[1], right[2], linewidth=5, color="red")
-            counter += 1
+    for counter, amp in enumerate(amplicon_scheme):
+        pool = amp.get("pool", 0)
+        if pool == 0:
+            position_amp = 0.7
+            position_text = 0.6
+        elif pool == 1:
+            position_amp = 0.6
+            position_text = 0.65
+        left = amp["LEFT"]
+        right = amp["RIGHT"]
+        # amplicons
+        ax[1].hlines(position_amp, left[1], right[2], linewidth=5)
+        # text
+        ax[1].text(right[2] - (right[2]-left[1])/2, position_text, str(counter), fontsize=8)
+        # primers
+        ax[1].hlines(position_amp, left[1], left[2], linewidth=5, color="red")
+        ax[1].hlines(position_amp, right[1], right[2], linewidth=5, color="red")
     # legends
     ax[1].hlines(position_amp, left[1]+config.PRIMER_SIZES[1], right[2]-config.PRIMER_SIZES[1], linewidth=5, label="amplicons")
     ax[1].hlines(position_amp, left[1], left[2], linewidth=5, color="red", label="primers")
@@ -447,12 +473,10 @@ def qpcr_subplot(ax, amplicon_scheme):
     """
     creates the qpcr subplot
     """
-    counter = 0
-
-    for scheme in amplicon_scheme:
-        left = amplicon_scheme[scheme]["LEFT"]
-        right = amplicon_scheme[scheme]["RIGHT"]
-        probe = amplicon_scheme[scheme]["PROBE"]
+    for counter, amp in enumerate(amplicon_scheme):
+        left = amp["LEFT"]
+        right = amp["RIGHT"]
+        probe = amp["PROBE"]
         # amplicons
         ax[1].hlines(0.8, left[1], right[2], linewidth=5)
         # text
@@ -463,7 +487,6 @@ def qpcr_subplot(ax, amplicon_scheme):
         # probe
         ax[1].hlines(0.75, probe[1], probe[2], linewidth=5, color="darkgrey")
 
-        counter += 1
     # legends
     ax[1].hlines(0.8, left[1]+config.PRIMER_SIZES[1], right[2]-config.PRIMER_SIZES[1], linewidth=5, label="amplicons")
     ax[1].hlines(0.8, left[1], left[2], linewidth=5, color="red", label="primers")
@@ -515,13 +538,10 @@ def get_SINGLE_TILED_primers_for_plot(amplicon_scheme):
     """
     amplicon_primers = []
 
-    for pool in amplicon_scheme:
-        for amp in amplicon_scheme[pool]:
-            primer_names = [i for i in amplicon_scheme[pool][amp]]
-            left = amplicon_scheme[pool][amp][primer_names[0]]
-            right = amplicon_scheme[pool][amp][primer_names[1]]
-            amplicon_primers.append((primer_names[0], left))
-            amplicon_primers.append((primer_names[1], right))
+    for counter, amp in enumerate(amplicon_scheme):
+        for type in ["LEFT", "RIGHT"]:
+            primer_name = f"AMPLICON_{counter}_{type}"
+            amplicon_primers.append((primer_name, amp[type]))
 
     return amplicon_primers
 
@@ -532,12 +552,10 @@ def get_QPCR_primers_for_plot(amplicon_schemes):
     """
     amplicon_primers = []
 
-    for scheme in amplicon_schemes:
-        for type in amplicon_schemes[scheme]:
-            if type == "penalty" or type == "deltaG":
-                continue
-            primer_name = f"{scheme}_{type}"
-            amplicon_primers.append((primer_name, amplicon_schemes[scheme][type]))
+    for counter, amp in enumerate(amplicon_schemes):
+        for type in ["PROBE", "LEFT", "RIGHT"]:
+            primer_name = f"QPCR_SCHEME_{counter}_{type}"
+            amplicon_primers.append((primer_name, amp[type]))
 
     return amplicon_primers
 
@@ -581,3 +599,15 @@ def per_base_mismatch_plot(path, amplicon_scheme, threshold, mode="SINGLE/TILED"
             # - to pdf
             pdf.savefig(fig, bbox_inches='tight')
             plt.close()
+
+
+def write_BLAST_warning(amplicon_name, log_file):
+    """
+    for each primer pair that has potential unspecific amplicons
+    write warnings to file.
+    """
+    logging.raise_error(
+        f"{amplicon_name} could produce off-targets. No better amplicon in this area was found.",
+        log_file,
+        exit=False,
+    )
