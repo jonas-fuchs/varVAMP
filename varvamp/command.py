@@ -502,6 +502,18 @@ def main(sysargs=sys.argv[1:]):
     reporting.write_fasta(data_dir, "majority_consensus", majority_consensus)
     reporting.write_fasta(results_dir, "ambiguous_consensus", ambiguous_consensus)
 
+    # Functions called from here on return lists of amplicons that are refined step-wise into final schemes.
+    # These lists that are passed between functions and later used for reporting consist of dictionary elemnts,
+    # which represent individual amplicons. A minimal amplicon dict could take the form:
+    # {
+    #     "id": amplicon_name,
+    #     "penalty": amplicon_cost,
+    #     "length": amplicon_length,
+    #     "LEFT": [left primer data],
+    #     "RIGHT": [right primer data]
+    # }
+    # to which different functions may add additional information.
+
     # SINGLE/TILED mode
     if args.mode == "tiled" or args.mode == "single":
         all_primers, amplicons, off_target_amplicons = single_and_tiled_shared_workflow(
