@@ -529,8 +529,15 @@ def main(sysargs=sys.argv[1:]):
                 log_file,
                 results_dir
             )
+
         # write files
-        amplicon_scheme.sort(key=lambda x: x["LEFT"][1])
+
+        if args.mode == "tiled":
+            # assign amplicon numbers from 5' to 3' along the genome
+            amplicon_scheme.sort(key=lambda x: x["LEFT"][1])
+        else:
+            # make sure amplicons with no off-target products and with low penalties get the lowest numbers
+            amplicon_scheme.sort(key=lambda x: (x["off_targets"], x["penalty"]))
         reporting.write_all_primers(data_dir, all_primers)
         reporting.write_scheme_to_files(
             results_dir,
@@ -560,8 +567,11 @@ def main(sysargs=sys.argv[1:]):
             right_primer_candidates,
             log_file
         )
+
         # write files
-        final_schemes.sort(key=lambda x: x["LEFT"][1])
+
+        # make sure amplicons with no off-target products and with low penalties get the lowest numbers
+        final_schemes.sort(key=lambda x: (x["off_targets"], x["penalty"]))
         reporting.write_regions_to_bed(probe_regions, data_dir, "probe")
         reporting.write_qpcr_to_files(results_dir, final_schemes, ambiguous_consensus, log_file)
         reporting.varvamp_plot(
