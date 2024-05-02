@@ -25,7 +25,7 @@ def construct_graph(nodes, init_graph):
     for node, neighbors in graph.items():
         for neighbor in neighbors.keys():
             if graph[neighbor].get(node, False) is False:
-                graph[neighbor][node] = float("infinity")
+                graph[neighbor][node] = (float("infinity"), 0)
 
     return graph
 
@@ -120,9 +120,17 @@ def create_amplicon_graph(amplicons, min_overlap):
             # following amplicon.
             if start <= next_amplicon["LEFT"][1] <= stop and next_amplicon["RIGHT"][2] > current_amplicon["RIGHT"][2] + next_amplicon["length"]/2:
                 if amplicon_id not in amplicon_graph:
-                    amplicon_graph[amplicon_id] = {next_amplicon["id"]: next_amplicon["penalty"]}
+                    amplicon_graph[amplicon_id] = {
+                        next_amplicon["id"]: (
+                            next_amplicon.get("off_targets", False),
+                            next_amplicon["penalty"]
+                        )
+                    }
                 else:
-                    amplicon_graph[amplicon_id][next_amplicon["id"]] = next_amplicon["penalty"]
+                    amplicon_graph[amplicon_id][next_amplicon["id"]] = (
+                        next_amplicon.get("off_targets", False),
+                        next_amplicon["penalty"]
+                    )
 
     # return a graph object
     return Graph(nodes, amplicon_graph)
@@ -134,17 +142,21 @@ def dijkstra_algorithm(graph, start_node):
     """
 
     previous_nodes = {}
-    shortest_path = {node: float('infinity') for node in graph.get_nodes()}
-    shortest_path[start_node] = 0
+    shortest_path = {node: (float('infinity'), 0) for node in graph.get_nodes()}
+    shortest_path[start_node] = (0, 0)
 
-    nodes_to_test = [(0, start_node)]
+    nodes_to_test = [((0, 0), start_node)]
 
     while nodes_to_test:
         current_distance, current_node = heapq.heappop(nodes_to_test)
         if current_distance > shortest_path[current_node]:
             continue
         for neighbor in graph.get_neighbors(current_node):
-            distance = current_distance + graph.value(current_node, neighbor)
+            off_targets, base_penalty = graph.value(current_node, neighbor)
+            distance = (
+                current_distance[0] + off_targets,
+                current_distance[1] + base_penalty
+            )
             # Only consider this new path if it's a better path
             if not distance < shortest_path[neighbor]:
                 continue
@@ -217,8 +229,8 @@ def find_best_covering_scheme(amplicons, amplicon_graph):
     # ini
     best_coverage = 0
     max_stop = max(amplicons, key=lambda x: x["RIGHT"][2])["RIGHT"][2]
-    lowest_costs = float('infinity')
-    # a dit for fast access to amplicons by their ID
+    lowest_costs = (float('infinity'),)
+    # a dict for fast access to amplicons by their ID
     amps_by_id = {amp["id"]: amp for amp in amplicons}
     for amplicon in amplicons:
         # if the currently best coverage + start nucleotide of the currently tested amplicon
@@ -251,7 +263,8 @@ def find_best_covering_scheme(amplicons, amplicon_graph):
                 if coverage > best_coverage:
                     best_start_node = amplicon["id"]
                     best_previous_nodes = previous_nodes
-                    lowest_costs = amplicon["penalty"]
+                    lowest_costs = (
+                        amplicon.get("off_targets", False), amplicon["penalty"])
                     best_coverage = coverage
         # no need to check more, the best covering amplicon scheme was found and
         # has the minimal costs compared to the schemes with the same coverage
