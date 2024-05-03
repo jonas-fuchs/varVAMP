@@ -314,9 +314,9 @@ def single_and_tiled_shared_workflow(args, left_primer_candidates, right_primer_
 
     if args.database is not None:
         # create blast query
-        query_path = blast.create_BLAST_query(all_primers, amplicons, data_dir)
+        query_path = blast.create_BLAST_query(amplicons, data_dir)
         # perform primer blast
-        amplicons, off_target_amplicons = blast.primer_blast(
+        amplicons = blast.primer_blast(
             data_dir,
             args.database,
             query_path,
@@ -326,10 +326,8 @@ def single_and_tiled_shared_workflow(args, left_primer_candidates, right_primer_
             log_file,
             mode="single_tiled"
         )
-    else:
-        off_target_amplicons = []
 
-    return all_primers, amplicons, off_target_amplicons
+    return all_primers, amplicons
 
 
 def single_workflow(args, amplicons, all_primers, log_file):
@@ -449,9 +447,9 @@ def qpcr_workflow(args, data_dir, alignment_cleaned, ambiguous_consensus, majori
     # run blast if db is given
     if args.database is not None:
         # create blast query
-        query_path = blast.create_BLAST_query_qpcr(qpcr_scheme_candidates, data_dir)
+        query_path = blast.create_BLAST_query(qpcr_scheme_candidates, data_dir, mode="qpcr")
         # perform primer blast
-        qpcr_scheme_candidates, off_target_amplicons = blast.primer_blast(
+        qpcr_scheme_candidates = blast.primer_blast(
             data_dir,
             args.database,
             query_path,
@@ -516,7 +514,7 @@ def main(sysargs=sys.argv[1:]):
 
     # SINGLE/TILED mode
     if args.mode == "tiled" or args.mode == "single":
-        all_primers, amplicons, off_target_amplicons = single_and_tiled_shared_workflow(
+        all_primers, amplicons = single_and_tiled_shared_workflow(
             args,
             left_primer_candidates,
             right_primer_candidates,

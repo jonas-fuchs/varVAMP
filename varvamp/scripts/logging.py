@@ -291,7 +291,6 @@ def confirm_config(args, log_file):
         (
             "BLAST_MAX_DIFF",
             "BLAST_SIZE_MULTI",
-            "BLAST_PENALTY"
         )
     ]
 
@@ -384,7 +383,6 @@ def confirm_config(args, log_file):
         ("qpcr deletion size still considered for deltaG calculation", config.QAMPLICON_DEL_CUTOFF),
         ("maximum difference between primer and blast db", config.BLAST_MAX_DIFF),
         ("multiplier of the maximum length for non-specific amplicons", config.BLAST_SIZE_MULTI),
-        ("blast penalty for off targets", config.BLAST_PENALTY)
     ]
     for var_type, var in non_negative_var:
         if var < 0:
@@ -467,11 +465,6 @@ def confirm_config(args, log_file):
             "off-targets should be considered at least in the range of the maximal amplicon length.",
             log_file,
             exit=True
-        )
-    if config.BLAST_PENALTY < 10:
-        raise_error(
-            "giving a too small penalty could result in the selection of off-target producing amplicons in the final scheme.",
-            log_file,
         )
     # confirm proper BLAST settings in dictionary
     if not isinstance(config.BLAST_SETTINGS, dict):

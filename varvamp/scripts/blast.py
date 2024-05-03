@@ -29,33 +29,20 @@ def check_BLAST_installation(log_file):
         logging.raise_error("BLASTN is not installed", log_file, exit=True)
 
 
-def create_BLAST_query(all_primers, amplicons, data_dir):
+def create_BLAST_query(amplicons, data_dir, mode="single_tiled"):
     """
-    create a query for the BLAST search (tiled, single mode)
+    create a query for the BLAST search
     """
+    query_path = os.path.join(data_dir, "BLAST_query.fasta")
+    if mode == "single_tiled":
+        primer_types = ["LEFT", "RIGHT"]
+    elif mode == "qpcr":
+        primer_types = ["PROBE", "LEFT", "RIGHT"]
     already_written = set()
 
-    query_path = os.path.join(data_dir, "BLAST_query.fasta")
     with open(query_path, "w") as query:
         for amp in amplicons:
-            for primer_type in ["LEFT", "RIGHT"]:
-                name = f"{primer_type}_{amp[primer_type][1]}_{amp[primer_type][2]}"
-                if name not in already_written:
-                    print(f">{name}\n{amp[primer_type][0]}", file=query)
-                    already_written.add(name)
-    return query_path
-
-
-def create_BLAST_query_qpcr(qpcr_scheme_candidates, data_dir):
-    """
-    create a query for the BLAST search (qpcr mode)
-    """
-    already_written = set()
-
-    query_path = os.path.join(data_dir, "BLAST_query.fasta")
-    with open(query_path, "w") as query:
-        for amp in qpcr_scheme_candidates:
-            for primer_type in ["PROBE", "LEFT", "RIGHT"]:
+            for primer_type in primer_types:
                 name = f"{primer_type}_{amp[primer_type][1]}_{amp[primer_type][2]}"
                 if name not in already_written:
                     print(f">{name}\n{amp[primer_type][0]}", file=query)
@@ -197,8 +184,8 @@ def predict_non_specific_amplicons(amplicons, blast_df, max_length, mode, n_thre
                 [(amp, blast_df, max_length, mode) for amp in amplicons]
             ) if result is not None
         ]
-    off_targets = {amp["id"] for amp in annotated_amps if amp["off_targets"]}
-    return off_targets, annotated_amps
+    n_off_targets = sum(amp["off_targets"] for amp in annotated_amps)
+    return n_off_targets, annotated_amps
 
 
 def primer_blast(data_dir, db, query_path, amplicons, max_length, n_threads, log_file, mode):
@@ -230,14 +217,17 @@ def primer_blast(data_dir, db, query_path, amplicons, max_length, n_threads, log
 
     blast_df = parse_and_filter_BLAST_output(blast_out)
     print("Predicting non-specific amplicons...")
-    off_target_amplicons, amplicons = predict_non_specific_amplicons(
+    n_off_targets, amplicons = predict_non_specific_amplicons(
         amplicons,
         blast_df,
         max_length,
         mode,
         n_threads
     )
-    success_text = f"varVAMP successfully predicted non-specific amplicons:\n\t> {len(off_target_amplicons)}/{len(amplicons)} amplicons could produce amplicons with the blast db.\n\t> raised their amplicon penalty by {config.BLAST_PENALTY}"
+    if n_off_targets > 0:
+        success_text = f"varVAMP predicted non-specific amplicons:\n\t> {n_off_targets}/{len(amplicons)} amplicons could produce amplicons with the blast db.\n\t> will attempt to avoid them in the final list of amplicons"
+    else:
+        success_text = f"NO off-target amplicons found with the blast db and a total of {len(amplicons)} amplicons"
     print(success_text)
     with open(log_file, 'a') as f:
         print(
@@ -246,5 +236,5 @@ def primer_blast(data_dir, db, query_path, amplicons, max_length, n_threads, log
         )
     print("\n#### off-target search finished ####\n")
 
-    return amplicons, off_target_amplicons
+    return amplicons
 
