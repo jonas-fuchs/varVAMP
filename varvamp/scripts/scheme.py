@@ -319,7 +319,7 @@ def get_overlapping_primers(dimer, left_primer_candidates, right_primer_candidat
         overlapping_primers_temp = []
         thirds_len = int((primer[3][2] - primer[3][1]) / 3)
         # get the middle third of the primer (here are the previously excluded primers)
-        overlap_set = set(range(primer[3][1] + thirds_len, primer[3][2] - thirds_len + 1))
+        overlap_set = set(range(primer[3][1] + thirds_len, primer[3][2] - thirds_len))
         # check in which list to look for them
         if "RIGHT" in primer[2]:
             primers_to_test = right_primer_candidates
@@ -327,7 +327,7 @@ def get_overlapping_primers(dimer, left_primer_candidates, right_primer_candidat
             primers_to_test = left_primer_candidates
         # and check this list for all primers that overlap
         for potential_new in primers_to_test:
-            primer_positions = list(range(potential_new[1], potential_new[2]+1))
+            primer_positions = list(range(potential_new[1], potential_new[2]))
             if not any(x in primer_positions for x in overlap_set):
                 continue
             overlapping_primers_temp.append((primer[0], primer[1], primer[2], potential_new))
@@ -399,15 +399,13 @@ def find_single_amplicons(amplicons, all_primers, n):
     # find lowest non-overlapping
     for amp in sorted_amplicons:
         overlaps_retained = False
-        amp_range = range(amp["LEFT"][1], amp["RIGHT"][2]+1)
+        amp_range = range(amp["LEFT"][1], amp["RIGHT"][2])
         for r in retained_ranges:
-            if amp_range.start in r or amp_range.stop in r or r.start in amp_range or r.stop in amp_range:
+            if amp_range.start < r.stop and r.start < amp_range.stop:
                 overlaps_retained = True
                 break
         if not overlaps_retained:
-            retained_ranges.append(
-                range(amp["LEFT"][1], amp["RIGHT"][2]+1)
-            )
+            retained_ranges.append(amp_range)
             to_retain.append(amp)
             if len(to_retain) == n:
                 break

@@ -211,13 +211,13 @@ def assess_amplicons(left_subset, right_subset, qpcr_probes, probe, majority_con
             if "LEFT" in probe:
                 if not qpcr_probes[probe][1] in range(
                         left_primer[2] + config.QPROBE_DISTANCE[0],
-                        left_primer[2] + config.QPROBE_DISTANCE[1] + 1
+                        left_primer[2] + config.QPROBE_DISTANCE[1]
                 ):
                     continue
             elif "RIGHT" in probe:
                 if not right_primer[1] in range(
                         qpcr_probes[probe][2] + config.QPROBE_DISTANCE[0],
-                        qpcr_probes[probe][2] + config.QPROBE_DISTANCE[1] + 1
+                        qpcr_probes[probe][2] + config.QPROBE_DISTANCE[1]
 
                 ):
                     continue
@@ -297,12 +297,9 @@ def process_single_amplicon_deltaG(amplicon, majority_consensus):
     Process a single amplicon to test its deltaG and apply filtering.
     This function will be called concurrently by multiple threads.
     """
-    start = amplicon["LEFT"][1]
-    stop = amplicon["RIGHT"][2]
-    seq = majority_consensus[start:stop]
+    seq = majority_consensus[amplicon["LEFT"][1]:amplicon["RIGHT"][2]]
     seq = seq.replace("N", "")
     seq = seq.replace("n", "")
-    amp_positions = list(range(start, stop + 1))
     # check if the amplicon overlaps with an amplicon that was previously
     # found and had a high enough deltaG
     min_temp = min((primers.calc_temp(amplicon["LEFT"][0]),
@@ -310,7 +307,7 @@ def process_single_amplicon_deltaG(amplicon, majority_consensus):
     # calculate deltaG at the minimal primer temp
     amplicon["deltaG"] = seqfold.dg(seq, min_temp)
 
-    return amp_positions, amplicon
+    return amplicon
 
 
 def test_amplicon_deltaG_parallel(qpcr_schemes_candidates, majority_consensus, n_to_test, deltaG_cutoff, n_threads):
@@ -320,7 +317,6 @@ def test_amplicon_deltaG_parallel(qpcr_schemes_candidates, majority_consensus, n
     for processing amplicons in parallel.
     """
     final_amplicons = []
-    amplicon_set = set()
 
     # Create a pool of processes to handle the concurrent processing
     with multiprocessing.Pool(processes=n_threads) as pool:
@@ -334,15 +330,20 @@ def test_amplicon_deltaG_parallel(qpcr_schemes_candidates, majority_consensus, n
         # process amplicons concurrently
         results = pool.starmap(process_single_amplicon_deltaG, [(amp, majority_consensus) for amp in amplicons])
         # Process the results
-        for amp_positions, amp in results:
+        retained_ranges = []
+        for amp in results:
             # check if the amplicon overlaps with an amplicon that was previously
             # found and had a high enough deltaG
-            if any(x in amp_positions for x in amplicon_set):
+            if amp["deltaG"] <= deltaG_cutoff:
                 continue
-            # and if this passes cutoff make a dict entry and do not allow further
-            # amplicons in that region (they will have a lower penalty)
-            if amp["deltaG"] > deltaG_cutoff:
+            amp_range = range(amp["LEFT"][1], amp["RIGHT"][2])
+            overlaps_retained = False
+            for r in retained_ranges:
+                if amp_range.start < r.stop and r.start < amp_range.stop:
+                    overlaps_retained = True
+                    break
+            if not overlaps_retained:
                 final_amplicons.append(amp)
-                amplicon_set.update(amp_positions)
+                retained_ranges.append(amp_range)
 
     return final_amplicons
