@@ -149,7 +149,7 @@ def write_qpcr_to_files(path, final_schemes, ambiguous_consensus, log_file):
                 amp["RIGHT"][2],
                 amp_name,
                 round(amp["penalty"], 1),
-                "+",
+                ".",
                 sep="\t",
                 file=bed
             )
@@ -313,7 +313,7 @@ def write_scheme_to_files(path, amplicon_scheme, ambiguous_consensus, mode, log_
             print(
                 "ambiguous_consensus",
                 *record,
-                "+",
+                ".",
                 sep="\t",
                 file=bed
             )
