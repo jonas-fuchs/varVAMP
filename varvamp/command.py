@@ -549,7 +549,7 @@ def main(sysargs=sys.argv[1:]):
             amplicon_scheme.sort(key=lambda x: x["LEFT"][1])
         else:
             # make sure amplicons with no off-target products and with low penalties get the lowest numbers
-            amplicon_scheme.sort(key=lambda x: (x["off_targets"], x["penalty"]))
+            amplicon_scheme.sort(key=lambda x: (x.get("off_targets", False), x["penalty"]))
         reporting.write_all_primers(data_dir, all_primers)
         reporting.write_scheme_to_files(
             results_dir,
