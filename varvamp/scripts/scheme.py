@@ -21,8 +21,6 @@ def construct_graph(nodes, init_graph):
         graph[node] = {}
 
     graph.update(init_graph)
-    print(graph)
-    return graph
     for node, neighbors in graph.items():
         for neighbor in neighbors.keys():
             if graph[neighbor].get(node, False) is False:
