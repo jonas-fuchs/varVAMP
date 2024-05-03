@@ -21,12 +21,12 @@ def construct_graph(nodes, init_graph):
         graph[node] = {}
 
     graph.update(init_graph)
-
+    print(graph)
+    return graph
     for node, neighbors in graph.items():
         for neighbor in neighbors.keys():
             if graph[neighbor].get(node, False) is False:
                 graph[neighbor][node] = (float("infinity"), 0)
-
     return graph
 
 
@@ -277,7 +277,6 @@ def find_best_covering_scheme(amplicons, amplicon_graph):
         # if no previous nodes are found but the single amplicon results in the largest
         # coverage - return as the best scheme
         amplicon_path = [best_start_node]
-
     return best_coverage, create_scheme_dic(amplicon_path, amps_by_id)
 
 
@@ -394,7 +393,7 @@ def find_single_amplicons(amplicons, all_primers, n):
     from all found amplicons. only for the SINGLE mode.
     """
     # sort amplicons
-    sorted_amplicons = sorted(amplicons, key=lambda x: (x.get("offset_targets"), x["penalty"]))
+    sorted_amplicons = sorted(amplicons, key=lambda x: (x.get("off_targets", False), x["penalty"]))
     to_retain = []
     retained_ranges = []
     # find lowest non-overlapping
