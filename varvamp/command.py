@@ -583,7 +583,7 @@ def main(sysargs=sys.argv[1:]):
         # write files
 
         # make sure amplicons with no off-target products and with low penalties get the lowest numbers
-        final_schemes.sort(key=lambda x: (x["off_targets"], x["penalty"]))
+        final_schemes.sort(key=lambda x: (x.get("off_targets", False), x["penalty"]))
         reporting.write_regions_to_bed(probe_regions, data_dir, "probe")
         reporting.write_qpcr_to_files(results_dir, final_schemes, ambiguous_consensus, log_file)
         reporting.varvamp_plot(
