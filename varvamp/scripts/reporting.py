@@ -177,9 +177,7 @@ def write_qpcr_to_files(path, final_schemes, ambiguous_consensus, log_file):
                 file=tsv
             )
             # write tsv2
-            for oligo_type in ["PROBE", "LEFT", "RIGHT"]:
-                if oligo_type == "penalty" or oligo_type == "deltaG":
-                    continue
+            for oligo_type in ["LEFT", "PROBE", "RIGHT"]:
                 seq = ambiguous_consensus[amp[oligo_type][1]:amp[oligo_type][2]]
                 if oligo_type == "RIGHT" or (oligo_type == "PROBE" and amp["PROBE"][5] == "-"):
                     seq = primers.rev_complement(seq)
