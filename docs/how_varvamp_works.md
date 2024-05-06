@@ -45,7 +45,7 @@ To search for the best amplicon, varVAMP uses a graph based approach.
 1. varVAMP generates a fasta query and searches for possible hits with the same settings as [primer blast](https://bmcbioinformatics.biomedcentral.com/articles/10.1186/1471-2105-13-134).
 2. For each amplicon varVAMP searches for off-targets, defined as hits in the db that are the maximum amplicons length multiplied by `BLAST_SIZE_MULTI` apart from each other.
 3. SINGLE/qPCR mode: varVAMP first sorts amplicons if they generate a BLAST hit or not and then by penalty to avoid the selection of off-targets. TILED: Graph edges are defined as tuples (off-target: True/False, amplicon_penalty). For finding the path with the lowest costs, varVAMP first considers if an amplicon generates off-targets and then the amplicon penalty, thereby avoiding the selection of amplicons during the graph search that generate off-targets.
-4. Reports if amplicons with off-targets are in the final scheme.
+4. Reports if the scheme has amplicons with off-targets in the log, in the primers.tsv (single/tiled) and in the qpcr_design.tsv/qpcr_primer.tsv files.
 
 #### qPCR
 1. Find probe regions with their own number of ambiguous characters.
