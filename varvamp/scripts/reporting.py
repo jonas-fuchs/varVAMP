@@ -133,11 +133,11 @@ def write_qpcr_to_files(path, final_schemes, ambiguous_consensus, log_file):
 
     with open(tsv_file, "w") as tsv, open(tsv_file_2, "w") as tsv2, open(amplicon_bed_file, "w") as bed, open(primer_fasta_file, "w") as fasta:
         print(
-            "qpcr_scheme\toligo_type\tstart\tstop\tseq\tsize\tgc_best\ttemp_best\tmean_gc\tmean_temp\tpenalty",
+            "qpcr_scheme\toligo_type\tstart\tstop\tseq\tsize\tgc_best\ttemp_best\tmean_gc\tmean_temp\tpenalty\toff_target_amplicons",
             file=tsv2
         )
         print(
-            "qpcr_scheme\toff_target\tpenalty\tdeltaG\tlength\tstart\tstop\tseq",
+            "qpcr_scheme\toff_target_amplicons\tpenalty\tdeltaG\tlength\tstart\tstop\tseq",
             file=tsv
         )
         for n, amp in enumerate(final_schemes):
@@ -163,7 +163,7 @@ def write_qpcr_to_files(path, final_schemes, ambiguous_consensus, log_file):
                 else:
                     amplicon_has_off_target = "No"
             else:
-                amplicon_has_off_target = "NA"
+                amplicon_has_off_target = "n.d."
             amplicon_seq = ambiguous_consensus[amplicon_start:amplicon_stop]
             print(
                 amp_name,
@@ -201,6 +201,7 @@ def write_qpcr_to_files(path, final_schemes, ambiguous_consensus, log_file):
                     gc,
                     temp,
                     round(amp[oligo_type][3], 1),
+                    amplicon_has_off_target,
                     sep="\t",
                     file=tsv2
                 )
@@ -228,7 +229,7 @@ def write_scheme_to_files(path, amplicon_scheme, ambiguous_consensus, mode, log_
     with open(tsv_file, "w") as tsv, open(amplicon_bed_file, "w") as bed, open(tabular_file, "w") as tabular:
         # write header for primer tsv
         print(
-            "amlicon_name\tamplicon_length\tprimer_name\talternate_primer_name\tpool\tstart\tstop\tseq\tsize\tgc_best\ttemp_best\tmean_gc\tmean_temp\tpenalty",
+            "amlicon_name\tamplicon_length\tprimer_name\talternate_primer_name\tpool\tstart\tstop\tseq\tsize\tgc_best\ttemp_best\tmean_gc\tmean_temp\tpenalty\toff_target_amplicons",
             file=tsv
         )
         amplicon_bed_records = []
@@ -247,8 +248,14 @@ def write_scheme_to_files(path, amplicon_scheme, ambiguous_consensus, mode, log_
                     new_name = f"AMPLICON_{amplicon_index}"
                     # get left and right primers and their names
                     amp_length = amp["RIGHT"][2] - amp["LEFT"][1]
-                    if amp.get("off_targets"):
-                        write_BLAST_warning(new_name, log_file)
+                    if "off_targets" in amp:
+                        if amp["off_targets"]:
+                            amplicon_has_off_target = "Yes"
+                            write_BLAST_warning(amp_name, log_file)
+                        else:
+                            amplicon_has_off_target = "No"
+                    else:
+                        amplicon_has_off_target = "n.d."
                     # write amplicon bed
                     if mode == "tiled":
                         bed_score = pool
@@ -298,6 +305,7 @@ def write_scheme_to_files(path, amplicon_scheme, ambiguous_consensus, mode, log_
                             gc,
                             temp,
                             round(primer[3], 1),
+                            amplicon_has_off_target,
                             sep="\t",
                             file=tsv
                         )
