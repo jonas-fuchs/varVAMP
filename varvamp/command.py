@@ -314,9 +314,9 @@ def single_and_tiled_shared_workflow(args, left_primer_candidates, right_primer_
 
     if args.database is not None:
         # create blast query
-        query_path = blast.create_BLAST_query(all_primers, amplicons, data_dir)
+        query_path = blast.create_BLAST_query(amplicons, data_dir)
         # perform primer blast
-        amplicons, off_target_amplicons = blast.primer_blast(
+        amplicons = blast.primer_blast(
             data_dir,
             args.database,
             query_path,
@@ -326,10 +326,8 @@ def single_and_tiled_shared_workflow(args, left_primer_candidates, right_primer_
             log_file,
             mode="single_tiled"
         )
-    else:
-        off_target_amplicons = []
 
-    return all_primers, amplicons, off_target_amplicons
+    return all_primers, amplicons
 
 
 def single_workflow(args, amplicons, all_primers, log_file):
@@ -337,12 +335,12 @@ def single_workflow(args, amplicons, all_primers, log_file):
     workflow part specific for single mode
     """
 
-    amplicon_scheme = scheme.find_single_amplicons(amplicons, all_primers, args.report_n)
+    amplicon_scheme = scheme.find_single_amplicons(amplicons, args.report_n)
     logging.varvamp_progress(
         log_file,
         progress=0.9,
         job="Finding amplicons with low penalties.",
-        progress_text=f"{len(amplicon_scheme[0])} amplicons."
+        progress_text=f"{len(amplicon_scheme)} amplicons."
     )
 
     return amplicon_scheme
@@ -359,8 +357,7 @@ def tiled_workflow(args, amplicons, left_primer_candidates, right_primer_candida
     # search for amplicon scheme
     coverage, amplicon_scheme = scheme.find_best_covering_scheme(
         amplicons,
-        amplicon_graph,
-        all_primers
+        amplicon_graph
     )
 
     # check for dimers
@@ -377,12 +374,13 @@ def tiled_workflow(args, amplicons, left_primer_candidates, right_primer_candida
         reporting.write_dimers(results_dir, dimers_not_solved)
 
     # evaluate coverage
+    # ATTENTION: Genome coverage of the scheme might still change slightly through resolution of primer dimers, but this potential, minor inaccuracy is currently accepted.
     percent_coverage = round(coverage/len(ambiguous_consensus)*100, 2)
     logging.varvamp_progress(
         log_file,
         progress=0.9,
         job="Creating amplicon scheme.",
-        progress_text=f"{percent_coverage} % total coverage with {len(amplicon_scheme[0]) + len(amplicon_scheme[1])} amplicons"
+        progress_text=f"{percent_coverage} % total coverage with {len(amplicon_scheme)} amplicons"
     )
     if percent_coverage < 70:
         logging.raise_error(
@@ -450,9 +448,9 @@ def qpcr_workflow(args, data_dir, alignment_cleaned, ambiguous_consensus, majori
     # run blast if db is given
     if args.database is not None:
         # create blast query
-        query_path = blast.create_BLAST_query_qpcr(qpcr_scheme_candidates, data_dir)
+        query_path = blast.create_BLAST_query(qpcr_scheme_candidates, data_dir, mode="qpcr")
         # perform primer blast
-        amplicons, off_target_amplicons = blast.primer_blast(
+        qpcr_scheme_candidates = blast.primer_blast(
             data_dir,
             args.database,
             query_path,
@@ -470,9 +468,6 @@ def qpcr_workflow(args, data_dir, alignment_cleaned, ambiguous_consensus, majori
             log_file,
             exit=True
         )
-    # report potential blast warnings
-    if args.database is not None:
-        blast.write_BLAST_warning(off_target_amplicons, final_schemes, log_file)
     logging.varvamp_progress(
         log_file,
         progress=0.9,
@@ -506,9 +501,21 @@ def main(sysargs=sys.argv[1:]):
     reporting.write_fasta(data_dir, "majority_consensus", majority_consensus)
     reporting.write_fasta(results_dir, "ambiguous_consensus", ambiguous_consensus)
 
+    # Functions called from here on return lists of amplicons that are refined step-wise into final schemes.
+    # These lists that are passed between functions and later used for reporting consist of dictionary elemnts,
+    # which represent individual amplicons. A minimal amplicon dict could take the form:
+    # {
+    #     "id": amplicon_name,
+    #     "penalty": amplicon_cost,
+    #     "length": amplicon_length,
+    #     "LEFT": [left primer data],
+    #     "RIGHT": [right primer data]
+    # }
+    # to which different functions may add additional information.
+
     # SINGLE/TILED mode
     if args.mode == "tiled" or args.mode == "single":
-        all_primers, amplicons, off_target_amplicons = single_and_tiled_shared_workflow(
+        all_primers, amplicons = single_and_tiled_shared_workflow(
             args,
             left_primer_candidates,
             right_primer_candidates,
@@ -533,15 +540,22 @@ def main(sysargs=sys.argv[1:]):
                 log_file,
                 results_dir
             )
-        if args.database is not None:
-            blast.write_BLAST_warning(off_target_amplicons, amplicon_scheme, log_file)
+
         # write files
+
+        if args.mode == "tiled":
+            # assign amplicon numbers from 5' to 3' along the genome
+            amplicon_scheme.sort(key=lambda x: x["LEFT"][1])
+        else:
+            # make sure amplicons with no off-target products and with low penalties get the lowest numbers
+            amplicon_scheme.sort(key=lambda x: (x.get("off_targets", False), x["penalty"]))
         reporting.write_all_primers(data_dir, all_primers)
         reporting.write_scheme_to_files(
             results_dir,
             amplicon_scheme,
             ambiguous_consensus,
-            args.mode
+            args.mode,
+            log_file
         )
         reporting.varvamp_plot(
             results_dir,
@@ -564,9 +578,13 @@ def main(sysargs=sys.argv[1:]):
             right_primer_candidates,
             log_file
         )
+
         # write files
+
+        # make sure amplicons with no off-target products and with low penalties get the lowest numbers
+        final_schemes.sort(key=lambda x: (x.get("off_targets", False), x["penalty"]))
         reporting.write_regions_to_bed(probe_regions, data_dir, "probe")
-        reporting.write_qpcr_to_files(results_dir, final_schemes, ambiguous_consensus)
+        reporting.write_qpcr_to_files(results_dir, final_schemes, ambiguous_consensus, log_file)
         reporting.varvamp_plot(
             results_dir,
             alignment_cleaned,

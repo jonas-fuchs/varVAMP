@@ -211,13 +211,13 @@ def assess_amplicons(left_subset, right_subset, qpcr_probes, probe, majority_con
             if "LEFT" in probe:
                 if not qpcr_probes[probe][1] in range(
                         left_primer[2] + config.QPROBE_DISTANCE[0],
-                        left_primer[2] + config.QPROBE_DISTANCE[1] + 1
+                        left_primer[2] + config.QPROBE_DISTANCE[1]
                 ):
                     continue
             elif "RIGHT" in probe:
                 if not right_primer[1] in range(
                         qpcr_probes[probe][2] + config.QPROBE_DISTANCE[0],
-                        qpcr_probes[probe][2] + config.QPROBE_DISTANCE[1] + 1
+                        qpcr_probes[probe][2] + config.QPROBE_DISTANCE[1]
 
                 ):
                     continue
@@ -258,7 +258,7 @@ def find_qcr_schemes(qpcr_probes, left_primer_candidates, right_primer_candidate
     there is no need to consider this primer probe combination.
     """
 
-    qpcr_scheme_candidates = {}
+    qpcr_scheme_candidates = []
     found_amplicons = []
     amplicon_nr = -1
 
@@ -279,15 +279,16 @@ def find_qcr_schemes(qpcr_probes, left_primer_candidates, right_primer_candidate
         # populate the primer dictionary:
         amplicon_nr += 1
         found_amplicons.append(primer_combination)
-        qpcr_scheme_candidates[f"AMPLICON_{amplicon_nr}"] = {
-            "penalty": qpcr_probes[probe][3] + primer_combination[0][3] + primer_combination[1][3],
-            "PROBE": qpcr_probes[probe],
-            "LEFT": primer_combination[0],
-            "RIGHT": primer_combination[1]
-        }
+        qpcr_scheme_candidates.append(
+            {
+                "id": f"AMPLICON_{amplicon_nr}",
+                "penalty": qpcr_probes[probe][3] + primer_combination[0][3] + primer_combination[1][3],
+                "PROBE": qpcr_probes[probe],
+                "LEFT": primer_combination[0],
+                "RIGHT": primer_combination[1]
+            }
+        )
     # and again sort by total penalty (left + right + probe)
-    qpcr_scheme_candidates = dict(sorted(qpcr_scheme_candidates.items(), key=lambda x: x[1]["penalty"]))
-
     return qpcr_scheme_candidates
 
 
@@ -296,21 +297,17 @@ def process_single_amplicon_deltaG(amplicon, majority_consensus):
     Process a single amplicon to test its deltaG and apply filtering.
     This function will be called concurrently by multiple threads.
     """
-    name, data = amplicon
-    start = data["LEFT"][1]
-    stop = data["RIGHT"][2]
-    seq = majority_consensus[start:stop]
+    seq = majority_consensus[amplicon["LEFT"][1]:amplicon["RIGHT"][2]]
     seq = seq.replace("N", "")
     seq = seq.replace("n", "")
-    amp_positions = list(range(start, stop + 1))
     # check if the amplicon overlaps with an amplicon that was previously
     # found and had a high enough deltaG
-    min_temp = min((primers.calc_temp(data["LEFT"][0]),
-                    primers.calc_temp(data["RIGHT"][0])))
+    min_temp = min((primers.calc_temp(amplicon["LEFT"][0]),
+                    primers.calc_temp(amplicon["RIGHT"][0])))
     # calculate deltaG at the minimal primer temp
-    deltaG = seqfold.dg(seq, min_temp)
+    amplicon["deltaG"] = seqfold.dg(seq, min_temp)
 
-    return deltaG, amp_positions, name
+    return amplicon
 
 
 def test_amplicon_deltaG_parallel(qpcr_schemes_candidates, majority_consensus, n_to_test, deltaG_cutoff, n_threads):
@@ -319,29 +316,34 @@ def test_amplicon_deltaG_parallel(qpcr_schemes_candidates, majority_consensus, n
     and filters if they fall below the cutoff. Multiple processes are used
     for processing amplicons in parallel.
     """
-    final_schemes = {}
-    passed_counter = 0  # counter for re-naming amplicons that passed deltaG cutoff
-    amplicon_set = set()
+    final_amplicons = []
 
     # Create a pool of processes to handle the concurrent processing
     with multiprocessing.Pool(processes=n_threads) as pool:
         # Create a list of the first n amplicon tuples for processing
-        amplicons = itertools.islice(qpcr_schemes_candidates.items(), n_to_test)
+        # The list is sorted first on whether offset targets were predicted for the amplicon,
+        # then by penalty. This ensures that amplicons with offset targets are always considered last
+        amplicons = itertools.islice(
+            sorted(qpcr_schemes_candidates, key=lambda x: (x.get("offset_targets", False), x["penalty"])),
+            n_to_test
+        )
         # process amplicons concurrently
         results = pool.starmap(process_single_amplicon_deltaG, [(amp, majority_consensus) for amp in amplicons])
         # Process the results
-        for deltaG, amp_positions, amp_name in results:
+        retained_ranges = []
+        for amp in results:
             # check if the amplicon overlaps with an amplicon that was previously
             # found and had a high enough deltaG
-            if any(x in amp_positions for x in amplicon_set):
+            if amp["deltaG"] <= deltaG_cutoff:
                 continue
-            # and if this passes cutoff make a dict entry and do not allow further
-            # amplicons in that region (they will have a lower penalty)
-            if deltaG > deltaG_cutoff:
-                new_name = f"QPCR_SCHEME_{passed_counter}"
-                final_schemes[new_name] = qpcr_schemes_candidates[amp_name]
-                final_schemes[new_name]["deltaG"] = deltaG
-                amplicon_set.update(amp_positions)
-                passed_counter += 1
+            amp_range = range(amp["LEFT"][1], amp["RIGHT"][2])
+            overlaps_retained = False
+            for r in retained_ranges:
+                if amp_range.start < r.stop and r.start < amp_range.stop:
+                    overlaps_retained = True
+                    break
+            if not overlaps_retained:
+                final_amplicons.append(amp)
+                retained_ranges.append(amp_range)
 
-    return final_schemes
+    return final_amplicons

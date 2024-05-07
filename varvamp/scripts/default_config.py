@@ -4,7 +4,7 @@ This contains all varVAMP parameters.
 
 # List of all known parameters. DO NOT CHANGE!
 __all__ = [
-    'BLAST_MAX_DIFF', 'BLAST_PENALTY', 'BLAST_SETTINGS', 'BLAST_SIZE_MULTI',
+    'BLAST_MAX_DIFF', 'BLAST_SETTINGS', 'BLAST_SIZE_MULTI',
     'END_OVERLAP',
     'PCR_DNA_CONC', 'PCR_DNTP_CONC', 'PCR_DV_CONC', 'PCR_MV_CONC',
     'PRIMER_3_PENALTY', 'PRIMER_GC_END', 'PRIMER_GC_PENALTY',
@@ -74,7 +74,6 @@ BLAST_SETTINGS = {  # blast settings for query search
 }
 BLAST_MAX_DIFF = 0.5  # min percent match between primer and BLAST hit (coverage and/or mismatches)
 BLAST_SIZE_MULTI = 2  # multiplier for the max_amp size of off targets (in relation to max amp size)
-BLAST_PENALTY = 50  # amplicon penalty increase -> considered only if no other possibilities
 
 # nucleotide definitions, do NOT change
 NUCS = set("atcg")
