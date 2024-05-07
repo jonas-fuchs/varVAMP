@@ -335,7 +335,7 @@ def single_workflow(args, amplicons, all_primers, log_file):
     workflow part specific for single mode
     """
 
-    amplicon_scheme = scheme.find_single_amplicons(amplicons, all_primers, args.report_n)
+    amplicon_scheme = scheme.find_single_amplicons(amplicons, args.report_n)
     logging.varvamp_progress(
         log_file,
         progress=0.9,
