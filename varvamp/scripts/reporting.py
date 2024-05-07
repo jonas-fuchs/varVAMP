@@ -350,12 +350,12 @@ def write_dimers(path, primer_dimers):
             "pool\tprimer_name_1\tprimer_name_2\tdimer melting temp",
             file=tsv
         )
-        for dimers in primer_dimers:
+        for pool, primer1, primer2 in primer_dimers:
             print(
-                dimers[0][0],
-                dimers[0][2],
-                dimers[1][2],
-                round(primers.calc_dimer(dimers[0][3][0], dimers[1][3][0]).tm, 1),
+                pool,
+                primer1[1],
+                primer2[1],
+                round(primers.calc_dimer(primer1[2][0], primer2[2][0]).tm, 1),
                 sep="\t",
                 file=tsv
             )

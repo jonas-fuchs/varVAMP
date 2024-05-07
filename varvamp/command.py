@@ -374,6 +374,7 @@ def tiled_workflow(args, amplicons, left_primer_candidates, right_primer_candida
         reporting.write_dimers(results_dir, dimers_not_solved)
 
     # evaluate coverage
+    # ATTENTION: Genome coverage of the scheme might still change slightly through resolution of primer dimers, but this potential, minor inaccuracy is currently accepted.
     percent_coverage = round(coverage/len(ambiguous_consensus)*100, 2)
     logging.varvamp_progress(
         log_file,
