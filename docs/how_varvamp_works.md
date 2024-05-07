@@ -44,8 +44,8 @@ To search for the best amplicon, varVAMP uses a graph based approach.
 #### primer BLAST module
 1. varVAMP generates a fasta query and searches for possible hits with the same settings as [primer blast](https://bmcbioinformatics.biomedcentral.com/articles/10.1186/1471-2105-13-134).
 2. For each amplicon varVAMP searches for off-targets, defined as hits in the db that are the maximum amplicons length multiplied by `BLAST_SIZE_MULTI` apart from each other.
-3. varVAMP appends a high penalty to the amplicons if these produce off-targets. This ensures that all other available amplicons are preferentially used.
-4. Reports if amplicons with off-targets are in the final scheme.
+3. SINGLE/qPCR mode: varVAMP first sorts amplicons if they generate a BLAST hit or not and then by penalty to avoid the selection of off-targets. TILED: Graph edges are defined as tuples (off-target: True/False, amplicon_penalty). For finding the path with the lowest costs, varVAMP first considers if an amplicon generates off-targets and then the amplicon penalty, thereby avoiding the selection of amplicons during the graph search that generate off-targets.
+4. Reports if the scheme has amplicons with off-targets in the log, in the primers.tsv (single/tiled) and in the qpcr_design.tsv/qpcr_primer.tsv files.
 
 #### qPCR
 1. Find probe regions with their own number of ambiguous characters.
@@ -75,11 +75,5 @@ PRIMER_PERMUTATION_PENALTY
 The number of permutations of a primer is multiplied by the penalty. For example 24 permutations and a penalty of 0.1 will yield a penalty of 2.4. Set `PRIMER_PERMUTATION_PENALTY` to 0 if you do not care about the number of permutations.
 
 All penalties of a primer are summed up and yield a final penalty. The penalty for each amplicon is then the penalty of its LEFT + RIGHT primers multiplied by the fold increase of the amplicon length compared to the optional length. This insures that in the final scheme not only large amplicons are used.
-
-```python3
-BLAST_PENALTY
-```
-
-If the `-db` argument is used, varVAMP will perform a BLAST search and evaluate off-targets against this database for each amplicon. If an off-target effect is predicted varVAMP will add this penalty to the amplicon penalty. This insures that this amplicon is only considered if no other amplicons are in this alignment region.
 
 #### [Previous: Wet lab protocol](./wet_lab_protocol.md)&emsp;&emsp;[Next: FAQ](./FAQ.md)
