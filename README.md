@@ -45,13 +45,11 @@ We, in collaboration with specialists for the respective viruses, have already d
 
 If you design primers for a particular pathogen, we will be happy to include them in this repo and make it freely available. Just contribute via an issue or pull request!
 
-# Citing varVAMP (coming soon)
-
-Please cite with the respective DOI of the version you used:
+# Citing varVAMP
 
 **varVAMP: automated pan-specific primer design for tiled full genome sequencing and qPCR of highly diverse viral pathogens.**
 
-(paper currently under preparation)
+[biorxiv preprint](https://doi.org/10.1101/2024.05.08.593102)
 
 ---
 
