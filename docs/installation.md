@@ -12,6 +12,11 @@ varVAMP runs on UNIX Systems, MacOSX and Windows with Python3 >=3.9 installed.
 ```shell
 pip install varvamp
 ```
+To ensure compatibility with python3.12 in a virtual enviroment, it might be required to also install setuptools:
+
+```shell
+pip install setuptools varvamp
+```
 
 ### CONDA:
 
