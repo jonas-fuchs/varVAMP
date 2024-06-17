@@ -1,4 +1,4 @@
-## UseGalaxy implementation (coming soon)
+## UseGalaxy implementation
 
 If you are unfamiliar with command-line programs, do not fear. varVAMP is also available at the community-driven web-based analysis platform [UseGalaxy](https://usegalaxy.eu).
 
