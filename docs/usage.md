@@ -110,8 +110,15 @@ Let's assume you have
 
 Then with
 
+Linux:
 ```shell
 VARVAMP_CONFIG=custom_config.py varvamp qpcr input_alignment.fasta my_results
+```
+
+Windows:
+```shell
+set "VARVAMP_CONFIG=custom_config.py"
+varvamp qpcr input_alignment.fasta my_results
 ```
 
 you run the command with the parameter change applied.
