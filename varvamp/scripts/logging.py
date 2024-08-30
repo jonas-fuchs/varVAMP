@@ -581,5 +581,14 @@ def goodbye_message():
         "Barba non facit philosophum.",
         "Task failed successfully.",
         "Never gonna give you up, never gonna let you down.",
+        "Have you tried turing it off and on again?",
+        "Look I am your primer scheme.",
+        "Quod erat demonstrandum.",
+        "Miau?",
+        "This is an automated message informing you that you are awsome.",
+        "Why was the negative-sense virus angry at the positive-sense virus?\nBecause he was left stranded!",
+        "If you see this message twice, you are an experienced user.",
+        "No one expects the spanish inquisition!",
+        "Primer design you must."
     ]
     print(f"\n{random.choice(messages)}")

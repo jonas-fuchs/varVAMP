@@ -89,6 +89,13 @@ def get_args(sysargs):
             type=int,
             default=1
         )
+        par.add_argument(
+            "--name",
+            help="name of the scheme",
+            metavar="varVAMP",
+            type=str,
+            default="varVAMP"
+        )
     for par in (SINGLE_parser, TILED_parser):
         par.add_argument(
             "-ol",
@@ -496,10 +503,10 @@ def main(sysargs=sys.argv[1:]):
     alignment_cleaned, majority_consensus, ambiguous_consensus, primer_regions, left_primer_candidates, right_primer_candidates = shared_workflow(args, log_file)
 
     # write files that are shared in all modes
-    reporting.write_regions_to_bed(primer_regions, data_dir)
+    reporting.write_regions_to_bed(primer_regions, args.name, data_dir)
     reporting.write_alignment(data_dir, alignment_cleaned)
-    reporting.write_fasta(data_dir, "majority_consensus", majority_consensus)
-    reporting.write_fasta(results_dir, "ambiguous_consensus", ambiguous_consensus)
+    reporting.write_fasta(data_dir, f"majority_consensus", f"{args.name}_consensus",majority_consensus)
+    reporting.write_fasta(results_dir, f"ambiguous_consensus", f"{args.name}_consensus", ambiguous_consensus)
 
     # Functions called from here on return lists of amplicons that are refined step-wise into final schemes.
     # These lists that are passed between functions and later used for reporting consist of dictionary elemnts,
@@ -549,11 +556,12 @@ def main(sysargs=sys.argv[1:]):
         else:
             # make sure amplicons with no off-target products and with low penalties get the lowest numbers
             amplicon_scheme.sort(key=lambda x: (x.get("off_targets", False), x["penalty"]))
-        reporting.write_all_primers(data_dir, all_primers)
+        reporting.write_all_primers(data_dir, args.name, all_primers)
         reporting.write_scheme_to_files(
             results_dir,
             amplicon_scheme,
             ambiguous_consensus,
+            args.name,
             args.mode,
             log_file
         )
@@ -561,10 +569,11 @@ def main(sysargs=sys.argv[1:]):
             results_dir,
             alignment_cleaned,
             primer_regions,
+            args.name,
             all_primers=all_primers,
             amplicon_scheme=amplicon_scheme,
         )
-        reporting.per_base_mismatch_plot(results_dir, amplicon_scheme, args.threshold)
+        reporting.per_base_mismatch_plot(results_dir, amplicon_scheme, args.threshold, args.name)
 
     # QPCR mode
     if args.mode == "qpcr":
@@ -583,16 +592,17 @@ def main(sysargs=sys.argv[1:]):
 
         # make sure amplicons with no off-target products and with low penalties get the lowest numbers
         final_schemes.sort(key=lambda x: (x.get("off_targets", False), x["penalty"]))
-        reporting.write_regions_to_bed(probe_regions, data_dir, "probe")
-        reporting.write_qpcr_to_files(results_dir, final_schemes, ambiguous_consensus, log_file)
+        reporting.write_regions_to_bed(probe_regions, args.name, data_dir, "probe")
+        reporting.write_qpcr_to_files(results_dir, final_schemes, ambiguous_consensus, args.name, log_file)
         reporting.varvamp_plot(
             results_dir,
             alignment_cleaned,
             primer_regions,
+            args.name,
             probe_regions=probe_regions,
             amplicon_scheme=final_schemes
         )
-        reporting.per_base_mismatch_plot(results_dir, final_schemes, args.threshold, mode="QPCR")
+        reporting.per_base_mismatch_plot(results_dir, final_schemes, args.threshold, args.name, mode="QPCR")
 
     # varVAMP finished
     logging.varvamp_progress(log_file, progress=1, start_time=start_time)
