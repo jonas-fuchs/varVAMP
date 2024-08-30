@@ -21,7 +21,8 @@ pip install setuptools varvamp
 ### CONDA:
 
 ```shell
-conda install -c bioconda varvamp
+conda create -n varvamp varvamp
+conda activate varvamp
 ```
 
 ### DOCKER:

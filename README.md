@@ -43,7 +43,7 @@ For a lot of virus genera it is difficult to design pan-specific primers. varVAM
 
 We, in collaboration with specialists for the respective viruses, have already designed and wet-lab evaluated primer schemes for various viral pathogens. All the input data and varVAMP outputs are freely available [here](https://github.com/jonas-fuchs/ViralPrimerSchemes). 
 
-If you design primers for a particular pathogen, we will be happy to include them in this repo and make it freely available. Just contribute via an issue or pull request!
+Moreover, varVAMP primers are now available at [primerschemes](https://labs.primalscheme.com/). varVAMP now reports primer bed files in ARTICv3 format. Feel free to contribute newly designed schemes via this [Github repository of the QuickLab](https://github.com/quick-lab/primerschemes). Use [primal-page](https://github.com/ChrisgKent/primal-page) developed by [Chris Kent](https://github.com/ChrisgKent) to generate data for compatible pull-requests.
 
 # Citing varVAMP
 
