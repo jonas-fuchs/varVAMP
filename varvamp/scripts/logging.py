@@ -567,7 +567,7 @@ def goodbye_message():
         "Thank you. Come again.",
         ">Placeholder for your advertisement<",
         "Make primers great again!",
-        "Ciao cacao!"
+        "Ciao cacao!",
         "And now lets pray to the PCR gods.",
         "**bibobibobop** task finished",
         "Thank you for traveling with varVAMP.",
