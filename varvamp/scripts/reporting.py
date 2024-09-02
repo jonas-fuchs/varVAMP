@@ -250,7 +250,7 @@ def write_scheme_to_files(path, amplicon_scheme, ambiguous_consensus, scheme_nam
             if mode == "single":
                 primer_fasta_file = os.path.join(path, "primers.fasta")
             else:
-                primer_fasta_file = os.path.join(path, f"primers_pool_{pool}.fasta")
+                primer_fasta_file = os.path.join(path, f"primers_pool_{pool+1}.fasta")
             with open(primer_fasta_file, "w") as primer_fasta:
                 for counter, amp in enumerate(amplicon_scheme[pool::len(pools)]):
                     # give a new amplicon name
@@ -267,7 +267,7 @@ def write_scheme_to_files(path, amplicon_scheme, ambiguous_consensus, scheme_nam
                         amplicon_has_off_target = "n.d."
                     # write amplicon bed
                     if mode == "tiled":
-                        bed_score = pool
+                        bed_score = pool+1
                     elif mode == "single":
                         bed_score = round(amp["LEFT"][3] + amp["RIGHT"][3], 1)
                     amplicon_bed_records.append(
@@ -304,7 +304,7 @@ def write_scheme_to_files(path, amplicon_scheme, ambiguous_consensus, scheme_nam
                             amp_length,
                             primer_name,
                             primer[-1],
-                            pool,
+                            pool+1,
                             primer[1] + 1,
                             primer[2],
                             seq.upper(),
@@ -322,7 +322,7 @@ def write_scheme_to_files(path, amplicon_scheme, ambiguous_consensus, scheme_nam
                             (
                                 # will need amplicon_index for sorting
                                 amplicon_index,
-                                (primer_name, primer, pool, direction, seq.upper())
+                                (primer_name, primer, pool+1, direction, seq.upper())
                             )
                         )
         # write amplicon bed with amplicons sorted by start position
@@ -362,7 +362,7 @@ def write_dimers(path, primer_dimers):
         )
         for pool, primer1, primer2 in primer_dimers:
             print(
-                pool,
+                pool+1,
                 primer1[1],
                 primer2[1],
                 round(primers.calc_dimer(primer1[2][0], primer2[2][0]).tm, 1),
