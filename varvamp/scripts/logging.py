@@ -15,12 +15,12 @@ from varvamp.scripts import config
 from varvamp import __version__
 
 
-def create_dir_structure(dir):
+def create_dir_structure(dir_path):
     """
     create output folders and log file
     """
     cwd = os.getcwd()
-    results_dir = os.path.join(cwd, dir)
+    results_dir = os.path.join(cwd, dir_path)
     data_dir = os.path.join(results_dir, "data/")
     # create folders
     if not os.path.exists(results_dir):
@@ -567,7 +567,7 @@ def goodbye_message():
         "Thank you. Come again.",
         ">Placeholder for your advertisement<",
         "Make primers great again!",
-        "Ciao cacao!"
+        "Ciao cacao!",
         "And now lets pray to the PCR gods.",
         "**bibobibobop** task finished",
         "Thank you for traveling with varVAMP.",
@@ -581,5 +581,14 @@ def goodbye_message():
         "Barba non facit philosophum.",
         "Task failed successfully.",
         "Never gonna give you up, never gonna let you down.",
+        "Have you tried turning it off and on again?",
+        "Look, I am your primer scheme.",
+        "Quod erat demonstrandum.",
+        "Miau?",
+        "This is an automated message informing you that you are awsome.",
+        "Why was the negative-sense virus angry at the positive-sense virus?\nBecause he was left stranded!",
+        "If you see this message twice, you are an experienced user.",
+        "No one expects the spanish inquisition!",
+        "Primer design you must."
     ]
     print(f"\n{random.choice(messages)}")
