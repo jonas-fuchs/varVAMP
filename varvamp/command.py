@@ -337,7 +337,7 @@ def single_and_tiled_shared_workflow(args, left_primer_candidates, right_primer_
     return all_primers, amplicons
 
 
-def single_workflow(args, amplicons, all_primers, log_file):
+def single_workflow(args, amplicons, log_file):
     """
     workflow part specific for single mode
     """
@@ -533,7 +533,6 @@ def main():
             amplicon_scheme = single_workflow(
                 args,
                 amplicons,
-                all_primers,
                 log_file
             )
         elif args.mode == "tiled":
