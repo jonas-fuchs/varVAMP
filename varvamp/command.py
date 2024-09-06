@@ -484,13 +484,13 @@ def qpcr_workflow(args, data_dir, alignment_cleaned, ambiguous_consensus, majori
     return probe_regions, final_schemes
 
 
-def main(sysargs=sys.argv[1:]):
+def main():
     """
     main varvamp workflow
     """
 
     # start varVAMP
-    args = get_args(sysargs)
+    args = get_args(sys.argv[1:])
     if not args.verbose:
         sys.stdout = open(os.devnull, 'w')
     start_time = datetime.datetime.now()
