@@ -255,6 +255,7 @@ def write_scheme_to_files(path, amplicon_scheme, ambiguous_consensus, scheme_nam
                 for counter, amp in enumerate(amplicon_scheme[pool::len(pools)]):
                     # give a new amplicon name
                     amplicon_index = counter*len(pools) + pool
+                    amp_name = f"{scheme_name}_{amplicon_index}"
                     # get left and right primers and their names
                     amp_length = amp["RIGHT"][2] - amp["LEFT"][1]
                     if "off_targets" in amp:
@@ -274,7 +275,7 @@ def write_scheme_to_files(path, amplicon_scheme, ambiguous_consensus, scheme_nam
                         (
                             amp["LEFT"][1],
                             amp["RIGHT"][2],
-                            f"{scheme_name}_{amplicon_index}",
+                            amp_name,
                             bed_score
                         )
                     )
@@ -282,7 +283,7 @@ def write_scheme_to_files(path, amplicon_scheme, ambiguous_consensus, scheme_nam
                         (
                             # will need amplicon_index for sorting
                             amplicon_index,
-                            (f"{scheme_name}_{amplicon_index}_LEFT", f"{scheme_name}_{amplicon_index}_RIGHT")
+                            (f"{amp_name}_LEFT", f"{amp_name}_RIGHT")
                         )
                     )
                     # write primer tsv and primer bed
@@ -290,9 +291,9 @@ def write_scheme_to_files(path, amplicon_scheme, ambiguous_consensus, scheme_nam
                         seq = ambiguous_consensus[primer[1]:primer[2]]
                         if direction == "-":
                             seq = primers.rev_complement(seq)
-                            primer_name = f"{scheme_name}_{amplicon_index}_RIGHT"
+                            primer_name = f"{amp_name}_RIGHT"
                         else:
-                            primer_name = f"{scheme_name}_{amplicon_index}_LEFT"
+                            primer_name = f"{amp_name}_LEFT"
                         # write primers to fasta pool file
                         print(f">{primer_name}\n{seq.upper()}", file=primer_fasta)
                         # calc primer parameters for all permutations
@@ -300,7 +301,7 @@ def write_scheme_to_files(path, amplicon_scheme, ambiguous_consensus, scheme_nam
                         gc, temp = calc_mean_stats(permutations)
                         # write tsv file
                         print(
-                            f"{scheme_name}_{amplicon_index}",
+                            amp_name,
                             amp_length,
                             primer_name,
                             primer[-1],
