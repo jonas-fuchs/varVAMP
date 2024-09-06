@@ -268,10 +268,10 @@ def shared_workflow(args, log_file):
         ambiguous_consensus,
         alignment_cleaned
     )
-    for type, primer_candidates in [("+", left_primer_candidates), ("-", right_primer_candidates)]:
+    for primer_type, primer_candidates in [("+", left_primer_candidates), ("-", right_primer_candidates)]:
         if not primer_candidates:
             logging.raise_error(
-                f"no {type} primers found.\n",
+                f"no {primer_type} primers found.\n",
                 log_file,
                 exit=True
             )
