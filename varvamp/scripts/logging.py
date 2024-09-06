@@ -15,12 +15,12 @@ from varvamp.scripts import config
 from varvamp import __version__
 
 
-def create_dir_structure(dir):
+def create_dir_structure(dir_path):
     """
     create output folders and log file
     """
     cwd = os.getcwd()
-    results_dir = os.path.join(cwd, dir)
+    results_dir = os.path.join(cwd, dir_path)
     data_dir = os.path.join(results_dir, "data/")
     # create folders
     if not os.path.exists(results_dir):
