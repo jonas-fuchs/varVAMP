@@ -102,14 +102,14 @@ def create_amplicon_graph(amplicons, min_overlap):
 
     # add the maximum len of a primer to ensure that possible amplicon starts
     # before the min overlap
-    min_overlap = min_overlap + config.PRIMER_SIZES[2]
+    min_overlap = min_overlap + config.PRIMER_SIZES[1]
 
     for current_amplicon in amplicons:
         # remember all vertices
         amplicon_id = current_amplicon["id"]
         nodes.append(amplicon_id)
         start = current_amplicon["LEFT"][1] + current_amplicon["length"]/2
-        stop = current_amplicon["RIGHT"][2] - min_overlap
+        stop = current_amplicon["RIGHT"][1] - min_overlap
         for next_amplicon in amplicons:
             # check if the next amplicon lies within the start/stop range of
             # the current amplicon and if its non-overlapping part is large

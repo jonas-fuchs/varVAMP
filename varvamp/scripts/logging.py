@@ -147,7 +147,7 @@ def raise_arg_errors(args, log_file):
                 log_file,
                 exit=True
             )
-        if args.overlap < 50:
+        if args.overlap < 10:
             raise_error(
                 "small overlaps might hinder downstream analyses. Consider increasing.",
                 log_file

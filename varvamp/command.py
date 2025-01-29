@@ -119,7 +119,7 @@ def get_args(sysargs):
         type=int,
         metavar="100",
         default=100,
-        help="min overlap of the amplicons"
+        help="min overlap of the amplicon inserts"
     )
     SINGLE_parser.add_argument(
         "-n",
