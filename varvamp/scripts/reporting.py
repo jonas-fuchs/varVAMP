@@ -68,8 +68,6 @@ def write_primers_to_bed(outfile, scheme_name, primer_name, primer_properties, n
     """
     with open(outfile, 'a') as o:
         # write header for primer bed
-        if os.path.getsize(outfile) == 0 and sequence is not None:
-            print("#chrom\tchromStart\tchromEnd\tprimer-name\tpool\tstrand\tprimer-sequence", file=o)
         data = [f"{scheme_name}_ambiguous_consensus",
             primer_properties[1],  # start
             primer_properties[2],  # stop
