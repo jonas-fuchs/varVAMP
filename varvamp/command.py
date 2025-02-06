@@ -119,7 +119,7 @@ def get_args(sysargs):
         type=int,
         metavar="100",
         default=100,
-        help="min overlap of the amplicons"
+        help="min overlap of the amplicon inserts"
     )
     SINGLE_parser.add_argument(
         "-n",
@@ -505,8 +505,8 @@ def main():
     # write files that are shared in all modes
     reporting.write_regions_to_bed(primer_regions, args.name, data_dir)
     reporting.write_alignment(data_dir, alignment_cleaned)
-    reporting.write_fasta(data_dir, f"majority_consensus", f"{args.name}_consensus",majority_consensus)
-    reporting.write_fasta(results_dir, f"ambiguous_consensus", f"{args.name}_consensus", ambiguous_consensus)
+    reporting.write_fasta(data_dir, f"majority_consensus", f"{args.name}_majority_consensus",majority_consensus)
+    reporting.write_fasta(results_dir, f"ambiguous_consensus", f"{args.name}_ambiguous_consensus", ambiguous_consensus)
 
     # Functions called from here on return lists of amplicons that are refined step-wise into final schemes.
     # These lists that are passed between functions and later used for reporting consist of dictionary elemnts,

@@ -62,7 +62,7 @@ optional arguments:
   --name varVAMP                name of the scheme
   -ol 1000, --opt-length 1000	optimal length of the amplicons
   -ml 1500, --max-length 1500	max length of the amplicons
-  -o 100, --overlap 100		min overlap of the amplicons
+  -o 100, --overlap 100		min overlap of the amplicon inserts
 ```
 **qpcr** mode:
 ```shell

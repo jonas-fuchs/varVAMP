@@ -53,7 +53,7 @@ def write_regions_to_bed(primer_regions, scheme_name, path, mode=None):
     with open(outfile, 'w') as o:
         for counter, region in enumerate(primer_regions):
             print(
-                f"{scheme_name}_consensus",
+                f"{scheme_name}_ambiguous_consensus",
                 region[0],
                 region[1],
                 "REGION_"+str(counter),
@@ -68,9 +68,7 @@ def write_primers_to_bed(outfile, scheme_name, primer_name, primer_properties, n
     """
     with open(outfile, 'a') as o:
         # write header for primer bed
-        if os.path.getsize(outfile) == 0 and sequence is not None:
-            print("#chrom\tchromStart\tchromEnd\tprimer-name\tpool\tstrand\tprimer-sequence", file=o)
-        data = [f"{scheme_name}_consensus",
+        data = [f"{scheme_name}_ambiguous_consensus",
             primer_properties[1],  # start
             primer_properties[2],  # stop
             primer_name,
@@ -150,7 +148,7 @@ def write_qpcr_to_files(path, final_schemes, ambiguous_consensus, scheme_name, l
             amp_name = f"{scheme_name}_{n}"
             # write bed amplicon file
             print(
-                f"{scheme_name}_consensus",
+                f"{scheme_name}_ambiguous_consensus",
                 amp["LEFT"][1],
                 amp["RIGHT"][2],
                 amp_name,
@@ -329,7 +327,7 @@ def write_scheme_to_files(path, amplicon_scheme, ambiguous_consensus, scheme_nam
         # write amplicon bed with amplicons sorted by start position
         for record in sorted(amplicon_bed_records, key=lambda x: x[0]):
             print(
-                f"{scheme_name}_consensus",
+                f"{scheme_name}_ambiguous_consensus",
                 *record,
                 ".",
                 sep="\t",
