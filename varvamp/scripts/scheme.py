@@ -107,15 +107,15 @@ def create_amplicon_graph(amplicons, min_overlap):
         # connect amplicons if they sufficiently overlap because ...
         for next_amplicon in amplicons:
             # ... the start of next amplicon lies in the second half of the prior amplicon
-            if next_amplicon["RIGHT"][1] >= current_amplicon["LEFT"][1] + current_amplicon["length"]/2:
+            if next_amplicon["LEFT"][1] < current_amplicon["LEFT"][1] + current_amplicon["length"]/2:
                 continue
             # ... the stop of the left primer of the next amplicon does not lie in the minimum amplicon insert
-            if next_amplicon["LEFT"][2] <= current_amplicon["RIGHT"][1] - min_overlap:
+            if next_amplicon["LEFT"][2] > current_amplicon["RIGHT"][1] - min_overlap:
                 continue
             # ... half of the next amplicon does not overlap with the previous amplicon --> enough space for a
             # further amplicon that lies in the second half next amplicon and cannot overlap with a primer of the
             # current amplicon
-            if next_amplicon["RIGHT"][2] > current_amplicon["RIGHT"][2] + next_amplicon["length"]/2:
+            if next_amplicon["RIGHT"][2] <= current_amplicon["RIGHT"][2] + next_amplicon["length"]/2:
                 continue
             # --> write to graph
             if amplicon_id not in amplicon_graph:
