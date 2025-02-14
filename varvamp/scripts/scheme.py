@@ -100,34 +100,36 @@ def create_amplicon_graph(amplicons, min_overlap):
     amplicon_graph = {}
     nodes = []
 
-    # add the maximum len of a primer to ensure that possible amplicon starts
-    # before the min overlap
-    min_overlap = min_overlap + config.PRIMER_SIZES[1]
-
     for current_amplicon in amplicons:
         # remember all vertices
         amplicon_id = current_amplicon["id"]
         nodes.append(amplicon_id)
-        start = current_amplicon["LEFT"][1] + current_amplicon["length"]/2
-        stop = current_amplicon["RIGHT"][1] - min_overlap
+        # connect amplicons if they sufficiently overlap because ...
         for next_amplicon in amplicons:
-            # check if the next amplicon lies within the start/stop range of
-            # the current amplicon and if its non-overlapping part is large
-            # enough to ensure space for a primer and the min overlap of the
-            # following amplicon.
-            if start <= next_amplicon["LEFT"][1] <= stop and next_amplicon["RIGHT"][2] > current_amplicon["RIGHT"][2] + next_amplicon["length"]/2:
-                if amplicon_id not in amplicon_graph:
-                    amplicon_graph[amplicon_id] = {
-                        next_amplicon["id"]: (
-                            next_amplicon.get("off_targets", False),
-                            next_amplicon["penalty"]
-                        )
-                    }
-                else:
-                    amplicon_graph[amplicon_id][next_amplicon["id"]] = (
+            # ... the start of next amplicon lies in the second half of the prior amplicon
+            if next_amplicon["RIGHT"][1] >= current_amplicon["LEFT"][1] + current_amplicon["length"]/2:
+                continue
+            # ... the stop of the left primer of the next amplicon does not lie in the minimum amplicon insert
+            if next_amplicon["LEFT"][2] <= current_amplicon["RIGHT"][1] - min_overlap:
+                continue
+            # ... half of the next amplicon does not overlap with the previous amplicon --> enough space for a
+            # further amplicon that lies in the second half next amplicon and cannot overlap with a primer of the
+            # current amplicon
+            if next_amplicon["RIGHT"][2] > current_amplicon["RIGHT"][2] + next_amplicon["length"]/2:
+                continue
+            # --> write to graph
+            if amplicon_id not in amplicon_graph:
+                amplicon_graph[amplicon_id] = {
+                    next_amplicon["id"]: (
                         next_amplicon.get("off_targets", False),
                         next_amplicon["penalty"]
                     )
+                }
+            else:
+                amplicon_graph[amplicon_id][next_amplicon["id"]] = (
+                    next_amplicon.get("off_targets", False),
+                    next_amplicon["penalty"]
+                )
 
     # return a graph object
     return Graph(nodes, amplicon_graph)
