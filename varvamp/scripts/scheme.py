@@ -111,6 +111,7 @@ def has_qualifying_overlap(current_amplicon, next_amplicon, min_overlap):
 
     return True
 
+
 def create_amplicon_graph(amplicons, min_overlap):
     """
     creates the amplicon graph.
