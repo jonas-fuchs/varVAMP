@@ -166,7 +166,7 @@ def raise_arg_errors(args, log_file):
             )
         if args.overlap > args.opt_length / 2 - config.PRIMER_SIZES[0] * 2:
             raise_error(
-                "Your min overlap is lower than your optimal length / 2 - 2 * min primer length. This reduces how well varvamps will find overlapping amplicons. Consider decreasing.",
+                "your min overlap is lower than your optimal length / 2 - 2 * min primer length. This reduces how well varvamps will find overlapping amplicons. Consider decreasing.",
                 log_file
             )
     # QPCR specific warnings
