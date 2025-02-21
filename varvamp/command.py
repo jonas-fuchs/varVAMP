@@ -117,8 +117,8 @@ def get_args(sysargs):
         "-o",
         "--overlap",
         type=int,
-        metavar="100",
-        default=100,
+        metavar="25",
+        default=25,
         help="min overlap of the amplicon inserts"
     )
     SINGLE_parser.add_argument(
