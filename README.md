@@ -47,9 +47,9 @@ Moreover, varVAMP primers are now available at [primerschemes](https://labs.prim
 
 # Citing varVAMP
 
-**varVAMP: automated pan-specific primer design for tiled full genome sequencing and qPCR of highly diverse viral pathogens.**
+varVAMP has been published in Nature Communication. If you use this software, please cite:
 
-[biorxiv preprint](https://doi.org/10.1101/2024.05.08.593102)
+[Fuchs, J., Kleine, J., Schemmerer, M. et al. varVAMP: degenerate primer design for tiled full genome sequencing and qPCR. Nat Commun 16, 5067 (2025).](https://doi.org/10.1038/s41467-025-60175-9)
 
 ---
 
