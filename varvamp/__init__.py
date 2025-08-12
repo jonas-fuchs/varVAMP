@@ -1,9 +1,16 @@
-import importlib.metadata, pathlib, tomllib
+from pathlib import Path
+from importlib.metadata import version, PackageNotFoundError
+import sys
 
-# get __version__ from pyproject.toml
-source_location = pathlib.Path("__file__").parent
-if (source_location.parent / "pyproject.toml").exists():
-    with open(source_location.parent / "pyproject.toml", "rb") as f:
-        __version__ = tomllib.load(f)['project']['version']
+source_location = Path(__file__).resolve()
+pyproject = source_location.parent.parent / "pyproject.toml"
+
+if sys.version_info >= (3, 11) and pyproject.exists():
+    import tomllib
+    with open(pyproject, "rb") as f:
+        __version__ = tomllib.load(f).get("project", {}).get("version")
 else:
-    __version__ = importlib.metadata.version("varvamp")
+    try:
+        __version__ = version("varvamp")
+    except PackageNotFoundError:
+        __version__ = "unknown"
