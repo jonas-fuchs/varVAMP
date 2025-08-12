@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools >= 65", "wheel >= 0.38"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = 'varvamp'
+version = '1.2.3'
+description = 'Variable VirusAMPlicons (varVAMP) is a tool to design primers for highly diverse viruses.'
+keywords = ['pcr, tiled pcr, primer-tiling, qpcr, primer design']
+dependencies = ["biopython>=1.79", "matplotlib>=3.5.1", "primer3-py>=1.1.0", "pandas>=1.4.4", "numpy>=1.23.3", "seqfold>=0.7.15"]
+requires-python = '>=3.9'
+authors = [{name = 'Jonas Fuchs', email = 'jonas.fuchs@uniklinik-freiburg.de'}]
+maintainers = [{name = 'Jonas Fuchs', email = 'jonas.fuchs@uniklinik-freiburg.de'}]
+readme = 'README.md'
+license = {file = 'LICENSE'}
+classifiers = [
+    'Programming Language :: Python :: 3.9',
+    'Operating System :: OS Independent',
+]
+
+[project.scripts]
+varvamp = "varvamp.command:main"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ['varvamp*']
+namespaces = false

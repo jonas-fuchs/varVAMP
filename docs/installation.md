@@ -12,11 +12,6 @@ varVAMP runs on UNIX Systems, MacOSX and Windows with Python3 >=3.9 installed.
 ```shell
 pip install varvamp
 ```
-To ensure compatibility with python3.12 in a virtual enviroment, it might be required to also install setuptools:
-
-```shell
-pip install setuptools varvamp
-```
 
 ### CONDA:
 
@@ -45,22 +40,11 @@ If you want to use varVAMPs blast module to predict off-targets, make sure that 
 
 ## Installation for development
 
-### - via pip (recommended)
-
 ```shell
 git clone https://github.com/jonas-fuchs/varVAMP
 cd varVAMP
 pip install .
 varvamp -v
-```
-
-### - via requirements.txt
-
-```shell
-git clone https://github.com/jonas-fuchs/varVAMP
-cd varVAMP
-pip install -r requirements.txt
-python3 varvamp -v
 ```
 
 
