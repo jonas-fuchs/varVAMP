@@ -7,7 +7,6 @@ import sys
 import os
 import datetime
 import argparse
-import multiprocessing
 
 # varVAMP
 from varvamp.scripts import alignment
@@ -22,7 +21,6 @@ from varvamp.scripts import reporting
 from varvamp.scripts import scheme
 from varvamp.scripts import blast
 from varvamp import __version__
-from . import _program
 
 
 def get_args(sysargs):
@@ -30,7 +28,6 @@ def get_args(sysargs):
     arg parsing for varvamp
     """
     parser = argparse.ArgumentParser(
-        prog=_program,
         usage='''\tvarvamp <mode> --help\n\tvarvamp <mode> [mode optional arguments] <alignment> <output dir>''')
     mode_parser = parser.add_subparsers(
         title="varvamp mode",
