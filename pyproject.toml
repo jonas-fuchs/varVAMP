@@ -19,7 +19,7 @@ classifiers = [
 ]
 
 [project.scripts]
-virheat = "varvamp.command:main"
+varvamp = "varvamp.command:main"
 
 [tool.setuptools]
 include-package-data = true
