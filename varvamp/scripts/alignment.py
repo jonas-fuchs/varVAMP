@@ -87,15 +87,12 @@ def process_alignment(preprocessed_alignment, threshold):
     """
 
     # build char array
-    seqs = [seq for _, seq in preprocessed_alignment]
+    seqs = [seq for seq_id, seq in preprocessed_alignment]
     arr = np.array([list(s) for s in seqs], dtype="U1")
     n_seq, len_seq = arr.shape
 
     # per-column gap counts
-    gap_counts = (arr == "-").sum(axis=0)
-
-    gap_cutoff = n_seq * (1 - threshold)
-    cols_to_mask = gap_counts > gap_cutoff
+    cols_to_mask = (arr == "-").sum(axis=0) > n_seq * (1 - threshold)
 
     # convert bool mask into list of (start, end) regions (end inclusive)
     gaps_to_mask = []
