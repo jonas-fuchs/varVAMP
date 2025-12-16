@@ -2,6 +2,9 @@
 estimate varVAMP threshold and max n of ambiguous bases if none are given
 """
 
+# libs
+import numpy as np
+
 # varVAMP
 from varvamp.scripts import config
 
@@ -30,7 +33,7 @@ def calculate_frequencies(preprocessed_alignment):
 
 def calculate_distances(all_freqs, threshold):
     """
-    calc the distance for each  nuc freq to the prior
+    calc the distance for each nuc freq to the prior
     nuc freq that fell below the cutoff
     """
 
@@ -56,32 +59,32 @@ def get_parameters(preprocessed_alignment, args, log_file):
     writes to log file
     """
     # set coverage to max
-    coverage = 1
     args.threshold = 0.1
     # read in the alignment and calc freqs
     frequencies = calculate_frequencies(preprocessed_alignment)
-    text = f"AUTOMATIC THRESHOLD SELECTION\n"
     # write to log
     with open(log_file, 'a') as f:
-        print(f"{text}\nto consider ~50% of the alignment for potential primers:\n\n-t\testimated coverage", file=f)
-        # optimize until less than 50 % is covered
-        while coverage >= 0.5 and args.threshold < 1:
+        print(f"AUTOMATIC THRESHOLD SELECTION\n", file=f)
+        print(f"-t\tmaximum non-covered region", file=f)
+        # calculate distance between passing potential primer regions
+        while args.threshold < 1:
             distances = calculate_distances(frequencies, args.threshold)
-            # calculate the cumulative sum of the sum of n consecutive stretches
-            # that are together larger than the min primer length
-            covered_pos = sum(
-                [distances[x] for x in range(0, len(distances)) if sum(distances[x:x+args.n_ambig+1]) >= config.PRIMER_SIZES[0]]
-            )
-            # calculate coverage
-            coverage = (covered_pos+1)/len(preprocessed_alignment[0][1])
-            if coverage >= 0.5:
+            max_distance_between_passing, previous_passing = 0, 0
+            for idx, dis in enumerate(distances):
+                if sum(distances[idx:idx + 1 + args.n_ambig]) >= config.PRIMER_SIZES[1]:
+                    current_dis = idx - previous_passing
+                    if max_distance_between_passing < current_dis:
+                        max_distance_between_passing = current_dis
+                    previous_passing = idx
+            # consider the threshold in which the distance between passing regions is smaller than the optimal primer
+            if max_distance_between_passing < args.max_length:
                 # write each iteration to log
-                print(round(args.threshold, 2), round(coverage*100, 1), sep="\t", file=f)
-                args.threshold += 0.01
+                print(round(args.threshold, 2), max_distance_between_passing, sep="\t", file=f)
+                args.threshold += 0.005
             # or reset to the param of the prior iteration
             else:
-                args.threshold -= 0.01
+                args.threshold -= 0.005
                 break
-        print(f"Automatic parameter selection set -t {round(args.threshold, 2)} at -a {args.n_ambig}.", file=f)
+        print(f"Automatic parameter selection set -t {round(args.threshold, 3)} at -a {args.n_ambig}.", file=f)
 
     return round(args.threshold, 2)
