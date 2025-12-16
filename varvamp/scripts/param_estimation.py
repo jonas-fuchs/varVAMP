@@ -57,50 +57,31 @@ def get_parameters(preprocessed_alignment, args, log_file):
     """
     # set coverage to max
     coverage = 1
+    args.threshold = 0.1
     # read in the alignment and calc freqs
     frequencies = calculate_frequencies(preprocessed_alignment)
-    # if no args for both threshold and n_ambig are given
-    # set the n_ambig to 2 and optimize threshold
-    if args.threshold is None:
-        args.threshold = 0.1
-        if args.n_ambig is None:
-            args.n_ambig = 2
-        text = f"AUTOMATIC PARAMETER SELECTION\nvarVAMP estimates the threshold at {args.n_ambig} ambiguous bases"
-        fixed = False
-    # if threshold is given, optimize n_ambig (number of ambiguous chars)
-    else:
-        args.n_ambig = config.PRIMER_SIZES[0]
-        text = f"varVAMP estimates the number of ambiguous bases at a threshold of {args.threshold}"
-        fixed = True
+    text = f"AUTOMATIC THRESHOLD SELECTION\n"
     # write to log
     with open(log_file, 'a') as f:
-        print(f"{text}\nto consider ~50% of the alignment for potential primers:\n\n-t\t-a\testimated coverage", file=f)
-
+        print(f"{text}\nto consider ~50% of the alignment for potential primers:\n\n-t\testimated coverage", file=f)
         # optimize until less than 50 % is covered
         while coverage >= 0.5 and args.threshold < 1:
             distances = calculate_distances(frequencies, args.threshold)
-            # calculate the cummulative sum of the sum of n conseq. streches
+            # calculate the cumulative sum of the sum of n consecutive stretches
             # that are together larger than the min primer length
             covered_pos = sum(
                 [distances[x] for x in range(0, len(distances)) if sum(distances[x:x+args.n_ambig+1]) >= config.PRIMER_SIZES[0]]
             )
             # calculate coverage
             coverage = (covered_pos+1)/len(preprocessed_alignment[0][1])
-            # change the non fixed param if threshold has not been reached
             if coverage >= 0.5:
                 # write each iteration to log
-                print(round(args.threshold, 2), args.n_ambig, round(coverage*100, 1), sep="\t", file=f)
-                if fixed:
-                    args.n_ambig -= 1
-                else:
-                    args.threshold += 0.01
+                print(round(args.threshold, 2), round(coverage*100, 1), sep="\t", file=f)
+                args.threshold += 0.01
             # or reset to the param of the prior iteration
             else:
-                if fixed:
-                    args.n_ambig += 1
-                else:
-                    args.threshold -= 0.01
+                args.threshold -= 0.01
                 break
-        print(f"Automatic parameter selection set -t {round(args.threshold, 2)} and -a {args.n_ambig}.", file=f)
+        print(f"Automatic parameter selection set -t {round(args.threshold, 2)} at -a {args.n_ambig}.", file=f)
 
-    return round(args.threshold, 2), args.n_ambig
+    return round(args.threshold, 2)
