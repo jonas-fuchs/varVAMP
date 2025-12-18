@@ -62,35 +62,42 @@ def get_parameters(preprocessed_alignment, args, log_file):
     """
     # set coverage to max
     args.threshold = 0.1
-    # read in the alignment and calc freqs
+    # calc freqs
     highest_frequencies, deletion_frequency = calculate_frequencies(preprocessed_alignment)
     # write to log
     with open(log_file, 'a') as f:
         print(f"AUTOMATIC THRESHOLD SELECTION\n", file=f)
         print(f"-t\tmaximum non-covered region", file=f)
         # calculate distance between passing potential primer regions
+        previous_stop = 0
         while args.threshold < 1:
             distances = calculate_distances(highest_frequencies, deletion_frequency, args.threshold)
             max_distance_between_passing, previous_passing = 0, 0
             # check if the distance between potential primer regions is not larger than:
-            #
+            # args.opt_length - 2 * args.overlap
             for idx, dis in enumerate(distances):
                 if sum(distances[idx:idx + 1 + args.n_ambig]) >= config.PRIMER_SIZES[1]:
-                    original_index = sum(distances[:idx+1])
-                    current_dis = original_index - distances[idx] - previous_passing
+                    # the stretch start in the gap-excluded alignment is the sum of all prior distances
+                    stretch_start = sum(distances[:idx])
+                    # then the distance between the prior stop and current start is calculated
+                    current_dis = stretch_start - previous_stop
+                    # and the max is updated if necessary
                     if max_distance_between_passing < current_dis:
                         max_distance_between_passing = current_dis
-                    print(current_dis)
-                    previous_passing = original_index
+                    # update previous stop position
+                    previous_stop = stretch_start + distances[idx]
+            # write each iteration to log
+            print(round(args.threshold, 2), max_distance_between_passing, sep="\t", file=f)
             # check if the distance is acceptable
-            if max_distance_between_passing < args.opt_length/2:
-                # write each iteration to log
-                print(round(args.threshold, 3), max_distance_between_passing, sep="\t", file=f)
-                args.threshold += 0.005
-            # or reset to the param of the prior iteration
+            if max_distance_between_passing < args.opt_length - 2 * args.overlap:
+                args.threshold += 0.01
+            # or reset to the param of the two previous iterations
             else:
-                args.threshold -= 0.005
+                args.threshold -= 0.02
                 break
-        print(f"Automatic parameter selection set -t {round(args.threshold, 3)} at -a {args.n_ambig}.", file=f)
+        print(f"Automatic parameter selection set -t {round(args.threshold, 2)} at -a {args.n_ambig}.", file=f)
 
     return round(args.threshold, 2)
+
+
+#TODO: Update Docu, No automatic selection for qPCR,
