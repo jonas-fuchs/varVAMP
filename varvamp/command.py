@@ -81,7 +81,7 @@ def get_args(sysargs):
         par.add_argument(
             "-th",
             "--threads",
-            help="number of threads",
+            help="number of threads for BLAST search and deltaG calculations",
             metavar="1",
             type=int,
             default=1
@@ -148,7 +148,7 @@ def get_args(sysargs):
         type=int,
         metavar="-3",
         default=-3,
-        help="minimum free energy (kcal/mol/K) cutoff at the lowest primer melting temp"
+        help="minimum free energy (kcal/mol/K) cutoff at the lowest primer melting temperature"
     )
     parser.add_argument(
         "--verbose",
@@ -208,7 +208,6 @@ def shared_workflow(args, log_file):
     alignment_cleaned, gaps_to_mask = alignment.process_alignment(
         preprocessed_alignment,
         args.threshold,
-        args.threads
     )
     logging.varvamp_progress(
         log_file,
