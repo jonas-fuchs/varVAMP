@@ -8,7 +8,7 @@ If you are not satisfied with the results try to optimize and run varVAMP again.
 
 2. **How do I optimize the output?**
 
-It all depends on how many primer regions varVAMP is able to find! There are two main parameters that influence this. The number of ambiguous bases allowed within a primer and the threshold for consensus nucleotides. Setting the threshold higher or the number of ambiguous bases lower will result in less primer regions. If you have set the parameters below and get a decent output, increase the threshold until the output gets worse. This will increase the specificity of your primers. Likewise, if you do not have a good output, consider increasing the number of ambiguous bases before you lower the threshold.
+It all depends on how many primer regions varVAMP is able to find! There are two main parameters that influence this. The number of ambiguous bases allowed within a primer and the threshold for consensus nucleotides. Setting the threshold higher will result in less primer regions. If you have set the parameters below and get a decent output, increase the threshold until the output gets worse. This will increase the specificity of your primers. Likewise, if you do not have a good output, consider increasing the number of ambiguous bases before you lower the threshold.
 
 The most easy way is to set the number of ambiguous characters you can tolerate in your primers and let varVAMP optimize the threshold. Have a look in the log file, to get detailed information on this. Afterwards you can try to optimize by incrementing the threshold 0.1.
 
@@ -28,23 +28,19 @@ DeltaG is the [minimal free energy](https://en.wikipedia.org/wiki/Gibbs_free_ene
 
 Yes, you can run primers against a local [BLAST](https://blast.ncbi.nlm.nih.gov/doc/blast-help/downloadblastdata.html#downloadblastdata) db via the `-db` argument.
 
-7. **Why does the % primer regions differ from the coverage estimated with the automatic parameter selection?**
-
-The coverage is estimated on an alignment that still has gaps. If there are a lot of large gaps the consensus sequence will be shorter and the % of the alignment that is considered for the alignment will be larger. The parameter selection is therefore only a rough estimate to provide settings at which varVAMP will perform reasonably well. However, it is likely that the output can be tweaked to find even better primers.
-
-8. **Can I customize all parameters (e.g. primer temperature)**
+7. **Can I customize all parameters (e.g. primer temperature)**
 
 Yes you can! By means of a [custom config file](./usage.md#further-customization-advanced).
 
-9. **How fast is varVAMP?**
+8. **How fast is varVAMP?**
 
 varVAMP is pretty fast given the complexity of the problem. Running time is dependent on the alignment length, number of sequences and the running mode. While the TILED is rather slow, qPCR and SINGLE can be faster. An alignment with a few hundred sequences and with a genome size of 10 kb will likely run in under a minute for the TILED mode. For large e.g. DNA viruses (200 kb) it takes considerably longer, but should still finish in minutes.
 
-10. **Can I contribute?**
+9. **Can I contribute?**
 
 Yes, please. Give feedback to code or settings or also if you have successfully used this to design primers that make your life easier in the lab!
 
-11. **Do I have to adapt the bed file if I want to trim primer sequences in my NGS analysis pipeline?**
+10. **Do I have to adapt the bed file if I want to trim primer sequences in my NGS analysis pipeline?**
 
 You can try to use varVAMP's consensus sequence for mapping. However, if you want to map to a different reference, you will need to adapt the primer's start and stop positions in the bed file to your new reference sequence. You can do this for example with the [varVAMP helper script developed by Namuun](https://github.com/rki-mf1/update-varvamp-bed/).
 

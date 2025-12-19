@@ -77,8 +77,8 @@ def get_parameters(preprocessed_alignment, args, log_file):
                 [1,1,1,1*,6*,10*,5,3,1,1]
         - now calculate the distance between the current start of a stretch and the previous stop
         - if this is larger than the minimal amplicon length - exit the optimization
-        - reset the threhold to second prior iteration to make it more robust (allow more primer regions) as
-        sometimes the optimization would fail but just 0.1
+        - reset the threshold to second prior iteration to make it more robust (allow more primer regions) as
+        sometimes the optimization would fail with just one iteration
 
     This means that manual optimization can be beneficial in some cases.
     """
@@ -112,7 +112,8 @@ def get_parameters(preprocessed_alignment, args, log_file):
             # write each iteration to log
             print(round(args.threshold, 2), max_distance_between_passing, sep="\t", file=f)
             # check if the distance is acceptable
-            if max_distance_between_passing < args.opt_length - 2 * args.overlap:
+            distance_threshold = args.opt_length - 2 * args.overlap if args.mode == 'tiled' else args.opt_length
+            if max_distance_between_passing < distance_threshold:
                 args.threshold += 0.01
             # or reset to the param of the two previous iterations
             else:
@@ -121,6 +122,3 @@ def get_parameters(preprocessed_alignment, args, log_file):
         print(f"Automatic parameter selection set -t {round(args.threshold, 2)} at -a {args.n_ambig}.", file=f)
 
     return round(args.threshold, 2)
-
-
-#TODO: Update Docu, No automatic selection for qPCR,

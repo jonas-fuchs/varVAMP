@@ -39,7 +39,7 @@ usage: varvamp single [optional arguments] <alignment> <output dir>
 ```
 optional arguments:
   -h, --help            	show this help message and exit
-  -t, --threshold 	        threshold for consensus nucleotides
+  -t, --threshold 	        consensus threshold - if not set it will be automatically determined (higher values result in higher specificity at the expense of found primers)
   -a , --n-ambig        	max number of ambiguous characters in a primer
   -db None, --database None     location of the BLAST db
   -th 1, --threads 1            number of threads
@@ -55,7 +55,7 @@ usage: varvamp tiled [optional arguments] <alignment> <output dir>
 ```
 optional arguments:
   -h, --help            	show this help message and exit
-  -t, --threshold 	        threshold for consensus nucleotides
+  -t, --threshold 	        consensus threshold - if not set it will be automatically determined (higher values result in higher specificity at the expense of found primers)
   -a , --n-ambig        	max number of ambiguous characters in a primer
   -db None, --database None     location of the BLAST db
   -th 1, --threads 1	        number of threads
@@ -71,7 +71,7 @@ usage: varvamp qpcr [optional arguments] <alignment> <output dir>
 ```
 optional arguments:
   -h, --help            	show this help message and exit
-  -t, --threshold 		threshold for consensus nucleotides
+  -t, --threshold 		threshold for consensus nucleotides - increase for higher specificity at the expense of found primers
   -a , --n-ambig        	max number of ambiguous characters in a primer
   -db None, --database None     location of the BLAST db
   -th 1, --threads 1   	        number of threads
