@@ -1,5 +1,5 @@
 """
-estimate varVAMP threshold of ambiguous bases if none are given
+estimate varVAMP threshold if not given
 """
 
 # libs
