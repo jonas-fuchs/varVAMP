@@ -63,7 +63,7 @@ def get_parameters(preprocessed_alignment, args, log_file):
     How it works:
 
     - calculate a np array with frequencies per position for ATCG and gaps (-)
-    - now increment for different threshold starting at 0.1
+    - increment for different threshold starting at 0.1
     - for each increment calculate:
         - the lengths of conseq. nucleotides that are >= threshold
         - skip all positions with gaps >= 1 - threshold
@@ -80,7 +80,7 @@ def get_parameters(preprocessed_alignment, args, log_file):
         - reset the threshold to second prior iteration to make it more robust (allow more primer regions) as
         sometimes the optimization would fail with just one iteration
 
-    This means that manual optimization can be beneficial in some cases.
+    Manual optimization can be beneficial in some cases.
     """
     # set coverage to max
     args.threshold = 0.1
@@ -101,14 +101,14 @@ def get_parameters(preprocessed_alignment, args, log_file):
                 if sum(distances[idx:idx + 1 + args.n_ambig]) >= config.PRIMER_SIZES[1]:
                     # the stretch start in the gap-excluded alignment is the sum of all prior distances including the current
                     # minus the distance of the current stretch
-                    stretch_start = sum(distances[:idx+1]) - distances[idx]
+                    stretch_start = sum(distances[:idx])
                     # then the distance between the prior stop and current start is calculated
                     current_dis = stretch_start - previous_stop
                     # and the max is updated if necessary
                     if max_distance_between_passing < current_dis:
                         max_distance_between_passing = current_dis
                     # update previous stop position
-                    previous_stop = sum(distances[:idx+1])
+                    previous_stop = stretch_start + distances[idx]
             # write each iteration to log
             print(round(args.threshold, 2), max_distance_between_passing, sep="\t", file=f)
             # check if the distance is acceptable

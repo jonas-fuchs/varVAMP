@@ -8,9 +8,8 @@ If you are not satisfied with the results try to optimize and run varVAMP again.
 
 2. **How do I optimize the output?**
 
-It all depends on how many primer regions varVAMP is able to find! There are two main parameters that influence this. The number of ambiguous bases allowed within a primer and the threshold for consensus nucleotides. Setting the threshold higher will result in less primer regions. If you have set the parameters below and get a decent output, increase the threshold until the output gets worse. This will increase the specificity of your primers. Likewise, if you do not have a good output, consider increasing the number of ambiguous bases before you lower the threshold.
-
-The most easy way is to set the number of ambiguous characters you can tolerate in your primers and let varVAMP optimize the threshold. Have a look in the log file, to get detailed information on this. Afterwards you can try to optimize by incrementing the threshold 0.1.
+It all depends on how many primer regions varVAMP is able to find! There are two main parameters that influence this. The number of ambiguous bases allowed within a primer and the threshold for consensus nucleotides. Setting the threshold higher or the number of ambiguous bases lower will result in less primer regions. If you have set the parameters below and get a decent output, increase the threshold until the output gets worse. This will increase the specificity of your primers. Likewise, if you do not have a good output, consider increasing the number of ambiguous bases before you lower the threshold.
+The most easy way is to set the number of ambiguous characters you can tolerate in your primers and let varVAMP optimize the threshold. Have a look in the log file, to get detailed information on this. Afterwards you can try to optimize by incrementing the threshold yourself.
 
 3. **varVAMP TILED reported primer dimers. What now?**
 
