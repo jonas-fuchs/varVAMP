@@ -178,8 +178,9 @@ def shared_workflow(args, log_file):
 
     # read in alignment and preprocess
     preprocessed_alignment = alignment.preprocess(args.input[0])
-    # check alignment length distribution
+    # check alignment length and number of gaps and report if its significantly more/less than expected
     logging.check_alignment_length(preprocessed_alignment, log_file)
+    logging.check_gaped_sequences(preprocessed_alignment, log_file)
 
     # estimate threshold or number of ambiguous bases if args were not supplied
     if args.threshold is None or args.n_ambig is None:
