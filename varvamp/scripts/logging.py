@@ -260,7 +260,7 @@ def check_gaped_sequences(preprocessed_alignment, log_file):
     for name, n_gaps in number_of_gaps.items():
         if n_gaps >= mean_gaps + 3 * mean_gaps_std:
             raise_error(
-                f"The sequence {name} contains considerably more gaps ({n_gaps}) than the alignment mean ({round(mean_gaps)} gaps) which restrict primer search.",
+                f"The sequence {name} contains considerably more gaps ({n_gaps}) than the alignment mean ({round(mean_gaps)} gaps) potentially restricting primer search.",
                 log_file,
                 exit=False
             )
