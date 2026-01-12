@@ -258,9 +258,9 @@ def check_gaped_sequences(preprocessed_alignment, log_file):
     # clac mean and std
     mean_gaps, mean_gaps_std = statistics.mean(number_of_gaps.values()), statistics.stdev(number_of_gaps.values())
     for name, n_gaps in number_of_gaps.items():
-        if n_gaps >= mean_gaps + 3 * mean_gaps_std:
+        if n_gaps < mean_gaps + 3 * mean_gaps_std:
             raise_error(
-                f"The sequence {name} contains considerably more gaps ({n_gaps}) than the alignment mean ({round(mean_gaps)} gaps) potentially restricting primer search.",
+                f"The sequence {name} contains considerably less gaps ({n_gaps}) than the alignment mean ({round(mean_gaps)} gaps) and is therefore causing gaps in other sequences.",
                 log_file,
                 exit=False
             )
