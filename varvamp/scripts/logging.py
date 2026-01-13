@@ -9,6 +9,7 @@ import shutil
 import datetime
 import random
 import statistics
+import re
 
 # varVAMP
 from varvamp.scripts import config
@@ -238,6 +239,34 @@ def check_alignment_length(preprocessed_alignment, log_file):
         warning = "".join(warning)
         raise_error(
             f"The following sequences are considerably {length_type} than the alignment mean ({round(mean_len)} nt) and might cause alignment trimming:\n{warning}",
+            log_file,
+            exit=False
+        )
+
+
+def check_gaped_sequences(preprocessed_alignment, log_file):
+    """
+    checks the number of gaps in each sequence of the alignment and reports a warning
+    if the number of gaps is larger than the mean + 3std
+    """
+    number_of_gaps = {}
+
+    for seq in preprocessed_alignment:
+        # find all gaps for all sequences with regular expression -{min}
+        number_of_gaps[seq[0]] = len(list(re.finditer(r"-+", seq[1])))
+
+    # clac mean and std
+    mean_gaps, mean_gaps_std = statistics.mean(number_of_gaps.values()), statistics.stdev(number_of_gaps.values())
+
+    warning = []
+
+    for name, n_gaps in number_of_gaps.items():
+        if n_gaps < mean_gaps - 3 * mean_gaps_std:
+            warning.append(f"{name} ({n_gaps} gaps)\n")
+
+    if warning:
+        raise_error(
+            f"The following sequences contain less gaps than the alignment mean ({round(mean_gaps)} gaps) and might overproportionally gap the alignment:\n{"".join(warning)}",
             log_file,
             exit=False
         )
