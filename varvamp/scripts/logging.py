@@ -257,13 +257,19 @@ def check_gaped_sequences(preprocessed_alignment, log_file):
 
     # clac mean and std
     mean_gaps, mean_gaps_std = statistics.mean(number_of_gaps.values()), statistics.stdev(number_of_gaps.values())
+
+    warning = []
+
     for name, n_gaps in number_of_gaps.items():
         if n_gaps < mean_gaps - 3 * mean_gaps_std:
-            raise_error(
-                f"The sequence {name} contains considerably less gaps ({n_gaps}) than the alignment mean ({round(mean_gaps)} gaps) and is therefore causing gaps in other sequences.",
-                log_file,
-                exit=False
-            )
+            warning.append(f"{name} ({n_gaps} gaps)\n")
+
+    if warning:
+        raise_error(
+            f"The following sequences contain less gaps than the alignment mean ({round(mean_gaps)} gaps) and might overproportionally gap the alignment:\n{"".join(warning)}",
+            log_file,
+            exit=False
+        )
 
 
 
