@@ -55,19 +55,11 @@ def get_args(sysargs):
     )
     for par in (SINGLE_parser, TILED_parser, QPCR_parser):
         par.add_argument(
-            "-t",
-            "--threshold",
-            metavar="",
-            type=float,
-            default=None,
-            help="threshold for consensus nucleotides"
-        )
-        par.add_argument(
             "-a",
             "--n-ambig",
-            metavar="",
+            metavar="2",
             type=int,
-            default=None,
+            default=2,
             help="max number of ambiguous characters in a primer"
         )
         par.add_argument(
@@ -94,6 +86,14 @@ def get_args(sysargs):
             default="varVAMP"
         )
     for par in (SINGLE_parser, TILED_parser):
+        par.add_argument(
+            "-t",
+            "--threshold",
+            metavar="",
+            type=float,
+            default=None,
+            help="consensus threshold (0-1) - if not set it will be estimated (higher values result in higher specificity at the expense of found primers)"
+        )
         par.add_argument(
             "-ol",
             "--opt-length",
@@ -133,6 +133,15 @@ def get_args(sysargs):
         type=int,
         default=None,
         help="max number of ambiguous characters in a probe"
+    )
+    QPCR_parser.add_argument(
+        "-t",
+        "--threshold",
+        required=True,
+        metavar="0.9",
+        type=float,
+        default=0.9,
+        help="consensus threshold (0-1) - higher values result in higher specificity at the expense of found primers"
     )
     QPCR_parser.add_argument(
         "-n",
@@ -183,12 +192,13 @@ def shared_workflow(args, log_file):
     logging.check_gaped_sequences(preprocessed_alignment, log_file)
 
     # estimate threshold or number of ambiguous bases if args were not supplied
-    if args.threshold is None or args.n_ambig is None:
-        args.threshold, args.n_ambig = param_estimation.get_parameters(preprocessed_alignment, args, log_file)
+    if args.threshold is None and not args.mode == 'qpcr':
+        args.threshold = param_estimation.get_parameters(preprocessed_alignment, args, log_file)
+    # set the number of ambiguous chars for qPCR probes to one less than for primers if not given
     if args.mode == "qpcr" and args.pn_ambig is None:
         if args.n_ambig == 0:
             args.pn_ambig = 0
-        if args.n_ambig > 0:
+        else:
             args.pn_ambig = args.n_ambig - 1
         with open(log_file, "a") as f:
             print(f"Automatic parameter selection set -pa {args.pn_ambig}.", file=f)
@@ -545,7 +555,6 @@ def main():
             )
 
         # write files
-
         if args.mode == "tiled":
             # assign amplicon numbers from 5' to 3' along the genome
             amplicon_scheme.sort(key=lambda x: x["LEFT"][1])
@@ -585,7 +594,6 @@ def main():
         )
 
         # write files
-
         # make sure amplicons with no off-target products and with low penalties get the lowest numbers
         final_schemes.sort(key=lambda x: (x.get("off_targets", False), x["penalty"]))
         reporting.write_regions_to_bed(probe_regions, args.name, data_dir, "probe")

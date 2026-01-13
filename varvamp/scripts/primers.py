@@ -5,7 +5,6 @@ primer creation and evaluation
 # LIBS
 from Bio.Seq import Seq
 import primer3 as p3
-import math
 
 # varVAMP
 from varvamp.scripts import config
