@@ -253,7 +253,7 @@ def check_gaped_sequences(preprocessed_alignment, log_file):
 
     for seq in preprocessed_alignment:
         # find all gaps for all sequences with regular expression -{min}
-        number_of_gaps[seq[0]] = len([(gap.start(0), gap.end(0) - 1) for gap in re.finditer("-{1,}", seq[1])])
+        number_of_gaps[seq[0]] = len(list(re.finditer(r"-+", seq[1])))
 
     # clac mean and std
     mean_gaps, mean_gaps_std = statistics.mean(number_of_gaps.values()), statistics.stdev(number_of_gaps.values())
@@ -270,7 +270,6 @@ def check_gaped_sequences(preprocessed_alignment, log_file):
             log_file,
             exit=False
         )
-
 
 
 def confirm_config(args, log_file):
