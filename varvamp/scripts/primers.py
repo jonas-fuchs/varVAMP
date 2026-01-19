@@ -2,12 +2,15 @@
 primer creation and evaluation
 """
 
+# BUILTIN
+from itertools import chain
+
 # LIBS
 from Bio.Seq import Seq
 import primer3 as p3
 
 # varVAMP
-from varvamp.scripts import config
+from varvamp.scripts import config, reporting
 
 
 def calc_gc(seq):
@@ -289,6 +292,60 @@ def filter_kmer_direction_dependend(direction, kmer, ambiguous_consensus):
         and (config.PRIMER_GC_END[0] <= calc_end_gc(kmer_seq) <= config.PRIMER_GC_END[1])
         and not is_three_prime_ambiguous(amb_kmer_seq)
     )
+
+
+def parse_primer_fasta(fasta_path):
+    """
+    Parse a primer FASTA file and return a list of sequences.
+    """
+    sequences = []
+    current_seq = []
+
+    with open(fasta_path, 'r') as f:
+        for line in f:
+            line = line.strip()
+            if line.startswith('>'):
+                if current_seq:
+                    seq = ''.join(current_seq).lower()
+                    if len(current_seq) <= 40:
+                        sequences.append(reporting.get_permutations(seq))
+                current_seq = []
+            else:
+                current_seq.append(line)
+        # read last sequence
+        if current_seq:
+            seq = ''.join(current_seq).lower()
+            if len(current_seq) <= 40:
+                sequences.append(reporting.get_permutations(seq))
+
+    return list(chain.from_iterable(sequences))
+
+
+def check_dimer_with_sequences(primer_seq, external_sequences):
+    """
+    Check if a primer forms dimers with any of the provided sequences.
+    Considers all permutations if primer contains degenerate bases.
+    Returns True if a dimer is formed above the threshold.
+    """
+
+
+    for seq in external_sequences:
+        if calc_dimer(primer_seq, seq).tm > config.PRIMER_MAX_DIMER_TMP:
+            return True
+
+    return False
+
+
+def filter_non_dimer_candidates(primer_candidates, external_sequences):
+    """
+    Filter out primer candidates that form dimers with external sequences.
+    """
+    filtered = []
+    for primer in primer_candidates:
+        if not check_dimer_with_sequences(primer[0], external_sequences):
+            filtered.append(primer)
+
+    return filtered
 
 
 def find_primers(kmers, ambiguous_consensus, alignment):

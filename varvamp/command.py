@@ -85,6 +85,14 @@ def get_args(sysargs):
             type=str,
             default="varVAMP"
         )
+        par.add_argument(
+            "--non-dimers",
+            metavar="None",
+            type=str,
+            default=None,
+            help="FASTA primer file with which primers should not form dimers. Primers >40 nt are ignored."
+        )
+
     for par in (SINGLE_parser, TILED_parser):
         par.add_argument(
             "-t",
@@ -288,6 +296,25 @@ def shared_workflow(args, log_file):
         job="Filtering for primers.",
         progress_text=f"{len(left_primer_candidates)} fw and {len(right_primer_candidates)} rv potential primers"
     )
+
+    # filter primers against non-dimer sequences if provided
+    if args.non_dimers is not None:
+        non_dimer_seqs = primers.parse_primer_fasta(args.non_dimers)
+
+        left_primer_candidates = primers.filter_non_dimer_candidates(
+            left_primer_candidates, non_dimer_seqs
+        )
+        right_primer_candidates = primers.filter_non_dimer_candidates(
+            right_primer_candidates, non_dimer_seqs
+        )
+        logging.varvamp_progress(
+            log_file,
+            progress=0.65,
+            job="Filtering primers against non-dimer sequences.",
+            progress_text=f"{len(left_primer_candidates)} fw and {len(right_primer_candidates)} rv primers after non-dimer filtering"
+        )
+
+
 
     return alignment_cleaned, majority_consensus, ambiguous_consensus, primer_regions, left_primer_candidates, right_primer_candidates
 
