@@ -359,7 +359,7 @@ def create_primer_dictionary(primer_candidates, direction):
     return primer_dict
 
 
-def find_best_primers(left_primer_candidates, right_primer_candidates):
+def find_best_primers(left_primer_candidates, right_primer_candidates, high_conservation:bool=False):
     """
     Primer candidates are likely overlapping. Here, the list of primers
     is sorted for the lowest to highest penalty. Then, the next lowest
@@ -389,9 +389,13 @@ def find_best_primers(left_primer_candidates, right_primer_candidates):
         primer_set = set(primer_ranges)
 
         for primer in primer_candidates:
+            # for highly conserved alignments exclude everything that overlaps with the best primer
+            if high_conservation:
+                primer_positions =list(range(primer[1], primer[2]))
             # get the thirds of the primer, only consider the middle
-            thirds_len = int((primer[2] - primer[1])/3)
-            primer_positions = list(range(primer[1] + thirds_len, primer[2] - thirds_len))
+            else:
+                thirds_len = int((primer[2] - primer[1])/3)
+                primer_positions = list(range(primer[1] + thirds_len, primer[2] - thirds_len))
             # check if none of the nucleotides of the next primer
             # are already covered by a better primer
             if not any(x in primer_positions for x in primer_set):
