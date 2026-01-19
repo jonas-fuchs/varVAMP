@@ -301,11 +301,17 @@ def single_and_tiled_shared_workflow(args, left_primer_candidates, right_primer_
     """
 
     # find best primers and create primer dict
-    all_primers = primers.find_best_primers(left_primer_candidates, right_primer_candidates, high_conservation=True if potential_primer_regions >= 90 else False)
+    # depending on the percentage of potential primer regions use high conservation mode
+    if potential_primer_regions >= 90:
+        all_primers = primers.find_best_primers(left_primer_candidates, right_primer_candidates, high_conservation=True)
+        job_text = "Excluding overlapping primers (stringent)."
+    else:
+        all_primers = primers.find_best_primers(left_primer_candidates, right_primer_candidates, high_conservation=False)
+        job_text = "Excluding overlapping primers."
     logging.varvamp_progress(
         log_file,
         progress=0.7,
-        job="Considering primers with low penalties.",
+        job=f"{job_text}",
         progress_text=f"{len(all_primers['+'])} fw and {len(all_primers['-'])} rv primers"
     )
 

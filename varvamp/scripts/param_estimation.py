@@ -115,8 +115,10 @@ def get_parameters(preprocessed_alignment, args, log_file):
             distance_threshold = args.opt_length - 2 * args.overlap if args.mode == 'tiled' else args.opt_length
             if max_distance_between_passing < distance_threshold:
                 # never exceed 0.99
-                if args.threshold != 0.99:
+                if args.threshold < 0.99:
                     args.threshold += 0.01
+                else:
+                    break
             # or reset to the param of the two previous iterations
             else:
                 args.threshold -= 0.02
