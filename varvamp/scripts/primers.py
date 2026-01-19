@@ -385,20 +385,20 @@ def find_best_primers(left_primer_candidates, right_primer_candidates, high_cons
         primer_candidates.sort(key=lambda x: (x[3], x[1]))
         # ini everything with the primer with the lowest penalty
         to_retain = [primer_candidates[0]]
-        primer_ranges = list(range(primer_candidates[0][1], primer_candidates[0][2]))
-        primer_set = set(primer_ranges)
+        primer_set = set(range(primer_candidates[0][1], primer_candidates[0][2]))
 
-        for primer in primer_candidates:
+        for primer in primer_candidates[1:]:
             # for highly conserved alignments exclude everything that overlaps with the best primer
+            # this reduces graph complexity by quite a large margin
             if high_conservation:
-                primer_positions =list(range(primer[1], primer[2]))
+                primer_positions =set(range(primer[1], primer[2]))
             # get the thirds of the primer, only consider the middle
             else:
                 thirds_len = int((primer[2] - primer[1])/3)
-                primer_positions = list(range(primer[1] + thirds_len, primer[2] - thirds_len))
+                primer_positions = set(range(primer[1] + thirds_len, primer[2] - thirds_len))
             # check if none of the nucleotides of the next primer
             # are already covered by a better primer
-            if not any(x in primer_positions for x in primer_set):
+            if primer_set.isdisjoint(primer_positions):
                 # update the primer set
                 primer_set.update(primer_positions)
                 # append this primer as it has a low penalty and is not overlapping
