@@ -86,11 +86,11 @@ def get_args(sysargs):
             default="varVAMP"
         )
         par.add_argument(
-            "--non-dimers",
+            "--compatible-primers",
             metavar="None",
             type=str,
             default=None,
-            help="FASTA primer file with which primers should not form dimers. Primers >40 nt are ignored."
+            help="FASTA primer file with which new primers should not form dimers. Sequences >40 nt are ignored. Can significantly increase runtime."
         )
 
     for par in (SINGLE_parser, TILED_parser):
@@ -145,7 +145,6 @@ def get_args(sysargs):
     QPCR_parser.add_argument(
         "-t",
         "--threshold",
-        required=True,
         metavar="0.9",
         type=float,
         default=0.9,
@@ -195,6 +194,11 @@ def shared_workflow(args, log_file):
 
     # read in alignment and preprocess
     preprocessed_alignment = alignment.preprocess(args.input[0])
+    # read in external primer sequences with which new primers should not form dimers
+    if args.compatible_primers is not None:
+        compatible_primers = primers.parse_primer_fasta(args.compatible_primers)
+    else:
+        compatible_primers = None
     # check alignment length and number of gaps and report if its significantly more/less than expected
     logging.check_alignment_length(preprocessed_alignment, log_file)
     logging.check_gaped_sequences(preprocessed_alignment, log_file)
@@ -297,26 +301,22 @@ def shared_workflow(args, log_file):
         progress_text=f"{len(left_primer_candidates)} fw and {len(right_primer_candidates)} rv potential primers"
     )
 
-    # filter primers against non-dimer sequences if provided
-    if args.non_dimers is not None:
-        non_dimer_seqs = primers.parse_primer_fasta(args.non_dimers)
-
+    # filter primers against non-dimer sequences if provided, can use multi-processing
+    if compatible_primers is not None:
         left_primer_candidates = primers.filter_non_dimer_candidates(
-            left_primer_candidates, non_dimer_seqs
+            left_primer_candidates, compatible_primers, args.threads
         )
         right_primer_candidates = primers.filter_non_dimer_candidates(
-            right_primer_candidates, non_dimer_seqs
+            right_primer_candidates, compatible_primers, args.threads
         )
         logging.varvamp_progress(
             log_file,
             progress=0.65,
-            job="Filtering primers against non-dimer sequences.",
-            progress_text=f"{len(left_primer_candidates)} fw and {len(right_primer_candidates)} rv primers after non-dimer filtering"
+            job="Filtering primers against provided primers.",
+            progress_text=f"{len(left_primer_candidates)} fw and {len(right_primer_candidates)} rv primers after filtering"
         )
 
-
-
-    return alignment_cleaned, majority_consensus, ambiguous_consensus, primer_regions, left_primer_candidates, right_primer_candidates
+    return alignment_cleaned, majority_consensus, ambiguous_consensus, primer_regions, left_primer_candidates, right_primer_candidates, compatible_primers
 
 
 def single_and_tiled_shared_workflow(args, left_primer_candidates, right_primer_candidates, data_dir, log_file):
@@ -341,8 +341,7 @@ def single_and_tiled_shared_workflow(args, left_primer_candidates, right_primer_
     )
     if not amplicons:
         logging.raise_error(
-            "no amplicons found. Increase the max amplicon length or \
-            number of ambiguous bases or lower threshold!\n",
+            "no amplicons found. Increase the max amplicon length or number of ambiguous bases or lower threshold!\n",
             log_file,
             exit=True
         )
@@ -435,7 +434,7 @@ def tiled_workflow(args, amplicons, left_primer_candidates, right_primer_candida
     return amplicon_scheme
 
 
-def qpcr_workflow(args, data_dir, alignment_cleaned, ambiguous_consensus, majority_consensus, left_primer_candidates, right_primer_candidates, log_file):
+def qpcr_workflow(args, data_dir, alignment_cleaned, ambiguous_consensus, majority_consensus, left_primer_candidates, right_primer_candidates, compatible_primers, log_file):
     """
     part of the workflow specific for the tiled mode
     """
@@ -471,6 +470,17 @@ def qpcr_workflow(args, data_dir, alignment_cleaned, ambiguous_consensus, majori
         job="Finding qPCR probes.",
         progress_text=f"{len(qpcr_probes)} potential qPCR probes"
     )
+
+    # filter primers against non-dimer sequences if provided
+    if compatible_primers is not None:
+        qpcr_probes = primers.filter_non_dimer_candidates(
+            qpcr_probes, compatible_primers, args.threads)
+        logging.varvamp_progress(
+            log_file,
+            progress=0.75,
+            job="Filtering probes against provided primer sequences.",
+            progress_text=f"{len(qpcr_probes)} potential qPCR probes after filtering"
+        )
 
     # find unique amplicons with a low penalty and an internal probe
     qpcr_scheme_candidates = qpcr.find_qcr_schemes(qpcr_probes, left_primer_candidates, right_primer_candidates, majority_consensus, ambiguous_consensus)
@@ -534,7 +544,7 @@ def main():
         blast.check_BLAST_installation(log_file)
 
     # mode unspecific part of the workflow
-    alignment_cleaned, majority_consensus, ambiguous_consensus, primer_regions, left_primer_candidates, right_primer_candidates = shared_workflow(args, log_file)
+    alignment_cleaned, majority_consensus, ambiguous_consensus, primer_regions, left_primer_candidates, right_primer_candidates, compatible_primers = shared_workflow(args, log_file)
 
     # write files that are shared in all modes
     reporting.write_regions_to_bed(primer_regions, args.name, data_dir)
@@ -617,6 +627,7 @@ def main():
             majority_consensus,
             left_primer_candidates,
             right_primer_candidates,
+            compatible_primers,
             log_file
         )
 

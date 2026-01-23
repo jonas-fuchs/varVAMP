@@ -4,9 +4,12 @@ primer creation and evaluation
 
 # BUILTIN
 from itertools import chain
+import re
+import multiprocessing
 
 # LIBS
 from Bio.Seq import Seq
+from Bio import SeqIO
 import primer3 as p3
 
 # varVAMP
@@ -60,6 +63,49 @@ def calc_dimer(seq1, seq2, structure=False):
         dntp_conc=config.PCR_DNTP_CONC,
         output_structure=structure
     )
+
+
+def has_end_overlap(dimer_result):
+    """
+    checks if two oligos overlap at their ends
+    Example:
+        xxxxxxxxtagc-------
+        --------atcgxxxxxxx
+    """
+    if dimer_result.structure_found:
+        # clean structure
+        structure = [x[4:] for x in dimer_result.ascii_structure_lines]
+        # check if we have an overlap that is large enough
+        overlap = len(structure[1].replace(" ", ""))
+        if overlap <= config.END_OVERLAP:
+            return False
+        # not more than one conseq. internal mismatch
+        if '  ' in structure[1].lstrip(" "):
+            return False
+        # The alignment length of the ACII structure is equal to the first part of the structure
+        # and the maximum possible alignment length is the cumulative length of both primers (-> no overlap at all)
+        alignment_length = len(structure[0])
+        maximum_alignment_length = len(re.findall("[ATCG]", "".join(structure)))
+        # this means that for a perfect end overlap the alignment length is equal to:
+        # len(primer1) + len(primer2) - overlap.
+        if alignment_length >= maximum_alignment_length - overlap:
+            return True
+
+    return False
+
+
+def is_dimer(seq1, seq2):
+    """
+    check if two sequences dimerize above threshold or are overlapping at their ends
+    """
+    dimer_result = calc_dimer(seq1, seq2, structure=True)
+
+    if dimer_result.tm > config.PRIMER_MAX_DIMER_TMP:
+       return True
+    if has_end_overlap(dimer_result):
+        return True
+
+    return False
 
 
 def calc_max_polyx(seq):
@@ -264,13 +310,14 @@ def filter_kmer_direction_independent(seq, primer_temps=config.PRIMER_TMP, gc_ra
     filter kmer for temperature, gc content,
     poly x, dinucleotide repeats and homodimerization
     """
+
     return(
         (primer_temps[0] <= calc_temp(seq) <= primer_temps[1])
         and (gc_range[0] <= calc_gc(seq) <= gc_range[1])
         and (calc_max_polyx(seq) <= config.PRIMER_MAX_POLYX)
         and (calc_max_dinuc_repeats(seq) <= config.PRIMER_MAX_DINUC_REPEATS)
         and (calc_base_penalty(seq, primer_temps, gc_range, primer_sizes) <= config.PRIMER_MAX_BASE_PENALTY)
-        and (calc_dimer(seq, seq).tm <= config.PRIMER_MAX_DIMER_TMP)
+        and not is_dimer(seq, seq)
     )
 
 
@@ -296,56 +343,56 @@ def filter_kmer_direction_dependend(direction, kmer, ambiguous_consensus):
 
 def parse_primer_fasta(fasta_path):
     """
-    Parse a primer FASTA file and return a list of sequences.
+    Parse a primer FASTA file and return a list of sequences using BioPython.
     """
-    sequences = []
-    current_seq = []
 
-    with open(fasta_path, 'r') as f:
-        for line in f:
-            line = line.strip()
-            if line.startswith('>'):
-                if current_seq:
-                    seq = ''.join(current_seq).lower()
-                    if len(current_seq) <= 40:
-                        sequences.append(reporting.get_permutations(seq))
-                current_seq = []
-            else:
-                current_seq.append(line)
-        # read last sequence
-        if current_seq:
-            seq = ''.join(current_seq).lower()
-            if len(current_seq) <= 40:
-                sequences.append(reporting.get_permutations(seq))
+    sequences = []
+
+    for record in SeqIO.parse(fasta_path, "fasta"):
+        seq = str(record.seq).lower()
+        # Only include primers up to 40 nucleotides
+        if len(seq) <= 40:
+            sequences.append(reporting.get_permutations(seq))
 
     return list(chain.from_iterable(sequences))
 
 
-def check_dimer_with_sequences(primer_seq, external_sequences):
+def check_primer_against_externals(args):
     """
-    Check if a primer forms dimers with any of the provided sequences.
-    Considers all permutations if primer contains degenerate bases.
-    Returns True if a dimer is formed above the threshold.
+    Worker function to check a single primer against all external sequences.
+    Returns the primer if it passes, None otherwise.
     """
 
+    primer, external_sequences = args
 
     for seq in external_sequences:
-        if calc_dimer(primer_seq, seq).tm > config.PRIMER_MAX_DIMER_TMP:
-            return True
+        if is_dimer(primer[0], seq):
+            return None
+        
+    return primer
 
-    return False
 
-
-def filter_non_dimer_candidates(primer_candidates, external_sequences):
+def filter_non_dimer_candidates(primer_candidates, external_sequences, n_threads):
     """
     Filter out primer candidates that form dimers with external sequences.
+    Uses multiprocessing to speed up checks.
     """
-    filtered = []
-    for primer in primer_candidates:
-        if not check_dimer_with_sequences(primer[0], external_sequences):
-            filtered.append(primer)
+    # Deduplicate external sequences to reduce redundant checks
+    unique_sequences = []
+    seen = set()
+    for seq in external_sequences:
+        if seq not in seen:
+            unique_sequences.append(seq)
+            seen.add(seq)
 
-    return filtered
+    with multiprocessing.Pool(processes=n_threads) as pool:
+        # Prepare arguments for each primer
+        args = [(primer, unique_sequences) for primer in primer_candidates]
+        # Process in parallel
+        results = pool.map(check_primer_against_externals, args)
+
+    # Filter out None results
+    return [primer for primer in results if primer is not None]
 
 
 def find_primers(kmers, ambiguous_consensus, alignment):

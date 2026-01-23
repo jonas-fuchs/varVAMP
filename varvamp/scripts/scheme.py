@@ -73,7 +73,7 @@ def find_amplicons(all_primers, opt_len, max_len):
             amplicon_length = right_primer[2] - left_primer[1]
             if not opt_len <= amplicon_length <= max_len:
                 continue
-            if primers.calc_dimer(left_primer[0], right_primer[0]).tm > config.PRIMER_MAX_DIMER_TMP:
+            if primers.is_dimer(left_primer[0], right_primer[0]):
                 continue
             # calculate length dependend amplicon costs as the cumulative primer
             # penalty multiplied by the e^(fold length of the optimal length).
@@ -309,7 +309,7 @@ def test_scheme_for_dimers(amplicon_scheme):
                 current_seq = current_primer[2][0]
                 for tested in tested_primers:
                     tested_seq = tested[2][0]
-                    if primers.calc_dimer(current_seq, tested_seq).tm <= config.PRIMER_MAX_DIMER_TMP:
+                    if not primers.is_dimer(current_seq, tested_seq):
                         continue
                     primer_dimers.append((current_primer, tested))
                 # and remember all tested primers
@@ -357,7 +357,7 @@ def test_overlaps_for_dimers(overlapping_primers):
         for second_overlap in overlapping_primers[1]:
             # return the first match. primers are sorted by penalty.
             # first pair that makes it has the lowest penalty
-            if primers.calc_dimer(first_overlap[2][0], second_overlap[2][0]).tm <= config.PRIMER_MAX_DIMER_TMP:
+            if not primers.is_dimer(first_overlap[2][0], second_overlap[2][0]):
                 return [first_overlap, second_overlap]
 
 
