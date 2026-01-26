@@ -256,6 +256,9 @@ def shared_workflow(args, log_file):
         ambiguous_consensus,
         args.n_ambig
     )
+
+    potential_primer_regions = regions.mean(primer_regions, majority_consensus)
+
     if not primer_regions:
         logging.raise_error(
             "no primer regions found. Lower the threshold!",
@@ -266,7 +269,7 @@ def shared_workflow(args, log_file):
         log_file,
         progress=0.4,
         job="Finding primer regions.",
-        progress_text=f"{regions.mean(primer_regions, majority_consensus)} % of the consensus sequence will be evaluated for primers"
+        progress_text=f"{potential_primer_regions} % of the consensus sequence will be evaluated for primers"
     )
 
     # produce kmers for all primer regions
@@ -316,20 +319,26 @@ def shared_workflow(args, log_file):
             progress_text=f"{len(left_primer_candidates)} fw and {len(right_primer_candidates)} rv primers after filtering"
         )
 
-    return alignment_cleaned, majority_consensus, ambiguous_consensus, primer_regions, left_primer_candidates, right_primer_candidates, compatible_primers
+    return alignment_cleaned, majority_consensus, ambiguous_consensus, primer_regions, left_primer_candidates, right_primer_candidates, potential_primer_regions, compatible_primers
 
 
-def single_and_tiled_shared_workflow(args, left_primer_candidates, right_primer_candidates, data_dir, log_file):
+def single_and_tiled_shared_workflow(args, left_primer_candidates, right_primer_candidates, potential_primer_regions, data_dir, log_file):
     """
     part of the workflow shared by the single and tiled mode
     """
 
     # find best primers and create primer dict
-    all_primers = primers.find_best_primers(left_primer_candidates, right_primer_candidates)
+    # depending on the percentage of potential primer regions use high conservation mode
+    if potential_primer_regions >= 90:
+        all_primers = primers.find_best_primers(left_primer_candidates, right_primer_candidates, high_conservation=True)
+        job_text = "Excluding overlapping primers (stringent)."
+    else:
+        all_primers = primers.find_best_primers(left_primer_candidates, right_primer_candidates, high_conservation=False)
+        job_text = "Excluding overlapping primers."
     logging.varvamp_progress(
         log_file,
         progress=0.7,
-        job="Considering primers with low penalties.",
+        job=f"{job_text}",
         progress_text=f"{len(all_primers['+'])} fw and {len(all_primers['-'])} rv primers"
     )
 
@@ -544,7 +553,7 @@ def main():
         blast.check_BLAST_installation(log_file)
 
     # mode unspecific part of the workflow
-    alignment_cleaned, majority_consensus, ambiguous_consensus, primer_regions, left_primer_candidates, right_primer_candidates, compatible_primers = shared_workflow(args, log_file)
+    alignment_cleaned, majority_consensus, ambiguous_consensus, primer_regions, left_primer_candidates, right_primer_candidates, potential_primer_regions, compatible_primers = shared_workflow(args, log_file)
 
     # write files that are shared in all modes
     reporting.write_regions_to_bed(primer_regions, args.name, data_dir)
@@ -570,6 +579,7 @@ def main():
             args,
             left_primer_candidates,
             right_primer_candidates,
+            potential_primer_regions,
             data_dir,
             log_file
         )
