@@ -139,7 +139,7 @@ def hardfilter_amplicon(majority_consensus, left_primer, right_primer):
     )
 
 
-def forms_dimer_or_overhangs(right_primer, left_primer, probe, ambiguous_consensus):
+def dimer_in_combinations(right_primer, left_primer, probe, ambiguous_consensus):
     """
     checks if primers cause dimers and if combinations of primers/probe including all permutations form dimers
     """
@@ -210,7 +210,7 @@ def assess_amplicons(left_subset, right_subset, qpcr_probes, probe, majority_con
                     [config.QPROBE_TEMP_DIFF[0] <= probe_temp - x <= config.QPROBE_TEMP_DIFF[1] for x in primer_temps]):
                 continue
             # .... all combination of oligos do not form dimers or overhangs.
-            if forms_dimer_or_overhangs(right_primer, left_primer, qpcr_probes[probe], ambiguous_consensus):
+            if dimer_in_combinations(right_primer, left_primer, qpcr_probes[probe], ambiguous_consensus):
                 continue
             # append to list and break as this is the primer combi
             # with the lowest penalty (primers are sorted by penalty)
