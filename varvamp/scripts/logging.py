@@ -281,7 +281,7 @@ def confirm_config(args, log_file):
 
     # check if all variables exists
     all_vars = [
-        # arg independent TILED, SINGLE mode
+        # arg independent all modes
         (
             "PRIMER_TMP",
             "PRIMER_GC_RANGE",
@@ -301,7 +301,8 @@ def confirm_config(args, log_file):
             "PRIMER_SIZE_PENALTY",
             "PRIMER_MAX_BASE_PENALTY",
             "PRIMER_3_PENALTY",
-            "PRIMER_PERMUTATION_PENALTY"
+            "PRIMER_PERMUTATION_PENALTY",
+            "END_OVERLAP"
         ),
         # arg independent QPCR mode
         (
@@ -312,7 +313,6 @@ def confirm_config(args, log_file):
             "QPRIMER_DIFF",
             "QPROBE_TEMP_DIFF",
             "QPROBE_DISTANCE",
-            "END_OVERLAP",
             "QAMPLICON_LENGTH",
             "QAMPLICON_GC",
             "QAMPLICON_DEL_CUTOFF"
@@ -408,7 +408,7 @@ def confirm_config(args, log_file):
         ("max base penalty", config.PRIMER_MAX_BASE_PENALTY),
         ("primer permutation penalty", config.PRIMER_PERMUTATION_PENALTY),
         ("qpcr flanking primer difference", config.QPRIMER_DIFF),
-        ("probe and primer end overlap", config.END_OVERLAP),
+        ("end overlap", config.END_OVERLAP),
         ("qpcr deletion size still considered for deltaG calculation", config.QAMPLICON_DEL_CUTOFF),
         ("maximum difference between primer and blast db", config.BLAST_MAX_DIFF),
         ("multiplier of the maximum length for non-specific amplicons", config.BLAST_SIZE_MULTI),

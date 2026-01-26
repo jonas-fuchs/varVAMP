@@ -141,13 +141,13 @@ def hardfilter_amplicon(majority_consensus, left_primer, right_primer):
 
 def forms_dimer_or_overhangs(right_primer, left_primer, probe, ambiguous_consensus):
     """
-    checks if combinations of primers/probe form dimers or overhangs
+    checks if primers cause dimers and if combinations of primers/probe including all permutations form dimers
     """
 
     forms_structure = False
 
     # first check if there are dimers between the two flanking primers
-    if primers.calc_dimer(left_primer[0], right_primer[0]).tm > config.PRIMER_MAX_DIMER_TMP:
+    if primers.is_dimer(left_primer[0], right_primer[0]):
         return True
     # for the probe check all permutations and possible overhangs to ensure
     # that none of the primers could cause unspecific probe binding.
