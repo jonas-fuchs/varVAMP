@@ -304,7 +304,7 @@ def shared_workflow(args, log_file):
         progress_text=f"{len(left_primer_candidates)} fw and {len(right_primer_candidates)} rv potential primers"
     )
 
-    # filter primers against non-dimer sequences if provided, can use multi-processing
+    # filter primers against user-provided list of compatible primers, can use multi-processing
     if compatible_primers is not None:
         left_primer_candidates = primers.filter_non_dimer_candidates(
             left_primer_candidates, compatible_primers, args.threads
@@ -433,7 +433,9 @@ def tiled_workflow(args, amplicons, left_primer_candidates, right_primer_candida
         amplicon_scheme,
         left_primer_candidates,
         right_primer_candidates,
-        all_primers)
+        all_primers,
+        args.threads
+    )
 
     # report dimers solve
     if n_initial_dimers > 0 and not dimers_not_solved:

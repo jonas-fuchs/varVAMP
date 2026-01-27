@@ -5,6 +5,7 @@ amplicon search
 # BUILT-INS
 import heapq
 import math
+from multiprocessing import Pool
 
 # varVAMP
 from varvamp.scripts import config, primers
@@ -375,31 +376,45 @@ def test_overlaps_for_dimers(overlapping_primers, non_dimers):
                 return [first_overlap, second_overlap]
 
 
-def check_and_solve_heterodimers(amplicon_scheme, left_primer_candidates, right_primer_candidates, all_primers):
+def _solve_single_dimer(args):
+    """
+    Helper function for multiprocessing: solve a single dimer independently.
+    Returns (amp_index, primer_name, new_primer) tuples or empty list if no solution.
+    """
+    dimer, amplicon_scheme, left_primer_candidates, right_primer_candidates, non_dimers_all_pools = args
+    pool = amplicon_scheme[dimer[0][0]]["pool"]
+    non_dimers = non_dimers_all_pools[pool]
+
+    overlapping_primers = get_overlapping_primers(dimer, left_primer_candidates, right_primer_candidates)
+    new_primers = test_overlaps_for_dimers(overlapping_primers, non_dimers)
+
+    return new_primers if new_primers else []
+
+
+def check_and_solve_heterodimers(amplicon_scheme, left_primer_candidates, right_primer_candidates, all_primers, num_processes):
     """
     check scheme for heterodimers, try to find
     new primers that overlap and replace the existing ones.
-    this can lead to new primer dimers. therefore the scheme
-    is checked a second time. if there are still primer dimers
-    present the non-solvable dimers are returned
+    Uses multiprocessing to solve dimers in parallel.
     """
-
     primer_dimers, non_dimers_all_pools = test_scheme_for_dimers(amplicon_scheme)
     n_initial_dimers = len(primer_dimers)
 
     if not primer_dimers:
         return [], []
 
-    for dimer in primer_dimers:
-        # determine the pool this dimer belongs to (both primers are in the same pool)
-        pool = amplicon_scheme[dimer[0][0]]["pool"]
-        non_dimers = non_dimers_all_pools[pool]
+    # Prepare arguments for each dimer
+    args_list = [
+        (dimer, amplicon_scheme, left_primer_candidates, right_primer_candidates, non_dimers_all_pools)
+        for dimer in primer_dimers
+    ]
 
-        # get overlapping primers that have not been considered
-        overlapping_primers = get_overlapping_primers(dimer, left_primer_candidates, right_primer_candidates)
-        # test all possible primers against each other for dimers
-        new_primers = test_overlaps_for_dimers(overlapping_primers, non_dimers)
-        # now change these primers in the scheme
+    # Solve dimers in parallel
+    with Pool(processes=num_processes) as pool:
+        results = pool.map(_solve_single_dimer, args_list)
+
+    # Apply all solutions to the scheme
+    for new_primers in results:
         if new_primers:
             for amp_index, primer_name, primer in new_primers:
                 # overwrite in final scheme

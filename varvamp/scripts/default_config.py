@@ -33,7 +33,7 @@ PRIMER_MIN_3_WITHOUT_AMB = 3  # min len of 3' without ambiguous charaters
 # primer dimer constraints
 PRIMER_MAX_DIMER_TMP = 35  # max melting temp for dimers, lower temperature means more stringent filtering
 PRIMER_MAX_DIMER_DELTAG = -9000  # max allowed gibbs free energy for dimer formation, higher values mean more stringent filtering
-END_OVERLAP = 5  # maximum allowed nt overlap between primer ends
+END_OVERLAP = 5  # maximum allowed nt overlap between ends of primers to be considered a dimer
 
 # QPCR parameters
 # basic probe parameters
