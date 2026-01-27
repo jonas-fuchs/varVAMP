@@ -401,7 +401,7 @@ def check_and_solve_heterodimers(amplicon_scheme, left_primer_candidates, right_
     n_initial_dimers = len(primer_dimers)
 
     if not primer_dimers:
-        return [], []
+        return [], 0
 
     # Prepare arguments for each dimer
     args_list = [
