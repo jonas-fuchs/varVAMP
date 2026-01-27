@@ -337,7 +337,7 @@ def get_overlapping_primers(dimer, left_primer_candidates, right_primer_candidat
     # test each primer in dimer
     for amp_index, primer_name, primer in dimer:
         overlapping_primers_temp = []
-        # as switching could result in failed overlap criteria,
+        # as switching could violate overlap criteria,
         # only consider primers that overlap in the left half (LEFT primers)
         # or right half (RIGHT primers) respectively, however this can result in slightly
         # longer amplicons than allowed.

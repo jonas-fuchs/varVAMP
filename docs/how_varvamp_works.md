@@ -64,11 +64,14 @@ at the following steps it might be worth increasing the number of cores.
 1. All workflows:
 - BLAST search: Each amplicon is searched for off-targets in the BLAST database.
 - Primer dimer search against a user-provided list of primers.
+- Primer search: Each kmer is evaluated as a potential primer.
 
 2. Tiled workflow:
 - Final primer dimer solve.
 
 3. qPCR workflow:
+- Probe search: Each kmer is evaluated as a potential probe.
+- Amplicon search: Each potential amplicon is checked for its parameters.
 - Amplicon deltaG calculation: Each amplicon is checked for potential secondary structures.
 
 #### Penalty calculation

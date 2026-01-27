@@ -107,13 +107,12 @@ def raise_arg_errors(args, log_file):
             "degeneracy. Consider reducing.",
             log_file
         )
-    if args.database is not None:
-        if args.threads < 1:
-            raise_error(
-                "number of threads cannot be smaller than 1.",
-                log_file,
-                exit=True
-            )
+    if args.threads < 1:
+        raise_error(
+            "number of threads cannot be smaller than 1.",
+            log_file,
+            exit=True
+        )
     if args.mode in ("tiled", "single"):
         if args.opt_length > args.max_length:
             raise_error(

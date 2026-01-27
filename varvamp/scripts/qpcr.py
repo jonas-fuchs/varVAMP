@@ -51,35 +51,27 @@ def filter_probe_direction_dependent(seq):
     )
 
 
-def get_qpcr_probes(kmers, ambiguous_consensus, alignment_cleaned):
+def _process_kmer_batch_probes(args):
     """
-    find potential qPCR probes
+    Helper function for multiprocessing: process a batch of kmers for probes.
+    Returns probe_candidates dictionary.
     """
+    kmers, ambiguous_consensus, alignment_cleaned = args
     probe_candidates = {}
     probe_idx = 0
 
     for kmer in kmers:
-        # filter probe for base params
         if not primers.filter_kmer_direction_independent(kmer[0], config.QPROBE_TMP, config.QPROBE_GC_RANGE,
                                                          config.QPROBE_SIZES):
             continue
-        # do not allow ambiguous chars at both ends
         if ambiguous_ends(ambiguous_consensus[kmer[1]:kmer[2]]):
             continue
-        # calc penalties analogous to primer search
-        base_penalty = primers.calc_base_penalty(kmer[0], config.QPROBE_TMP, config.QPROBE_GC_RANGE,
-                                                 config.QPROBE_SIZES)
-        per_base_mismatches = primers.calc_per_base_mismatches(
-            kmer,
-            alignment_cleaned,
-            ambiguous_consensus
-        )
-        permutation_penalty = primers.calc_permutation_penalty(
-            ambiguous_consensus[kmer[1]:kmer[2]]
-        )
-        # determine the direction with more cytosine or set both if 50 %
+
+        base_penalty = primers.calc_base_penalty(kmer[0], config.QPROBE_TMP, config.QPROBE_GC_RANGE, config.QPROBE_SIZES)
+        per_base_mismatches = primers.calc_per_base_mismatches(kmer, alignment_cleaned, ambiguous_consensus)
+        permutation_penalty = primers.calc_permutation_penalty(ambiguous_consensus[kmer[1]:kmer[2]])
         direction = choose_probe_direction(kmer[0])
-        # create probe dictionary
+
         if "+" in direction:
             if filter_probe_direction_dependent(kmer[0]):
                 probe_name = f"PROBE_{probe_idx}_LEFT"
@@ -96,7 +88,40 @@ def get_qpcr_probes(kmers, ambiguous_consensus, alignment_cleaned):
                                                 base_penalty + permutation_penalty + three_prime_penalty,
                                                 per_base_mismatches, direction]
                 probe_idx += 1
-    # sort by penalty
+
+    return probe_candidates
+
+
+def get_qpcr_probes(kmers, ambiguous_consensus, alignment_cleaned, num_processes, batch_size=1000):
+    """
+    Find potential qPCR probes using multiprocessing.
+    """
+    if not kmers:
+        return {}
+
+    # Convert kmers set to list for batching
+    kmers = list(kmers)
+
+    # Split kmers into batches
+    batches = [kmers[i:i + batch_size] for i in range(0, len(kmers), batch_size)]
+    args_list = [(batch, ambiguous_consensus, alignment_cleaned) for batch in batches]
+
+    # Process batches in parallel
+    with multiprocessing.Pool(processes=num_processes) as pool:
+        results = pool.map(_process_kmer_batch_probes, args_list)
+
+    # Aggregate results and re-index probe names
+    probe_candidates = {}
+    probe_idx = 0
+    for batch_probes in results:
+        for probe_name, probe_data in batch_probes.items():
+            # Extract direction from original probe name
+            direction = "LEFT" if "LEFT" in probe_name else "RIGHT"
+            new_probe_name = f"PROBE_{probe_idx}_{direction}"
+            probe_candidates[new_probe_name] = probe_data
+            probe_idx += 1
+
+    # Sort by penalty
     probe_candidates = dict(sorted(probe_candidates.items(), key=lambda x: x[1][3]))
 
     return probe_candidates
@@ -224,50 +249,70 @@ def assess_amplicons(left_subset, right_subset, qpcr_probes, probe, majority_con
     return primer_combinations
 
 
-def find_qcr_schemes(qpcr_probes, left_primer_candidates, right_primer_candidates, majority_consensus,
-                     ambiguous_consensus):
+def _assess_amplicon_for_probe(args):
     """
-    this finds the final qPCR schemes. it slices for primers flanking a probe and
-    test all left/right combinations whether they are potential amplicons. as primers
-    are sorted by penalty, only the very first match is considered as this has the
-    lowest penalty. however, probes are overlapping and there is a high chance that
-    left and right primers are found multiple times. to consider only one primer-probe
-    combination the probes are also sorted by penalty. therefore, if a primer
-    combination has been found already the optimal probe was already selected and
-    there is no need to consider this primer probe combination.
+    Helper function for multiprocessing: assess if primers form valid amplicon for a probe.
+    Includes flanking primer subset generation.
+    Returns (probe_name, primer_combination) or (probe_name, None) if no valid combination.
     """
+    probe_name, probe_data, left_primer_candidates, right_primer_candidates, qpcr_probes, majority_consensus, ambiguous_consensus = args
 
+    # Generate flanking subsets within the worker process
+    left_subset = flanking_primer_subset(left_primer_candidates, "+", probe_data)
+    right_subset = flanking_primer_subset(right_primer_candidates, "-", probe_data)
+
+    if not left_subset or not right_subset:
+        return probe_name, None
+
+    primer_combination = assess_amplicons(
+        left_subset, right_subset, qpcr_probes, probe_name,
+        majority_consensus, ambiguous_consensus
+    )
+
+    return probe_name, primer_combination
+
+
+def find_qcr_schemes(qpcr_probes, left_primer_candidates, right_primer_candidates,
+                     majority_consensus, ambiguous_consensus, num_processes, batch_size=100):
+    """
+    Find final qPCR schemes using multiprocessing to evaluate probes in parallel.
+    Probes are sorted by penalty, ensuring optimal probe selection.
+    """
     qpcr_scheme_candidates = []
     found_amplicons = []
     amplicon_nr = -1
 
-    for probe in qpcr_probes:
-        left_subset = flanking_primer_subset(left_primer_candidates, "+", qpcr_probes[probe])
-        right_subset = flanking_primer_subset(right_primer_candidates, "-", qpcr_probes[probe])
-        # consider if there are primers flanking the probe ...
-        if not left_subset or not right_subset:
-            continue
-        primer_combination = assess_amplicons(left_subset, right_subset, qpcr_probes, probe, majority_consensus,
-                                              ambiguous_consensus)
-        # ... a combi has been found, ...
+    # Prepare arguments for parallel processing - pass full primer lists
+    args_list = [
+        (probe_name, probe_data, left_primer_candidates, right_primer_candidates,
+         qpcr_probes, majority_consensus, ambiguous_consensus)
+        for probe_name, probe_data in qpcr_probes.items()
+    ]
+
+    # Process probes in parallel
+    with multiprocessing.Pool(processes=num_processes) as pool:
+        results = pool.map(_assess_amplicon_for_probe, args_list, chunksize=batch_size)
+
+    # Aggregate results in original probe order (sorted by penalty)
+    for probe_name, primer_combination in results:
         if not primer_combination:
             continue
-        # ...and this combi is not already present for a probe with a better penalty.
         if primer_combination in found_amplicons:
             continue
-        # populate the primer dictionary:
+
         amplicon_nr += 1
         found_amplicons.append(primer_combination)
-        qpcr_scheme_candidates.append(
-            {
-                "id": f"AMPLICON_{amplicon_nr}",
-                "penalty": qpcr_probes[probe][3] + primer_combination[0][3] + primer_combination[1][3],
-                "PROBE": qpcr_probes[probe],
-                "LEFT": primer_combination[0],
-                "RIGHT": primer_combination[1]
-            }
-        )
-    # and again sort by total penalty (left + right + probe)
+        qpcr_scheme_candidates.append({
+            "id": f"AMPLICON_{amplicon_nr}",
+            "penalty": qpcr_probes[probe_name][3] + primer_combination[0][3] + primer_combination[1][3],
+            "PROBE": qpcr_probes[probe_name],
+            "LEFT": primer_combination[0],
+            "RIGHT": primer_combination[1]
+        })
+
+    # Sort by total penalty
+    qpcr_scheme_candidates.sort(key=lambda x: x["penalty"])
+
     return qpcr_scheme_candidates
 
 

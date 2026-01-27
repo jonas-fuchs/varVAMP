@@ -73,7 +73,7 @@ def get_args(sysargs):
         par.add_argument(
             "-th",
             "--threads",
-            help="number of threads for BLAST search and deltaG calculations",
+            help="number of threads",
             metavar="1",
             type=int,
             default=1
@@ -191,7 +191,6 @@ def shared_workflow(args, log_file):
     """
     # start varvamp
     logging.varvamp_progress(log_file, mode=args.mode)
-
     # read in alignment and preprocess
     preprocessed_alignment = alignment.preprocess(args.input[0])
     # read in external primer sequences with which new primers should not form dimers
@@ -288,7 +287,8 @@ def shared_workflow(args, log_file):
     left_primer_candidates, right_primer_candidates = primers.find_primers(
         kmers,
         ambiguous_consensus,
-        alignment_cleaned
+        alignment_cleaned,
+        args.threads
     )
     for primer_type, primer_candidates in [("+", left_primer_candidates), ("-", right_primer_candidates)]:
         if not primer_candidates:
@@ -410,7 +410,8 @@ def tiled_workflow(args, amplicons, left_primer_candidates, right_primer_candida
     )
 
     # evaluate coverage
-    # ATTENTION: Genome coverage of the scheme might still change slightly through resolution of primer dimers, but this potential, minor inaccuracy is currently accepted.
+    # ATTENTION: Genome coverage of the scheme might still change slightly through resolution of primer dimers,
+    # but this potential, minor inaccuracy is currently accepted.
     percent_coverage = round(coverage/len(ambiguous_consensus)*100, 2)
     logging.varvamp_progress(
         log_file,
@@ -480,7 +481,7 @@ def qpcr_workflow(args, data_dir, alignment_cleaned, ambiguous_consensus, majori
         config.QPROBE_SIZES
     )
     # find potential probes
-    qpcr_probes = qpcr.get_qpcr_probes(probe_kmers, ambiguous_consensus, alignment_cleaned)
+    qpcr_probes = qpcr.get_qpcr_probes(probe_kmers, ambiguous_consensus, alignment_cleaned, args.threads)
     if not qpcr_probes:
         logging.raise_error(
             "no qpcr probes found\n",
@@ -506,7 +507,9 @@ def qpcr_workflow(args, data_dir, alignment_cleaned, ambiguous_consensus, majori
         )
 
     # find unique amplicons with a low penalty and an internal probe
-    qpcr_scheme_candidates = qpcr.find_qcr_schemes(qpcr_probes, left_primer_candidates, right_primer_candidates, majority_consensus, ambiguous_consensus)
+    qpcr_scheme_candidates = qpcr.find_qcr_schemes(
+        qpcr_probes, left_primer_candidates, right_primer_candidates, majority_consensus, ambiguous_consensus, args.threads
+    )
     if not qpcr_scheme_candidates:
         logging.raise_error(
             "no qPCR scheme candidates found. lower threshold or increase number of ambiguous chars in primer and/or probe\n",

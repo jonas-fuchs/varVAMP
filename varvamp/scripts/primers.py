@@ -395,51 +395,63 @@ def filter_non_dimer_candidates(primer_candidates, external_sequences, n_threads
     return [primer for primer in results if primer is not None]
 
 
-def find_primers(kmers, ambiguous_consensus, alignment):
+def _process_kmer_batch(args):
     """
-    filter kmers direction specific and append penalties
-    --> potential primers
+    Helper function for multiprocessing: process a batch of kmers.
+    Returns (left_primers, right_primers) tuples.
     """
-    left_primer_candidates = []
-    right_primer_candidates = []
+    kmers, ambiguous_consensus, alignment = args
+    left_primers = []
+    right_primers = []
 
     for kmer in kmers:
-        # filter kmers based on their direction independend stats
         if not filter_kmer_direction_independent(kmer[0]):
             continue
-        # calc base penalty
-        base_penalty = calc_base_penalty(kmer[0],config.PRIMER_TMP, config.PRIMER_GC_RANGE, config.PRIMER_SIZES)
-        # calculate per base mismatches
-        per_base_mismatches = calc_per_base_mismatches(
-                                kmer,
-                                alignment,
-                                ambiguous_consensus
-                            )
-        # calculate permutation penealty
-        permutation_penalty = calc_permutation_penalty(
-                                ambiguous_consensus[kmer[1]:kmer[2]]
-                            )
-        # now check direction specific
+
+        base_penalty = calc_base_penalty(kmer[0], config.PRIMER_TMP, config.PRIMER_GC_RANGE, config.PRIMER_SIZES)
+        per_base_mismatches = calc_per_base_mismatches(kmer, alignment, ambiguous_consensus)
+        permutation_penalty = calc_permutation_penalty(ambiguous_consensus[kmer[1]:kmer[2]])
+
         for direction in ["+", "-"]:
-            # check if kmer passes direction filter
             if not filter_kmer_direction_dependend(direction, kmer, ambiguous_consensus):
                 continue
-            # calculate the 3' penalty
-            three_prime_penalty = calc_3_prime_penalty(
-                                    direction,
-                                    per_base_mismatches
-                                )
-            # add all penalties
+
+            three_prime_penalty = calc_3_prime_penalty(direction, per_base_mismatches)
             primer_penalty = base_penalty + permutation_penalty + three_prime_penalty
-            # sort into lists
+
             if direction == "+":
-                left_primer_candidates.append(
-                    [kmer[0], kmer[1], kmer[2], primer_penalty, per_base_mismatches]
-                )
-            if direction == "-":
-                right_primer_candidates.append(
-                    [rev_complement(kmer[0]), kmer[1], kmer[2], primer_penalty, per_base_mismatches]
-                )
+                left_primers.append([kmer[0], kmer[1], kmer[2], primer_penalty, per_base_mismatches])
+            else:
+                right_primers.append([rev_complement(kmer[0]), kmer[1], kmer[2], primer_penalty, per_base_mismatches])
+
+    return left_primers, right_primers
+
+
+def find_primers(kmers, ambiguous_consensus, alignment, num_processes, batch_size=1000):
+    """
+    Filter kmers direction specific and append penalties --> potential primers.
+    Uses multiprocessing to process kmers in parallel.
+    """
+    if not kmers:
+        return [], []
+
+    # Convert kmers set to list for slicing
+    kmers = list(kmers)
+
+    # Split kmers into batches
+    batches = [kmers[i:i + batch_size] for i in range(0, len(kmers), batch_size)]
+    args_list = [(batch, ambiguous_consensus, alignment) for batch in batches]
+
+    # Process batches in parallel
+    with multiprocessing.Pool(processes=num_processes) as pool:
+        results = pool.map(_process_kmer_batch, args_list)
+
+    # Aggregate results
+    left_primer_candidates = []
+    right_primer_candidates = []
+    for left_primers, right_primers in results:
+        left_primer_candidates.extend(left_primers)
+        right_primer_candidates.extend(right_primers)
 
     return left_primer_candidates, right_primer_candidates
 
