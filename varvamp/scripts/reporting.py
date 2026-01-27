@@ -353,21 +353,32 @@ def write_dimers(path, primer_dimers):
     """
     write dimers for which no replacement was found to file
     """
-    tsv_file = os.path.join(path, "unsolvable_primer_dimers.tsv")
-    with open(tsv_file, "w") as tsv:
-        print(
-            "pool\tprimer_name_1\tprimer_name_2\tdimer melting temp",
-            file=tsv
-        )
+    file = os.path.join(path, "unsolvable_primer_dimers.txt")
+    with open(file, "w") as f:
         for pool, primer1, primer2 in primer_dimers:
+            dimer_result = primers.calc_dimer(primer1[2][0], primer2[2][0], structure=True)
+            print(
+                "pool\tprimer 1\tprimer 2\tdimer melting temp\tdeltaG",
+                file=f
+            )
             print(
                 pool+1,
-                primer1[1],
-                primer2[1],
-                round(primers.calc_dimer(primer1[2][0], primer2[2][0]).tm, 1),
+                primer1[2][0],
+                primer2[2][0],
+                round(dimer_result.tm, 1),
+                dimer_result.dg,
                 sep="\t",
-                file=tsv
+                file=f
             )
+            structure = [x[4:] for x in dimer_result.ascii_structure_lines]
+            print("\nDimer structure:", file=f)
+            for line in structure:
+                print(
+                    line,
+                    file=f
+                )
+            print(file=f)
+
 
 def entropy(chars, states):
     """

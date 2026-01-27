@@ -9,7 +9,7 @@ __all__ = [
     'PCR_DNA_CONC', 'PCR_DNTP_CONC', 'PCR_DV_CONC', 'PCR_MV_CONC',
     'PRIMER_3_PENALTY', 'PRIMER_GC_END', 'PRIMER_GC_PENALTY',
     'PRIMER_GC_RANGE', 'PRIMER_HAIRPIN', 'PRIMER_MAX_BASE_PENALTY',
-    'PRIMER_MAX_DIMER_TMP', 'PRIMER_MAX_DINUC_REPEATS', 'PRIMER_MAX_POLYX',
+    'PRIMER_MAX_DIMER_TMP', 'PRIMER_MAX_DIMER_DELTAG', 'PRIMER_MAX_DINUC_REPEATS', 'PRIMER_MAX_POLYX',
     'PRIMER_MIN_3_WITHOUT_AMB', 'PRIMER_PERMUTATION_PENALTY',
     'PRIMER_SIZES', 'PRIMER_SIZE_PENALTY',
     'PRIMER_TMP', 'PRIMER_TM_PENALTY',
@@ -30,7 +30,9 @@ PRIMER_MAX_DINUC_REPEATS = 4  # max number of polyXY
 PRIMER_HAIRPIN = 47  # max melting temp for secondary structure
 PRIMER_GC_END = (1, 3)  # min/max GCs in the last 5 bases of the 3' end
 PRIMER_MIN_3_WITHOUT_AMB = 3  # min len of 3' without ambiguous charaters
-PRIMER_MAX_DIMER_TMP = 35  # max melting temp for dimers (homo- or heterodimers)
+# primer dimer constraints
+PRIMER_MAX_DIMER_TMP = 35  # max melting temp for dimers, lower temperature means more stringent filtering
+PRIMER_MAX_DIMER_DELTAG = -9000  # max allowed gibbs free energy for dimer formation, higher values mean more stringent filtering
 END_OVERLAP = 5  # maximum allowed nt overlap between primer ends
 
 # QPCR parameters

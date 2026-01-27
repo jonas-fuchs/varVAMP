@@ -88,7 +88,7 @@ def has_end_overlap(dimer_result):
         maximum_alignment_length = len(re.findall("[ATCG]", "".join(structure)))
         # this means that for a perfect end overlap the alignment length is equal to:
         # len(primer1) + len(primer2) - overlap.
-        if alignment_length >= maximum_alignment_length - overlap:
+        if alignment_length == maximum_alignment_length - overlap:
             return True
 
     return False
@@ -100,8 +100,8 @@ def is_dimer(seq1, seq2):
     """
     dimer_result = calc_dimer(seq1, seq2, structure=True)
 
-    if dimer_result.tm > config.PRIMER_MAX_DIMER_TMP:
-       return True
+    if dimer_result.tm > config.PRIMER_MAX_DIMER_TMP or dimer_result.dg < config.PRIMER_MAX_DIMER_DELTAG:
+        return True
     if has_end_overlap(dimer_result):
         return True
 

@@ -409,19 +409,6 @@ def tiled_workflow(args, amplicons, left_primer_candidates, right_primer_candida
         amplicon_graph
     )
 
-    # check for dimers
-    dimers_not_solved = scheme.check_and_solve_heterodimers(
-        amplicon_scheme,
-        left_primer_candidates,
-        right_primer_candidates,
-        all_primers)
-    if dimers_not_solved:
-        logging.raise_error(
-            f"varVAMP found {len(dimers_not_solved)} primer dimers without replacements. Check the dimer file and perform the PCR for incomaptible amplicons in a sperate reaction.",
-            log_file
-        )
-        reporting.write_dimers(results_dir, dimers_not_solved)
-
     # evaluate coverage
     # ATTENTION: Genome coverage of the scheme might still change slightly through resolution of primer dimers, but this potential, minor inaccuracy is currently accepted.
     percent_coverage = round(coverage/len(ambiguous_consensus)*100, 2)
@@ -440,6 +427,31 @@ def tiled_workflow(args, amplicons, left_primer_candidates, right_primer_candida
             "\t - relax primer settings (not recommended)\n",
             log_file
         )
+
+    # check for dimers
+    dimers_not_solved, n_initial_dimers = scheme.check_and_solve_heterodimers(
+        amplicon_scheme,
+        left_primer_candidates,
+        right_primer_candidates,
+        all_primers)
+
+    # report dimers solve
+    if n_initial_dimers > 0 and not dimers_not_solved:
+        logging.varvamp_progress(
+            log_file,
+            progress=0.95,
+            job="Trying to solve primer dimers.",
+            progress_text=f"all dimers (n={n_initial_dimers}) could be resolved"
+        )
+    elif dimers_not_solved:
+        logging.varvamp_progress(
+            log_file,
+            progress=0.95,
+            job="Trying to solve primer dimers.",
+            progress_text=f"{len(dimers_not_solved)}/{n_initial_dimers} dimers could not be resolved"
+        )
+        reporting.write_dimers(results_dir, dimers_not_solved)
+
     return amplicon_scheme
 
 
@@ -454,7 +466,7 @@ def qpcr_workflow(args, data_dir, alignment_cleaned, ambiguous_consensus, majori
     )
     if not probe_regions:
         logging.raise_error(
-            "no regions that fullfill probe criteria! lower threshold or increase number of ambiguous chars in probe\n",
+            "no regions that fulfill probe criteria! lower threshold or increase number of ambiguous chars in probe\n",
             log_file,
             exit=True
         )
