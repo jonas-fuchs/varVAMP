@@ -502,7 +502,7 @@ def qpcr_workflow(args, data_dir, alignment_cleaned, ambiguous_consensus, majori
         logging.varvamp_progress(
             log_file,
             progress=0.75,
-            job="Filtering probes against provided primer sequences.",
+            job="Filtering probes against provided primers.",
             progress_text=f"{len(qpcr_probes)} potential qPCR probes after filtering"
         )
 

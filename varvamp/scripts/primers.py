@@ -341,60 +341,6 @@ def filter_kmer_direction_dependend(direction, kmer, ambiguous_consensus):
     )
 
 
-def parse_primer_fasta(fasta_path):
-    """
-    Parse a primer FASTA file and return a list of sequences using BioPython.
-    """
-
-    sequences = []
-
-    for record in SeqIO.parse(fasta_path, "fasta"):
-        seq = str(record.seq).lower()
-        # Only include primers up to 40 nucleotides
-        if len(seq) <= 40:
-            sequences.append(reporting.get_permutations(seq))
-
-    return list(chain.from_iterable(sequences))
-
-
-def check_primer_against_externals(args):
-    """
-    Worker function to check a single primer against all external sequences.
-    Returns the primer if it passes, None otherwise.
-    """
-
-    primer, external_sequences = args
-
-    for seq in external_sequences:
-        if is_dimer(primer[0], seq):
-            return None
-        
-    return primer
-
-
-def filter_non_dimer_candidates(primer_candidates, external_sequences, n_threads):
-    """
-    Filter out primer candidates that form dimers with external sequences.
-    Uses multiprocessing to speed up checks.
-    """
-    # Deduplicate external sequences to reduce redundant checks
-    unique_sequences = []
-    seen = set()
-    for seq in external_sequences:
-        if seq not in seen:
-            unique_sequences.append(seq)
-            seen.add(seq)
-
-    with multiprocessing.Pool(processes=n_threads) as pool:
-        # Prepare arguments for each primer
-        args = [(primer, unique_sequences) for primer in primer_candidates]
-        # Process in parallel
-        results = pool.map(check_primer_against_externals, args)
-
-    # Filter out None results
-    return [primer for primer in results if primer is not None]
-
-
 def _process_kmer_batch(args):
     """
     Helper function for multiprocessing: process a batch of kmers.
@@ -528,3 +474,68 @@ def find_best_primers(left_primer_candidates, right_primer_candidates, high_cons
 
     # and create a dict
     return all_primers
+
+
+def parse_primer_fasta(fasta_path):
+    """
+    Parse a primer FASTA file and return a list of sequences using BioPython.
+    """
+
+    sequences = []
+
+    for record in SeqIO.parse(fasta_path, "fasta"):
+        seq = str(record.seq).lower()
+        # Only include primers up to 40 nucleotides
+        if len(seq) <= 40:
+            sequences.append(reporting.get_permutations(seq))
+
+    return list(chain.from_iterable(sequences))
+
+
+def check_primer_against_externals(args):
+    """
+    Worker function to check a single primer against all external sequences.
+    Returns the primer if it passes, None otherwise.
+    Handles both list format and dict format (name, data) tuples.
+    """
+    primer, external_sequences = args
+
+    # Extract sequence based on input format
+    if isinstance(primer, tuple):
+        name, data = primer
+        seq = data[0]
+    else:
+        seq = primer[0]
+
+    for ext_seq in external_sequences:
+        if is_dimer(seq, ext_seq):
+            return None
+
+    return primer
+
+
+def filter_non_dimer_candidates(primer_candidates, external_sequences, n_threads):
+    """
+    Filter out primer candidates that form dimers with external sequences.
+    Uses multiprocessing to speed up checks.
+    """
+    is_dict = isinstance(primer_candidates, dict)
+
+    # Deduplicate external sequences
+    unique_sequences = list(set(external_sequences))
+
+    with multiprocessing.Pool(processes=n_threads) as pool:
+        # Prepare arguments based on input type
+        if is_dict:
+            args = [((name, data), unique_sequences) for name, data in primer_candidates.items()]
+        else:
+            args = [(primer, unique_sequences) for primer in primer_candidates]
+
+        results = pool.map(check_primer_against_externals, args)
+
+    # Filter and restore original format
+    if is_dict:
+        filtered_results = [result for result in results if result is not None]
+        return {name: data for name, data in filtered_results}
+    else:
+        return [primer for primer in results if primer is not None]

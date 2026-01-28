@@ -96,8 +96,6 @@ def get_qpcr_probes(kmers, ambiguous_consensus, alignment_cleaned, num_processes
     """
     Find potential qPCR probes using multiprocessing.
     """
-    if not kmers:
-        return {}
 
     # Convert kmers set to list for batching
     kmers = list(kmers)
