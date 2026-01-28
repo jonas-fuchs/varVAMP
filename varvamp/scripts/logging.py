@@ -107,13 +107,12 @@ def raise_arg_errors(args, log_file):
             "degeneracy. Consider reducing.",
             log_file
         )
-    if args.database is not None:
-        if args.threads < 1:
-            raise_error(
-                "number of threads cannot be smaller than 1.",
-                log_file,
-                exit=True
-            )
+    if args.threads < 1:
+        raise_error(
+            "number of threads cannot be smaller than 1.",
+            log_file,
+            exit=True
+        )
     if args.mode in ("tiled", "single"):
         if args.opt_length > args.max_length:
             raise_error(
@@ -281,7 +280,7 @@ def confirm_config(args, log_file):
 
     # check if all variables exists
     all_vars = [
-        # arg independent TILED, SINGLE mode
+        # arg independent all modes
         (
             "PRIMER_TMP",
             "PRIMER_GC_RANGE",
@@ -291,6 +290,7 @@ def confirm_config(args, log_file):
             "PRIMER_MAX_DINUC_REPEATS",
             "PRIMER_GC_END",
             "PRIMER_MAX_DIMER_TMP",
+            "PRIMER_MAX_DIMER_DELTAG",
             "PRIMER_MIN_3_WITHOUT_AMB",
             "PCR_MV_CONC",
             "PCR_DV_CONC",
@@ -301,7 +301,8 @@ def confirm_config(args, log_file):
             "PRIMER_SIZE_PENALTY",
             "PRIMER_MAX_BASE_PENALTY",
             "PRIMER_3_PENALTY",
-            "PRIMER_PERMUTATION_PENALTY"
+            "PRIMER_PERMUTATION_PENALTY",
+            "END_OVERLAP"
         ),
         # arg independent QPCR mode
         (
@@ -312,7 +313,6 @@ def confirm_config(args, log_file):
             "QPRIMER_DIFF",
             "QPROBE_TEMP_DIFF",
             "QPROBE_DISTANCE",
-            "END_OVERLAP",
             "QAMPLICON_LENGTH",
             "QAMPLICON_GC",
             "QAMPLICON_DEL_CUTOFF"
@@ -408,7 +408,7 @@ def confirm_config(args, log_file):
         ("max base penalty", config.PRIMER_MAX_BASE_PENALTY),
         ("primer permutation penalty", config.PRIMER_PERMUTATION_PENALTY),
         ("qpcr flanking primer difference", config.QPRIMER_DIFF),
-        ("probe and primer end overlap", config.END_OVERLAP),
+        ("end overlap", config.END_OVERLAP),
         ("qpcr deletion size still considered for deltaG calculation", config.QAMPLICON_DEL_CUTOFF),
         ("maximum difference between primer and blast db", config.BLAST_MAX_DIFF),
         ("multiplier of the maximum length for non-specific amplicons", config.BLAST_SIZE_MULTI),
@@ -446,15 +446,20 @@ def confirm_config(args, log_file):
         )
     if config.PRIMER_HAIRPIN < 0:
         raise_error(
-            "decreasing hairpin melting temp to negative values "
-            "will influence successful primer search!",
+            "decreasing hairpin melting temp to negative values will influence successful primer search!",
             log_file
         )
-    if config.PRIMER_MAX_DIMER_TMP < 0:
+    if config.PRIMER_MAX_DIMER_TMP < 21:
         raise_error(
-            "there is no need to set max dimer melting temp below 0.",
+            "there is no need to set max dimer melting temp below room temperature.",
             log_file
         )
+    if config.PRIMER_MAX_DIMER_DELTAG > -6000:
+        raise_error(
+            "primer interactions with deltaG values higher than -6000 are generally considered unproblematic.",
+            log_file
+        )
+
     if config.PRIMER_MAX_BASE_PENALTY < 8:
         raise_error(
             "decreasing the base penalty will filter out more primers.",
@@ -595,7 +600,6 @@ def goodbye_message():
     messages = [
         "Thank you. Come again.",
         ">Placeholder for your advertisement<",
-        "Make primers great again!",
         "Ciao cacao!",
         "And now lets pray to the PCR gods.",
         "**bibobibobop** task finished",
@@ -611,6 +615,19 @@ def goodbye_message():
         "Task failed successfully.",
         "Never gonna give you up, never gonna let you down.",
         "Have you tried turning it off and on again?",
+        "Just try it. PCR is magic!",
+        "One goat was sacrificed for this primer design to work.",
+        "You seem trustworthy. Here's a cookie!",
+        "Owwww yeah, primers done!",
+        "These primers were designed without AI assistance.",
+        "Research is fun (if you ignore the pipetting).",
+        "Balance your primers, balance your life.",
+        "Keep calm and PCR on.",
+        "In silico we trust.",
+        "May the primers be with you.",
+        "Designing primers like a boss!",
+        "Primer design completed. Time for a break!",
+        "Eureka! Your primers are ready.",
         "Look, I am your primer scheme.",
         "Quod erat demonstrandum.",
         "Miau?",

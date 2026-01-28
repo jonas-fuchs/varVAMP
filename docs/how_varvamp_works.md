@@ -56,6 +56,24 @@ To search for the best amplicon, varVAMP uses a graph based approach.
 7. Test amplicons for their [minimal free energy](https://en.wikipedia.org/wiki/Gibbs_free_energy) at their lowest primer temperature with [`seqfold`](https://github.com/Lattice-Automation/seqfold) and filter to avoid secondary structures. Amplicons with large potential deletions (>QAMPLICON_DEL_CUTOFF) will be ignored. Smaller deletions will be accepted.
 8. Take the best qPCR schemes of overlapping schemes.
 
+
+#### Multi-processing
+varVAMP can use multiple cores at some steps in the workflow. If you have performance issues
+at the following steps it might be worth increasing the number of cores.
+
+1. All workflows:
+- BLAST search: Each amplicon is searched for off-targets in the BLAST database.
+- Primer dimer search against a user-provided list of primers.
+- Primer search: Each kmer is evaluated as a potential primer.
+
+2. Tiled workflow:
+- Final primer dimer solve.
+
+3. qPCR workflow:
+- Probe search: Each kmer is evaluated as a potential probe.
+- Amplicon search: Each potential amplicon is checked for its parameters.
+- Amplicon deltaG calculation: Each amplicon is checked for potential secondary structures.
+
 #### Penalty calculation
 
 ```python

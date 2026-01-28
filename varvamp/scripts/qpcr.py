@@ -51,35 +51,27 @@ def filter_probe_direction_dependent(seq):
     )
 
 
-def get_qpcr_probes(kmers, ambiguous_consensus, alignment_cleaned):
+def _process_kmer_batch_probes(args):
     """
-    find potential qPCR probes
+    Helper function for multiprocessing: process a batch of kmers for probes.
+    Returns probe_candidates dictionary.
     """
+    kmers, ambiguous_consensus, alignment_cleaned = args
     probe_candidates = {}
     probe_idx = 0
 
     for kmer in kmers:
-        # filter probe for base params
         if not primers.filter_kmer_direction_independent(kmer[0], config.QPROBE_TMP, config.QPROBE_GC_RANGE,
                                                          config.QPROBE_SIZES):
             continue
-        # do not allow ambiguous chars at both ends
         if ambiguous_ends(ambiguous_consensus[kmer[1]:kmer[2]]):
             continue
-        # calc penalties analogous to primer search
-        base_penalty = primers.calc_base_penalty(kmer[0], config.QPROBE_TMP, config.QPROBE_GC_RANGE,
-                                                 config.QPROBE_SIZES)
-        per_base_mismatches = primers.calc_per_base_mismatches(
-            kmer,
-            alignment_cleaned,
-            ambiguous_consensus
-        )
-        permutation_penalty = primers.calc_permutation_penalty(
-            ambiguous_consensus[kmer[1]:kmer[2]]
-        )
-        # determine the direction with more cytosine or set both if 50 %
+
+        base_penalty = primers.calc_base_penalty(kmer[0], config.QPROBE_TMP, config.QPROBE_GC_RANGE, config.QPROBE_SIZES)
+        per_base_mismatches = primers.calc_per_base_mismatches(kmer, alignment_cleaned, ambiguous_consensus)
+        permutation_penalty = primers.calc_permutation_penalty(ambiguous_consensus[kmer[1]:kmer[2]])
         direction = choose_probe_direction(kmer[0])
-        # create probe dictionary
+
         if "+" in direction:
             if filter_probe_direction_dependent(kmer[0]):
                 probe_name = f"PROBE_{probe_idx}_LEFT"
@@ -96,7 +88,38 @@ def get_qpcr_probes(kmers, ambiguous_consensus, alignment_cleaned):
                                                 base_penalty + permutation_penalty + three_prime_penalty,
                                                 per_base_mismatches, direction]
                 probe_idx += 1
-    # sort by penalty
+
+    return probe_candidates
+
+
+def get_qpcr_probes(kmers, ambiguous_consensus, alignment_cleaned, num_processes, batch_size=1000):
+    """
+    Find potential qPCR probes using multiprocessing.
+    """
+
+    # Convert kmers set to list for batching
+    kmers = list(kmers)
+
+    # Split kmers into batches
+    batches = [kmers[i:i + batch_size] for i in range(0, len(kmers), batch_size)]
+    args_list = [(batch, ambiguous_consensus, alignment_cleaned) for batch in batches]
+
+    # Process batches in parallel
+    with multiprocessing.Pool(processes=num_processes) as pool:
+        results = pool.map(_process_kmer_batch_probes, args_list)
+
+    # Aggregate results and re-index probe names
+    probe_candidates = {}
+    probe_idx = 0
+    for batch_probes in results:
+        for probe_name, probe_data in batch_probes.items():
+            # Extract direction from original probe name
+            direction = "LEFT" if "LEFT" in probe_name else "RIGHT"
+            new_probe_name = f"PROBE_{probe_idx}_{direction}"
+            probe_candidates[new_probe_name] = probe_data
+            probe_idx += 1
+
+    # Sort by penalty
     probe_candidates = dict(sorted(probe_candidates.items(), key=lambda x: x[1][3]))
 
     return probe_candidates
@@ -139,35 +162,15 @@ def hardfilter_amplicon(majority_consensus, left_primer, right_primer):
     )
 
 
-def check_end_overlap(dimer_result):
+def dimer_in_combinations(right_primer, left_primer, probe, ambiguous_consensus):
     """
-    checks if two oligos overlap at their ends (pretty rare)
-    Example:
-        xxxxxxxxtagc-------
-        --------atcgxxxxxxx
-    """
-    if dimer_result.structure_found:
-        # clean structure
-        structure = [x[4:] for x in dimer_result.ascii_structure_lines]
-        # calc overlap and the cumulative len of the oligos
-        overlap = len(structure[1].replace(" ", ""))
-        nt_count = len(re.findall("[ATCG]", "".join(structure)))
-        # check for overlaps at the ends and the min overlap (allows for some amount of mismatches)
-        if overlap > config.END_OVERLAP and nt_count <= len(structure[0]) + overlap + 1 and "  " not in structure[1].lstrip(" "):
-            return True
-
-    return False
-
-
-def forms_dimer_or_overhangs(right_primer, left_primer, probe, ambiguous_consensus):
-    """
-    checks if combinations of primers/probe form dimers or overhangs
+    checks if primers cause dimers and if combinations of primers/probe including all permutations form dimers
     """
 
     forms_structure = False
 
     # first check if there are dimers between the two flanking primers
-    if primers.calc_dimer(left_primer[0], right_primer[0]).tm > config.PRIMER_MAX_DIMER_TMP:
+    if primers.is_dimer(left_primer[0], right_primer[0]):
         return True
     # for the probe check all permutations and possible overhangs to ensure
     # that none of the primers could cause unspecific probe binding.
@@ -179,8 +182,7 @@ def forms_dimer_or_overhangs(right_primer, left_primer, probe, ambiguous_consens
     for combination in [(probe_per, left_per), (probe_per, right_per)]:
         for oligo1 in combination[0]:
             for oligo2 in combination[1]:
-                dimer_result = primers.calc_dimer(oligo1, oligo2, structure=True)
-                if dimer_result.tm >= config.PRIMER_MAX_DIMER_TMP or check_end_overlap(dimer_result):
+                if primers.is_dimer(oligo1, oligo2):
                     forms_structure = True
                     break
             # break all loops because we found an unwanted structure in one of the permutations
@@ -231,7 +233,7 @@ def assess_amplicons(left_subset, right_subset, qpcr_probes, probe, majority_con
                     [config.QPROBE_TEMP_DIFF[0] <= probe_temp - x <= config.QPROBE_TEMP_DIFF[1] for x in primer_temps]):
                 continue
             # .... all combination of oligos do not form dimers or overhangs.
-            if forms_dimer_or_overhangs(right_primer, left_primer, qpcr_probes[probe], ambiguous_consensus):
+            if dimer_in_combinations(right_primer, left_primer, qpcr_probes[probe], ambiguous_consensus):
                 continue
             # append to list and break as this is the primer combi
             # with the lowest penalty (primers are sorted by penalty)
@@ -245,50 +247,70 @@ def assess_amplicons(left_subset, right_subset, qpcr_probes, probe, majority_con
     return primer_combinations
 
 
-def find_qcr_schemes(qpcr_probes, left_primer_candidates, right_primer_candidates, majority_consensus,
-                     ambiguous_consensus):
+def _assess_amplicon_for_probe(args):
     """
-    this finds the final qPCR schemes. it slices for primers flanking a probe and
-    test all left/right combinations whether they are potential amplicons. as primers
-    are sorted by penalty, only the very first match is considered as this has the
-    lowest penalty. however, probes are overlapping and there is a high chance that
-    left and right primers are found multiple times. to consider only one primer-probe
-    combination the probes are also sorted by penalty. therefore, if a primer
-    combination has been found already the optimal probe was already selected and
-    there is no need to consider this primer probe combination.
+    Helper function for multiprocessing: assess if primers form valid amplicon for a probe.
+    Includes flanking primer subset generation.
+    Returns (probe_name, primer_combination) or (probe_name, None) if no valid combination.
     """
+    probe_name, probe_data, left_primer_candidates, right_primer_candidates, qpcr_probes, majority_consensus, ambiguous_consensus = args
 
+    # Generate flanking subsets within the worker process
+    left_subset = flanking_primer_subset(left_primer_candidates, "+", probe_data)
+    right_subset = flanking_primer_subset(right_primer_candidates, "-", probe_data)
+
+    if not left_subset or not right_subset:
+        return probe_name, None
+
+    primer_combination = assess_amplicons(
+        left_subset, right_subset, qpcr_probes, probe_name,
+        majority_consensus, ambiguous_consensus
+    )
+
+    return probe_name, primer_combination
+
+
+def find_qcr_schemes(qpcr_probes, left_primer_candidates, right_primer_candidates,
+                     majority_consensus, ambiguous_consensus, num_processes, batch_size=100):
+    """
+    Find final qPCR schemes using multiprocessing to evaluate probes in parallel.
+    Probes are sorted by penalty, ensuring optimal probe selection.
+    """
     qpcr_scheme_candidates = []
     found_amplicons = []
     amplicon_nr = -1
 
-    for probe in qpcr_probes:
-        left_subset = flanking_primer_subset(left_primer_candidates, "+", qpcr_probes[probe])
-        right_subset = flanking_primer_subset(right_primer_candidates, "-", qpcr_probes[probe])
-        # consider if there are primers flanking the probe ...
-        if not left_subset or not right_subset:
-            continue
-        primer_combination = assess_amplicons(left_subset, right_subset, qpcr_probes, probe, majority_consensus,
-                                              ambiguous_consensus)
-        # ... a combi has been found, ...
+    # Prepare arguments for parallel processing - pass full primer lists
+    args_list = [
+        (probe_name, probe_data, left_primer_candidates, right_primer_candidates,
+         qpcr_probes, majority_consensus, ambiguous_consensus)
+        for probe_name, probe_data in qpcr_probes.items()
+    ]
+
+    # Process probes in parallel
+    with multiprocessing.Pool(processes=num_processes) as pool:
+        results = pool.map(_assess_amplicon_for_probe, args_list, chunksize=batch_size)
+
+    # Aggregate results in original probe order (sorted by penalty)
+    for probe_name, primer_combination in results:
         if not primer_combination:
             continue
-        # ...and this combi is not already present for a probe with a better penalty.
         if primer_combination in found_amplicons:
             continue
-        # populate the primer dictionary:
+
         amplicon_nr += 1
         found_amplicons.append(primer_combination)
-        qpcr_scheme_candidates.append(
-            {
-                "id": f"AMPLICON_{amplicon_nr}",
-                "penalty": qpcr_probes[probe][3] + primer_combination[0][3] + primer_combination[1][3],
-                "PROBE": qpcr_probes[probe],
-                "LEFT": primer_combination[0],
-                "RIGHT": primer_combination[1]
-            }
-        )
-    # and again sort by total penalty (left + right + probe)
+        qpcr_scheme_candidates.append({
+            "id": f"AMPLICON_{amplicon_nr}",
+            "penalty": qpcr_probes[probe_name][3] + primer_combination[0][3] + primer_combination[1][3],
+            "PROBE": qpcr_probes[probe_name],
+            "LEFT": primer_combination[0],
+            "RIGHT": primer_combination[1]
+        })
+
+    # Sort by total penalty
+    qpcr_scheme_candidates.sort(key=lambda x: x["penalty"])
+
     return qpcr_scheme_candidates
 
 

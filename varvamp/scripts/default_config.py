@@ -9,7 +9,7 @@ __all__ = [
     'PCR_DNA_CONC', 'PCR_DNTP_CONC', 'PCR_DV_CONC', 'PCR_MV_CONC',
     'PRIMER_3_PENALTY', 'PRIMER_GC_END', 'PRIMER_GC_PENALTY',
     'PRIMER_GC_RANGE', 'PRIMER_HAIRPIN', 'PRIMER_MAX_BASE_PENALTY',
-    'PRIMER_MAX_DIMER_TMP', 'PRIMER_MAX_DINUC_REPEATS', 'PRIMER_MAX_POLYX',
+    'PRIMER_MAX_DIMER_TMP', 'PRIMER_MAX_DIMER_DELTAG', 'PRIMER_MAX_DINUC_REPEATS', 'PRIMER_MAX_POLYX',
     'PRIMER_MIN_3_WITHOUT_AMB', 'PRIMER_PERMUTATION_PENALTY',
     'PRIMER_SIZES', 'PRIMER_SIZE_PENALTY',
     'PRIMER_TMP', 'PRIMER_TM_PENALTY',
@@ -30,7 +30,10 @@ PRIMER_MAX_DINUC_REPEATS = 4  # max number of polyXY
 PRIMER_HAIRPIN = 47  # max melting temp for secondary structure
 PRIMER_GC_END = (1, 3)  # min/max GCs in the last 5 bases of the 3' end
 PRIMER_MIN_3_WITHOUT_AMB = 3  # min len of 3' without ambiguous charaters
-PRIMER_MAX_DIMER_TMP = 47  # max melting temp for dimers (homo- or heterodimers)
+# primer dimer constraints
+PRIMER_MAX_DIMER_TMP = 35  # max melting temp for dimers, lower temperature means more stringent filtering
+PRIMER_MAX_DIMER_DELTAG = -9000  # max allowed gibbs free energy for dimer formation, higher values mean more stringent filtering
+END_OVERLAP = 5  # maximum allowed nt overlap between ends of primers to be considered a dimer
 
 # QPCR parameters
 # basic probe parameters
@@ -42,7 +45,6 @@ QPROBE_GC_END = (0, 4)
 QPRIMER_DIFF = 2  # maximal temperature diff of qPCR primers
 QPROBE_TEMP_DIFF = (5, 10)  # min/max temp diff between probe and primers
 QPROBE_DISTANCE = (4, 15)  # min/max distance to the primer on the same strand
-END_OVERLAP = 5  # maximum allowed nt overlap between the ends of probe and primer
 QAMPLICON_LENGTH = (70, 200)  # min/max length of the qPCR amplicon
 QAMPLICON_GC = (40, 60)  # GC min/max of the qPCR amplicon
 QAMPLICON_DEL_CUTOFF = 4  # consider regions of the alignment for deltaG calculation if they have smaller deletions than cutoff

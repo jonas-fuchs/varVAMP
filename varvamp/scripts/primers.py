@@ -2,12 +2,18 @@
 primer creation and evaluation
 """
 
+# BUILTIN
+from itertools import chain
+import re
+import multiprocessing
+
 # LIBS
 from Bio.Seq import Seq
+from Bio import SeqIO
 import primer3 as p3
 
 # varVAMP
-from varvamp.scripts import config
+from varvamp.scripts import config, reporting
 
 
 def calc_gc(seq):
@@ -57,6 +63,49 @@ def calc_dimer(seq1, seq2, structure=False):
         dntp_conc=config.PCR_DNTP_CONC,
         output_structure=structure
     )
+
+
+def has_end_overlap(dimer_result):
+    """
+    checks if two oligos overlap at their ends
+    Example:
+        xxxxxxxxtagc-------
+        --------atcgxxxxxxx
+    """
+    if dimer_result.structure_found:
+        # clean structure
+        structure = [x[4:] for x in dimer_result.ascii_structure_lines]
+        # check if we have an overlap that is large enough
+        overlap = len(structure[1].replace(" ", ""))
+        if overlap <= config.END_OVERLAP:
+            return False
+        # not more than one conseq. internal mismatch
+        if '  ' in structure[1].lstrip(" "):
+            return False
+        # The alignment length of the ACII structure is equal to the first part of the structure
+        # and the maximum possible alignment length is the cumulative length of both primers (-> no overlap at all)
+        alignment_length = len(structure[0])
+        maximum_alignment_length = len(re.findall("[ATCG]", "".join(structure)))
+        # this means that for a perfect end overlap the alignment length is equal to:
+        # len(primer1) + len(primer2) - overlap.
+        if alignment_length == maximum_alignment_length - overlap:
+            return True
+
+    return False
+
+
+def is_dimer(seq1, seq2):
+    """
+    check if two sequences dimerize above threshold or are overlapping at their ends
+    """
+    dimer_result = calc_dimer(seq1, seq2, structure=True)
+
+    if dimer_result.tm > config.PRIMER_MAX_DIMER_TMP or dimer_result.dg < config.PRIMER_MAX_DIMER_DELTAG:
+        return True
+    if has_end_overlap(dimer_result):
+        return True
+
+    return False
 
 
 def calc_max_polyx(seq):
@@ -261,13 +310,14 @@ def filter_kmer_direction_independent(seq, primer_temps=config.PRIMER_TMP, gc_ra
     filter kmer for temperature, gc content,
     poly x, dinucleotide repeats and homodimerization
     """
+
     return(
         (primer_temps[0] <= calc_temp(seq) <= primer_temps[1])
         and (gc_range[0] <= calc_gc(seq) <= gc_range[1])
         and (calc_max_polyx(seq) <= config.PRIMER_MAX_POLYX)
         and (calc_max_dinuc_repeats(seq) <= config.PRIMER_MAX_DINUC_REPEATS)
         and (calc_base_penalty(seq, primer_temps, gc_range, primer_sizes) <= config.PRIMER_MAX_BASE_PENALTY)
-        and (calc_dimer(seq, seq).tm <= config.PRIMER_MAX_DIMER_TMP)
+        and not is_dimer(seq, seq)
     )
 
 
@@ -291,51 +341,63 @@ def filter_kmer_direction_dependend(direction, kmer, ambiguous_consensus):
     )
 
 
-def find_primers(kmers, ambiguous_consensus, alignment):
+def _process_kmer_batch(args):
     """
-    filter kmers direction specific and append penalties
-    --> potential primers
+    Helper function for multiprocessing: process a batch of kmers.
+    Returns (left_primers, right_primers) tuples.
     """
-    left_primer_candidates = []
-    right_primer_candidates = []
+    kmers, ambiguous_consensus, alignment = args
+    left_primers = []
+    right_primers = []
 
     for kmer in kmers:
-        # filter kmers based on their direction independend stats
         if not filter_kmer_direction_independent(kmer[0]):
             continue
-        # calc base penalty
-        base_penalty = calc_base_penalty(kmer[0],config.PRIMER_TMP, config.PRIMER_GC_RANGE, config.PRIMER_SIZES)
-        # calculate per base mismatches
-        per_base_mismatches = calc_per_base_mismatches(
-                                kmer,
-                                alignment,
-                                ambiguous_consensus
-                            )
-        # calculate permutation penealty
-        permutation_penalty = calc_permutation_penalty(
-                                ambiguous_consensus[kmer[1]:kmer[2]]
-                            )
-        # now check direction specific
+
+        base_penalty = calc_base_penalty(kmer[0], config.PRIMER_TMP, config.PRIMER_GC_RANGE, config.PRIMER_SIZES)
+        per_base_mismatches = calc_per_base_mismatches(kmer, alignment, ambiguous_consensus)
+        permutation_penalty = calc_permutation_penalty(ambiguous_consensus[kmer[1]:kmer[2]])
+
         for direction in ["+", "-"]:
-            # check if kmer passes direction filter
             if not filter_kmer_direction_dependend(direction, kmer, ambiguous_consensus):
                 continue
-            # calculate the 3' penalty
-            three_prime_penalty = calc_3_prime_penalty(
-                                    direction,
-                                    per_base_mismatches
-                                )
-            # add all penalties
+
+            three_prime_penalty = calc_3_prime_penalty(direction, per_base_mismatches)
             primer_penalty = base_penalty + permutation_penalty + three_prime_penalty
-            # sort into lists
+
             if direction == "+":
-                left_primer_candidates.append(
-                    [kmer[0], kmer[1], kmer[2], primer_penalty, per_base_mismatches]
-                )
-            if direction == "-":
-                right_primer_candidates.append(
-                    [rev_complement(kmer[0]), kmer[1], kmer[2], primer_penalty, per_base_mismatches]
-                )
+                left_primers.append([kmer[0], kmer[1], kmer[2], primer_penalty, per_base_mismatches])
+            else:
+                right_primers.append([rev_complement(kmer[0]), kmer[1], kmer[2], primer_penalty, per_base_mismatches])
+
+    return left_primers, right_primers
+
+
+def find_primers(kmers, ambiguous_consensus, alignment, num_processes, batch_size=1000):
+    """
+    Filter kmers direction specific and append penalties --> potential primers.
+    Uses multiprocessing to process kmers in parallel.
+    """
+    if not kmers:
+        return [], []
+
+    # Convert kmers set to list for slicing
+    kmers = list(kmers)
+
+    # Split kmers into batches
+    batches = [kmers[i:i + batch_size] for i in range(0, len(kmers), batch_size)]
+    args_list = [(batch, ambiguous_consensus, alignment) for batch in batches]
+
+    # Process batches in parallel
+    with multiprocessing.Pool(processes=num_processes) as pool:
+        results = pool.map(_process_kmer_batch, args_list)
+
+    # Aggregate results
+    left_primer_candidates = []
+    right_primer_candidates = []
+    for left_primers, right_primers in results:
+        left_primer_candidates.extend(left_primers)
+        right_primer_candidates.extend(right_primers)
 
     return left_primer_candidates, right_primer_candidates
 
@@ -412,3 +474,68 @@ def find_best_primers(left_primer_candidates, right_primer_candidates, high_cons
 
     # and create a dict
     return all_primers
+
+
+def parse_primer_fasta(fasta_path):
+    """
+    Parse a primer FASTA file and return a list of sequences using BioPython.
+    """
+
+    sequences = []
+
+    for record in SeqIO.parse(fasta_path, "fasta"):
+        seq = str(record.seq).lower()
+        # Only include primers up to 40 nucleotides
+        if len(seq) <= 40:
+            sequences.append(reporting.get_permutations(seq))
+
+    return list(chain.from_iterable(sequences))
+
+
+def check_primer_against_externals(args):
+    """
+    Worker function to check a single primer against all external sequences.
+    Returns the primer if it passes, None otherwise.
+    Handles both list format and dict format (name, data) tuples.
+    """
+    primer, external_sequences = args
+
+    # Extract sequence based on input format
+    if isinstance(primer, tuple):
+        name, data = primer
+        seq = data[0]
+    else:
+        seq = primer[0]
+
+    for ext_seq in external_sequences:
+        if is_dimer(seq, ext_seq):
+            return None
+
+    return primer
+
+
+def filter_non_dimer_candidates(primer_candidates, external_sequences, n_threads):
+    """
+    Filter out primer candidates that form dimers with external sequences.
+    Uses multiprocessing to speed up checks.
+    """
+    is_dict = isinstance(primer_candidates, dict)
+
+    # Deduplicate external sequences
+    unique_sequences = list(set(external_sequences))
+
+    with multiprocessing.Pool(processes=n_threads) as pool:
+        # Prepare arguments based on input type
+        if is_dict:
+            args = [((name, data), unique_sequences) for name, data in primer_candidates.items()]
+        else:
+            args = [(primer, unique_sequences) for primer in primer_candidates]
+
+        results = pool.map(check_primer_against_externals, args)
+
+    # Filter and restore original format
+    if is_dict:
+        filtered_results = [result for result in results if result is not None]
+        return {name: data for name, data in filtered_results}
+    else:
+        return [primer for primer in results if primer is not None]
