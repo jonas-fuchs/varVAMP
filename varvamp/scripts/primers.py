@@ -3,7 +3,7 @@ primer creation and evaluation
 """
 
 # BUILTIN
-from itertools import chain
+import itertools
 import re
 import multiprocessing
 
@@ -13,7 +13,7 @@ from Bio import SeqIO
 import primer3 as p3
 
 # varVAMP
-from varvamp.scripts import config, reporting
+from varvamp.scripts import config
 
 
 def calc_gc(seq):
@@ -476,6 +476,21 @@ def find_best_primers(left_primer_candidates, right_primer_candidates, high_cons
     return all_primers
 
 
+def get_permutations(seq):
+    """
+    get all permutations of an ambiguous sequence.
+    """
+    groups = itertools.groupby(seq, lambda char: char not in config.AMBIG_NUCS)
+    splits = []
+    for b, group in groups:
+        if b:
+            splits.extend([[g] for g in group])
+        else:
+            for nuc in group:
+                splits.append(config.AMBIG_NUCS[nuc])
+    return[''.join(p) for p in itertools.product(*splits)]
+
+
 def parse_primer_fasta(fasta_path):
     """
     Parse a primer FASTA file and return a list of sequences using BioPython.
@@ -487,9 +502,9 @@ def parse_primer_fasta(fasta_path):
         seq = str(record.seq).lower()
         # Only include primers up to 40 nucleotides
         if len(seq) <= 40:
-            sequences.append(reporting.get_permutations(seq))
+            sequences.append(get_permutations(seq))
 
-    return list(chain.from_iterable(sequences))
+    return list(itertools.chain.from_iterable(sequences))
 
 
 def check_primer_against_externals(args):

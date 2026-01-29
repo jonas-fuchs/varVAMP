@@ -4,7 +4,6 @@ data writing and visualization.
 # BUILT-INS
 import os
 import math
-import itertools
 
 # LIBS
 import pandas as pd
@@ -94,20 +93,6 @@ def write_all_primers(path, scheme_name, all_primers):
             write_primers_to_bed(outfile, scheme_name, primer, all_primers[direction][primer], round(all_primers[direction][primer][3], 2), direction)
 
 
-def get_permutations(seq):
-    """
-    get all permutations of an ambiguous sequence. needed to
-    correctly report the gc and the temperature.
-    """
-    groups = itertools.groupby(seq, lambda char: char not in config.AMBIG_NUCS)
-    splits = []
-    for b, group in groups:
-        if b:
-            splits.extend([[g] for g in group])
-        else:
-            for nuc in group:
-                splits.append(config.AMBIG_NUCS[nuc])
-    return[''.join(p) for p in itertools.product(*splits)]
 
 
 def calc_mean_stats(permutations):
@@ -190,7 +175,7 @@ def write_qpcr_to_files(path, final_schemes, ambiguous_consensus, scheme_name, l
                 else:
                     direction = "+"
 
-                permutations = get_permutations(seq)
+                permutations = primers.get_permutations(seq)
                 gc, temp = calc_mean_stats(permutations)
                 primer_name = f"{amp_name}_{oligo_type}"
 
@@ -295,7 +280,7 @@ def write_scheme_to_files(path, amplicon_scheme, ambiguous_consensus, scheme_nam
                         # write primers to fasta pool file
                         print(f">{primer_name}\n{seq.upper()}", file=primer_fasta)
                         # calc primer parameters for all permutations
-                        permutations = get_permutations(seq)
+                        permutations = primers.get_permutations(seq)
                         gc, temp = calc_mean_stats(permutations)
                         # write tsv file
                         print(

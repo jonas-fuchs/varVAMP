@@ -61,8 +61,7 @@ def _process_kmer_batch_probes(args):
     probe_idx = 0
 
     for kmer in kmers:
-        if not primers.filter_kmer_direction_independent(kmer[0], config.QPROBE_TMP, config.QPROBE_GC_RANGE,
-                                                         config.QPROBE_SIZES):
+        if not primers.filter_kmer_direction_independent(kmer[0], config.QPROBE_TMP, config.QPROBE_GC_RANGE, config.QPROBE_SIZES):
             continue
         if ambiguous_ends(ambiguous_consensus[kmer[1]:kmer[2]]):
             continue
@@ -112,6 +111,8 @@ def get_qpcr_probes(kmers, ambiguous_consensus, alignment_cleaned, num_processes
     probe_candidates = {}
     probe_idx = 0
     for batch_probes in results:
+        if batch_probes is None:
+            continue
         for probe_name, probe_data in batch_probes.items():
             # Extract direction from original probe name
             direction = "LEFT" if "LEFT" in probe_name else "RIGHT"
@@ -175,9 +176,9 @@ def dimer_in_combinations(right_primer, left_primer, probe, ambiguous_consensus)
     # for the probe check all permutations and possible overhangs to ensure
     # that none of the primers could cause unspecific probe binding.
     # first get all permutations
-    probe_per = reporting.get_permutations(ambiguous_consensus[probe[1]:probe[2]])
-    left_per = reporting.get_permutations(ambiguous_consensus[left_primer[1]:left_primer[2]])
-    right_per = reporting.get_permutations(ambiguous_consensus[right_primer[1]:right_primer[2]])
+    probe_per = primers.get_permutations(ambiguous_consensus[probe[1]:probe[2]])
+    left_per = primers.get_permutations(ambiguous_consensus[left_primer[1]:left_primer[2]])
+    right_per = primers.get_permutations(ambiguous_consensus[right_primer[1]:right_primer[2]])
     # then check all permutations
     for combination in [(probe_per, left_per), (probe_per, right_per)]:
         for oligo1 in combination[0]:

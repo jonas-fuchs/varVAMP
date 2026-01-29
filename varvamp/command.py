@@ -46,7 +46,7 @@ def get_args(sysargs):
     QPCR_parser = mode_parser.add_parser(
         "qpcr",
         help="design qPCR primers",
-        usage="varvamp qpcr [optional arguments] <alignment> <output dir>"
+        usage="varvamp qpcr -t [optional arguments] <alignment> <output dir>"
     )
     parser.add_argument(
         "input",
@@ -145,9 +145,8 @@ def get_args(sysargs):
     QPCR_parser.add_argument(
         "-t",
         "--threshold",
-        metavar="0.9",
+        required=True,
         type=float,
-        default=0.9,
         help="consensus threshold (0-1) - higher values result in higher specificity at the expense of found primers"
     )
     QPCR_parser.add_argument(
