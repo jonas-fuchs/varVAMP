@@ -480,8 +480,8 @@ def get_permutations(seq):
     """
     get all permutations of an ambiguous sequence.
     """
-    
     splits = [config.AMBIG_NUCS.get(nuc, [nuc]) for nuc in seq]
+
     return[''.join(p) for p in itertools.product(*splits)]
 
 
@@ -498,7 +498,7 @@ def parse_primer_fasta(fasta_path):
         if len(seq) <= 40:
             sequences += get_permutations(seq)
 
-    return sequences
+    return list(set(sequences))  # deduplication
 
 
 def check_primer_against_externals(args):
@@ -530,15 +530,12 @@ def filter_non_dimer_candidates(primer_candidates, external_sequences, n_threads
     """
     is_dict = isinstance(primer_candidates, dict)
 
-    # Deduplicate external sequences
-    unique_sequences = list(set(external_sequences))
-
     with multiprocessing.Pool(processes=n_threads) as pool:
         # Prepare arguments based on input type
         if is_dict:
-            args = [((name, data), unique_sequences) for name, data in primer_candidates.items()]
+            args = [((name, data), external_sequences) for name, data in primer_candidates.items()]
         else:
-            args = [(primer, unique_sequences) for primer in primer_candidates]
+            args = [(primer, external_sequences) for primer in primer_candidates]
 
         results = pool.map(check_primer_against_externals, args)
 
