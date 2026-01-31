@@ -185,10 +185,10 @@ def dimer_in_combinations(right_primer, left_primer, probe, ambiguous_consensus)
             if primers.is_dimer(oligo1, oligo2):
                 forms_structure = True
                 break
-            # break also outer loop because we found an unwanted structure in one of the permutations
-            # (either dimer formation or a too long overlap at the ends of the primer)
-            if forms_structure:
-                break
+        # break also outer loop because we found an unwanted structure in one of the permutations
+        # (either dimer formation or a too long overlap at the ends of the primer)
+        if forms_structure:
+            break
 
     return forms_structure
 
