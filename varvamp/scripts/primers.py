@@ -480,14 +480,8 @@ def get_permutations(seq):
     """
     get all permutations of an ambiguous sequence.
     """
-    groups = itertools.groupby(seq, lambda char: char not in config.AMBIG_NUCS)
-    splits = []
-    for b, group in groups:
-        if b:
-            splits.extend([[g] for g in group])
-        else:
-            for nuc in group:
-                splits.append(config.AMBIG_NUCS[nuc])
+    
+    splits = [config.AMBIG_NUCS.get(nuc, [nuc]) for nuc in seq]
     return[''.join(p) for p in itertools.product(*splits)]
 
 
