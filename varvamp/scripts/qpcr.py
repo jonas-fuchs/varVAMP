@@ -332,7 +332,7 @@ def process_single_amplicon_deltaG(amplicon, majority_consensus):
     return amplicon
 
 
-def test_amplicon_deltaG_parallel(qpcr_schemes_candidates, majority_consensus, n_to_test, deltaG_cutoff, n_threads):
+def test_amplicon_deltaG_parallel(qpcr_schemes_candidates, majority_consensus, n_to_test, deltaG_cutoff, num_processes):
     """
     Test all amplicon deltaGs for the top n hits at the lowest primer temperature
     and filters if they fall below the cutoff. Multiple processes are used
