@@ -341,7 +341,7 @@ def test_amplicon_deltaG_parallel(qpcr_schemes_candidates, majority_consensus, n
     final_amplicons = []
 
     # Create a pool of processes to handle the concurrent processing
-    with multiprocessing.Pool(processes=n_threads) as pool:
+    with multiprocessing.Pool(processes=num_processes) as pool:
         # Create a list of the first n amplicon tuples for processing
         # The list is sorted first on whether offset targets were predicted for the amplicon,
         # then by penalty. This ensures that amplicons with offset targets are always considered last
