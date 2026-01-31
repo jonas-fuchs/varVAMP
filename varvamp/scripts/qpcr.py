@@ -245,14 +245,11 @@ def assess_amplicons(left_subset, right_subset, qpcr_probes, probe, majority_con
     return primer_combinations
 
 
-def _assess_amplicon_for_probe(args):
+def find_single_qpcr_scheme(probe_name, probe_data, left_primer_candidates, right_primer_candidates, qpcr_probes,
+                            majority_consensus, ambiguous_consensus):
     """
-    Helper function for multiprocessing: assess if primers form valid amplicon for a probe.
-    Includes flanking primer subset generation.
-    Returns (probe_name, primer_combination) or (probe_name, None) if no valid combination.
+    Find a qPCR scheme for a single probe.
     """
-    probe_name, probe_data, left_primer_candidates, right_primer_candidates, qpcr_probes, majority_consensus, ambiguous_consensus = args
-
     # Generate flanking subsets within the worker process
     left_subset = flanking_primer_subset(left_primer_candidates, "+", probe_data)
     right_subset = flanking_primer_subset(right_primer_candidates, "-", probe_data)
@@ -287,7 +284,7 @@ def find_qcr_schemes(qpcr_probes, left_primer_candidates, right_primer_candidate
 
     # Process probes in parallel
     with multiprocessing.Pool(processes=num_processes) as pool:
-        results = pool.map(_assess_amplicon_for_probe, args_list, chunksize=batch_size)
+        results = pool.map(find_single_qpcr_scheme, args_list, chunksize=batch_size)
 
     # Aggregate results in original probe order (sorted by penalty)
     for probe_name, primer_combination in results:
