@@ -181,17 +181,14 @@ def dimer_in_combinations(right_primer, left_primer, probe, ambiguous_consensus)
     right_per = primers.get_permutations(ambiguous_consensus[right_primer[1]:right_primer[2]])
     # then check all permutations
     for combination in [(probe_per, left_per), (probe_per, right_per)]:
-        for oligo1 in combination[0]:
-            for oligo2 in combination[1]:
-                if primers.is_dimer(oligo1, oligo2):
-                    forms_structure = True
-                    break
-            # break all loops because we found an unwanted structure in one of the permutations
+        for oligo1, oligo2 in itertools.product(*combination):
+            if primers.is_dimer(oligo1, oligo2):
+                forms_structure = True
+                break
+            # break also outer loop because we found an unwanted structure in one of the permutations
             # (either dimer formation or a too long overlap at the ends of the primer)
             if forms_structure:
                 break
-        if forms_structure:
-            break
 
     return forms_structure
 
