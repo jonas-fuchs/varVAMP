@@ -387,8 +387,6 @@ def find_primers(kmers, ambiguous_consensus, alignment, num_processes):
 
     # Split kmers into batches
     batches = [kmers[i:i + batch_size] for i in range(0, len(kmers), batch_size)]
-
-    # Prepare arguments for each dimer
     callable_f = functools.partial(
         _process_kmer_batch,
         ambiguous_consensus, alignment
