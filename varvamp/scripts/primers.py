@@ -496,9 +496,9 @@ def parse_primer_fasta(fasta_path):
         seq = str(record.seq).lower()
         # Only include primers up to 40 nucleotides
         if len(seq) <= 40:
-            sequences.append(get_permutations(seq))
+            sequences += get_permutations(seq)
 
-    return list(itertools.chain.from_iterable(sequences))
+    return sequences
 
 
 def check_primer_against_externals(args):
