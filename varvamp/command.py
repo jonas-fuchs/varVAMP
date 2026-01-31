@@ -46,7 +46,7 @@ def get_args(sysargs):
     QPCR_parser = mode_parser.add_parser(
         "qpcr",
         help="design qPCR primers",
-        usage="varvamp qpcr -t [optional arguments] <alignment> <output dir>"
+        usage="varvamp qpcr -t <threshold> [optional arguments] <alignment> <output dir>"
     )
     parser.add_argument(
         "input",
