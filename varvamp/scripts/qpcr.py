@@ -282,15 +282,14 @@ def find_qcr_schemes(qpcr_probes, left_primer_candidates, right_primer_candidate
     amplicon_nr = -1
 
     # Prepare arguments for parallel processing - pass full primer lists
-    args_list = [
-        (probe_name, probe_data, left_primer_candidates, right_primer_candidates,
-         qpcr_probes, majority_consensus, ambiguous_consensus)
-        for probe_name, probe_data in qpcr_probes.items()
-    ]
-
+    callable = functools.partial(
+        find_single_qpcr_scheme,
+        left_primer_candidates, right_primer_candidates, qpcr_probes, majority_consensus, ambiguous_consensus
+    )
+    
     # Process probes in parallel
     with multiprocessing.Pool(processes=num_processes) as pool:
-        results = pool.map(_assess_amplicon_for_probe, args_list, chunksize=batch_size)
+        results = pool.map(callable, qpcr_probes.items(), chunksize=batch_size)
 
     # Aggregate results in original probe order (sorted by penalty)
     for probe_name, primer_combination in results:
