@@ -373,7 +373,7 @@ def _process_kmer_batch(args):
     return left_primers, right_primers
 
 
-def find_primers(kmers, ambiguous_consensus, alignment, num_processes, batch_size=1000):
+def find_primers(kmers, ambiguous_consensus, alignment, num_processes):
     """
     Filter kmers direction specific and append penalties --> potential primers.
     Uses multiprocessing to process kmers in parallel.
@@ -383,6 +383,7 @@ def find_primers(kmers, ambiguous_consensus, alignment, num_processes, batch_siz
 
     # Convert kmers set to list for slicing
     kmers = list(kmers)
+    batch_size = int(len(kmers)/num_processes)
 
     # Split kmers into batches
     batches = [kmers[i:i + batch_size] for i in range(0, len(kmers), batch_size)]
