@@ -5,7 +5,8 @@ amplicon search
 # BUILT-INS
 import heapq
 import math
-from multiprocessing import Pool
+import multiprocessing
+import functools
 
 # varVAMP
 from varvamp.scripts import config, primers
@@ -376,12 +377,11 @@ def test_overlaps_for_dimers(overlapping_primers, non_dimers):
                 return [first_overlap, second_overlap]
 
 
-def _solve_single_dimer(args):
+def _solve_single_dimer(amplicon_scheme, left_primer_candidates, right_primer_candidates, non_dimers_all_pools, dimer):
     """
     Helper function for multiprocessing: solve a single dimer independently.
     Returns (amp_index, primer_name, new_primer) tuples or empty list if no solution.
     """
-    dimer, amplicon_scheme, left_primer_candidates, right_primer_candidates, non_dimers_all_pools = args
     pool = amplicon_scheme[dimer[0][0]]["pool"]
     non_dimers = non_dimers_all_pools[pool]
 
@@ -404,14 +404,14 @@ def check_and_solve_heterodimers(amplicon_scheme, left_primer_candidates, right_
         return [], 0
 
     # Prepare arguments for each dimer
-    args_list = [
-        (dimer, amplicon_scheme, left_primer_candidates, right_primer_candidates, non_dimers_all_pools)
-        for dimer in primer_dimers
-    ]
+    callable_f = functools.partial(
+        _solve_single_dimer,
+    amplicon_scheme, left_primer_candidates, right_primer_candidates, non_dimers_all_pools
+    )
 
     # Solve dimers in parallel
-    with Pool(processes=num_processes) as pool:
-        results = pool.map(_solve_single_dimer, args_list)
+    with multiprocessing.Pool(processes=num_processes) as pool:
+        results = pool.map(callable_f, primer_dimers)
 
     # Apply all solutions to the scheme
     for new_primers in results:

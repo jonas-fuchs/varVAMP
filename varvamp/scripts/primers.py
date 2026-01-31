@@ -6,6 +6,7 @@ primer creation and evaluation
 import itertools
 import re
 import multiprocessing
+import functools
 
 # LIBS
 from Bio.Seq import Seq
@@ -341,12 +342,11 @@ def filter_kmer_direction_dependend(direction, kmer, ambiguous_consensus):
     )
 
 
-def _process_kmer_batch(args):
+def _process_kmer_batch(ambiguous_consensus, alignment, kmers):
     """
     Helper function for multiprocessing: process a batch of kmers.
     Returns (left_primers, right_primers) tuples.
     """
-    kmers, ambiguous_consensus, alignment = args
     left_primers = []
     right_primers = []
 
@@ -387,11 +387,16 @@ def find_primers(kmers, ambiguous_consensus, alignment, num_processes):
 
     # Split kmers into batches
     batches = [kmers[i:i + batch_size] for i in range(0, len(kmers), batch_size)]
-    args_list = [(batch, ambiguous_consensus, alignment) for batch in batches]
 
-    # Process batches in parallel
+    # Prepare arguments for each dimer
+    callable_f = functools.partial(
+        _process_kmer_batch,
+        ambiguous_consensus, alignment
+    )
+
+    # Solve dimers in parallel
     with multiprocessing.Pool(processes=num_processes) as pool:
-        results = pool.map(_process_kmer_batch, args_list)
+        results = pool.map(callable_f, batches)
 
     # Aggregate results
     left_primer_candidates = []
@@ -502,13 +507,12 @@ def parse_primer_fasta(fasta_path):
     return list(set(sequences))  # deduplication
 
 
-def check_primer_against_externals(args):
+def check_primer_against_externals(external_sequences, primer):
     """
     Worker function to check a single primer against all external sequences.
     Returns the primer if it passes, None otherwise.
     Handles both list format and dict format (name, data) tuples.
     """
-    primer, external_sequences = args
 
     # Extract sequence based on input format
     if isinstance(primer, tuple):
@@ -524,21 +528,24 @@ def check_primer_against_externals(args):
     return primer
 
 
-def filter_non_dimer_candidates(primer_candidates, external_sequences, n_threads):
+def filter_non_dimer_candidates(primer_candidates, external_sequences, n_processes):
     """
     Filter out primer candidates that form dimers with external sequences.
     Uses multiprocessing to speed up checks.
     """
     is_dict = isinstance(primer_candidates, dict)
 
-    with multiprocessing.Pool(processes=n_threads) as pool:
+    callable_f = functools.partial(
+        check_primer_against_externals,
+        external_sequences
+    )
+
+    with multiprocessing.Pool(processes=n_processes) as pool:
         # Prepare arguments based on input type
         if is_dict:
-            args = [((name, data), external_sequences) for name, data in primer_candidates.items()]
+            results = pool.map(callable_f, primer_candidates.items())
         else:
-            args = [(primer, external_sequences) for primer in primer_candidates]
-
-        results = pool.map(check_primer_against_externals, args)
+            results = pool.map(callable_f, primer_candidates)
 
     # Filter and restore original format
     if is_dict:

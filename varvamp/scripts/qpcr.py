@@ -7,11 +7,11 @@ import re
 import seqfold
 import itertools
 import multiprocessing
+import functools
 
 # varVAMP
 from varvamp.scripts import config
 from varvamp.scripts import primers
-from varvamp.scripts import reporting
 
 
 def choose_probe_direction(seq):
@@ -51,12 +51,11 @@ def filter_probe_direction_dependent(seq):
     )
 
 
-def _process_kmer_batch_probes(args):
+def _process_kmer_batch_probes(ambiguous_consensus, alignment_cleaned, kmers):
     """
     Helper function for multiprocessing: process a batch of kmers for probes.
     Returns probe_candidates dictionary.
     """
-    kmers, ambiguous_consensus, alignment_cleaned = args
     probe_candidates = {}
     probe_idx = 0
 
@@ -91,7 +90,7 @@ def _process_kmer_batch_probes(args):
     return probe_candidates
 
 
-def get_qpcr_probes(kmers, ambiguous_consensus, alignment_cleaned, num_processes, batch_size=1000):
+def get_qpcr_probes(kmers, ambiguous_consensus, alignment_cleaned, num_processes):
     """
     Find potential qPCR probes using multiprocessing.
     """
@@ -100,12 +99,16 @@ def get_qpcr_probes(kmers, ambiguous_consensus, alignment_cleaned, num_processes
     kmers = list(kmers)
 
     # Split kmers into batches
+    batch_size = int(len(kmers) / num_processes)
     batches = [kmers[i:i + batch_size] for i in range(0, len(kmers), batch_size)]
-    args_list = [(batch, ambiguous_consensus, alignment_cleaned) for batch in batches]
 
-    # Process batches in parallel
+    # Prepare arguments for each dimer
+    callable_f = functools.partial(
+        _process_kmer_batch_probes,
+        ambiguous_consensus, alignment_cleaned
+    )
     with multiprocessing.Pool(processes=num_processes) as pool:
-        results = pool.map(_process_kmer_batch_probes, args_list)
+        results = pool.map(callable_f, batches)
 
     # Aggregate results and re-index probe names
     probe_candidates = {}
@@ -245,11 +248,14 @@ def assess_amplicons(left_subset, right_subset, qpcr_probes, probe, majority_con
     return primer_combinations
 
 
-def find_single_qpcr_scheme(probe_name, probe_data, left_primer_candidates, right_primer_candidates, qpcr_probes,
-                            majority_consensus, ambiguous_consensus):
+def find_single_qpcr_scheme(left_primer_candidates, right_primer_candidates, qpcr_probes,
+                            majority_consensus, ambiguous_consensus, probe):
     """
     Find a qPCR scheme for a single probe.
     """
+
+    probe_name, probe_data = probe
+
     # Generate flanking subsets within the worker process
     left_subset = flanking_primer_subset(left_primer_candidates, "+", probe_data)
     right_subset = flanking_primer_subset(right_primer_candidates, "-", probe_data)
@@ -266,7 +272,7 @@ def find_single_qpcr_scheme(probe_name, probe_data, left_primer_candidates, righ
 
 
 def find_qcr_schemes(qpcr_probes, left_primer_candidates, right_primer_candidates,
-                     majority_consensus, ambiguous_consensus, num_processes, batch_size=100):
+                     majority_consensus, ambiguous_consensus, num_processes):
     """
     Find final qPCR schemes using multiprocessing to evaluate probes in parallel.
     Probes are sorted by penalty, ensuring optimal probe selection.
@@ -276,15 +282,15 @@ def find_qcr_schemes(qpcr_probes, left_primer_candidates, right_primer_candidate
     amplicon_nr = -1
 
     # Prepare arguments for parallel processing - pass full primer lists
-    args_list = [
-        (probe_name, probe_data, left_primer_candidates, right_primer_candidates,
-         qpcr_probes, majority_consensus, ambiguous_consensus)
-        for probe_name, probe_data in qpcr_probes.items()
-    ]
+    batch_size = int(len(qpcr_probes) / num_processes)
+    callable_f = functools.partial(
+        find_single_qpcr_scheme,
+        left_primer_candidates, right_primer_candidates, qpcr_probes, majority_consensus, ambiguous_consensus
+    )
 
     # Process probes in parallel
     with multiprocessing.Pool(processes=num_processes) as pool:
-        results = pool.map(find_single_qpcr_scheme, args_list, chunksize=batch_size)
+        results = pool.map(callable_f, qpcr_probes.items(), chunksize=batch_size)
 
     # Aggregate results in original probe order (sorted by penalty)
     for probe_name, primer_combination in results:
@@ -327,7 +333,7 @@ def process_single_amplicon_deltaG(amplicon, majority_consensus):
     return amplicon
 
 
-def test_amplicon_deltaG_parallel(qpcr_schemes_candidates, majority_consensus, n_to_test, deltaG_cutoff, n_threads):
+def test_amplicon_deltaG_parallel(qpcr_schemes_candidates, majority_consensus, n_to_test, deltaG_cutoff, n_processes):
     """
     Test all amplicon deltaGs for the top n hits at the lowest primer temperature
     and filters if they fall below the cutoff. Multiple processes are used
@@ -336,7 +342,7 @@ def test_amplicon_deltaG_parallel(qpcr_schemes_candidates, majority_consensus, n
     final_amplicons = []
 
     # Create a pool of processes to handle the concurrent processing
-    with multiprocessing.Pool(processes=n_threads) as pool:
+    with multiprocessing.Pool(processes=n_processes) as pool:
         # Create a list of the first n amplicon tuples for processing
         # The list is sorted first on whether offset targets were predicted for the amplicon,
         # then by penalty. This ensures that amplicons with offset targets are always considered last

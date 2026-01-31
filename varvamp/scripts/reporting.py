@@ -209,7 +209,7 @@ def write_qpcr_to_files(path, final_schemes, ambiguous_consensus, scheme_name, l
                 print(f">{primer_name}\n{seq.upper()}", file=fasta)
 
 
-def write_scheme_to_files(path, amplicon_scheme, ambiguous_consensus, scheme_name, mode, log_file):
+def write_scheme_to_files(path, amplicon_scheme, ambiguous_consensus, scheme_name, mode, log_file, primer_dimers=None):
     """
     write all relevant bed files and a tsv file with all primer stats
     """
@@ -217,6 +217,9 @@ def write_scheme_to_files(path, amplicon_scheme, ambiguous_consensus, scheme_nam
     primer_bed_file = os.path.join(path, "primers.bed")
     amplicon_bed_file = os.path.join(path, "amplicons.bed")
     tabular_file = os.path.join(path, "primer_to_amplicon_assignment.tabular")
+
+    # Map old primer names to new amplicon-based names
+    name_mapping = {}
 
     # open files to write
     with open(tsv_file, "w") as tsv, open(amplicon_bed_file, "w") as bed, open(tabular_file, "w") as tabular:
@@ -233,11 +236,11 @@ def write_scheme_to_files(path, amplicon_scheme, ambiguous_consensus, scheme_nam
             if mode == "single":
                 primer_fasta_file = os.path.join(path, "primers.fasta")
             else:
-                primer_fasta_file = os.path.join(path, f"primers_pool_{pool+1}.fasta")
+                primer_fasta_file = os.path.join(path, f"primers_pool_{pool + 1}.fasta")
             with open(primer_fasta_file, "w") as primer_fasta:
                 for counter, amp in enumerate(amplicon_scheme[pool::len(pools)]):
                     # give a new amplicon name
-                    amplicon_index = counter*len(pools) + pool
+                    amplicon_index = counter * len(pools) + pool
                     amp_name = f"{scheme_name}_{amplicon_index}"
                     # get left and right primers and their names
                     amp_length = amp["RIGHT"][2] - amp["LEFT"][1]
@@ -251,7 +254,7 @@ def write_scheme_to_files(path, amplicon_scheme, ambiguous_consensus, scheme_nam
                         amplicon_has_off_target = "n.d."
                     # write amplicon bed
                     if mode == "tiled":
-                        bed_score = pool+1
+                        bed_score = pool + 1
                     elif mode == "single":
                         bed_score = round(amp["LEFT"][3] + amp["RIGHT"][3], 1)
                     amplicon_bed_records.append(
@@ -269,6 +272,10 @@ def write_scheme_to_files(path, amplicon_scheme, ambiguous_consensus, scheme_nam
                             (f"{amp_name}_LEFT", f"{amp_name}_RIGHT")
                         )
                     )
+                    # Build name mapping for dimers
+                    name_mapping[amp["LEFT"][-1]] = f"{amp_name}_LEFT"
+                    name_mapping[amp["RIGHT"][-1]] = f"{amp_name}_RIGHT"
+
                     # write primer tsv and primer bed
                     for direction, primer in [("+", amp["LEFT"]), ("-", amp["RIGHT"])]:
                         seq = ambiguous_consensus[primer[1]:primer[2]]
@@ -288,7 +295,7 @@ def write_scheme_to_files(path, amplicon_scheme, ambiguous_consensus, scheme_nam
                             amp_length,
                             primer_name,
                             primer[-1],
-                            pool+1,
+                            pool + 1,
                             primer[1] + 1,
                             primer[2],
                             seq.upper(),
@@ -306,7 +313,7 @@ def write_scheme_to_files(path, amplicon_scheme, ambiguous_consensus, scheme_nam
                             (
                                 # will need amplicon_index for sorting
                                 amplicon_index,
-                                (primer_name, primer, pool+1, direction, seq.upper())
+                                (primer_name, primer, pool + 1, direction, seq.upper())
                             )
                         )
         # write amplicon bed with amplicons sorted by start position
@@ -333,8 +340,12 @@ def write_scheme_to_files(path, amplicon_scheme, ambiguous_consensus, scheme_nam
                 *record[1]
             )
 
+    # Write dimers with renamed primers
+    if primer_dimers:
+        write_dimers(path, primer_dimers, name_mapping)
 
-def write_dimers(path, primer_dimers):
+
+def write_dimers(path, primer_dimers, name_mapping):
     """
     write dimers for which no replacement was found to file
     """
@@ -348,8 +359,8 @@ def write_dimers(path, primer_dimers):
             )
             print(
                 pool+1,
-                primer1[2][0],
-                primer2[2][0],
+                name_mapping[primer1[1]],
+                name_mapping[primer2[1]],
                 round(dimer_result.tm, 1),
                 dimer_result.dg,
                 sep="\t",

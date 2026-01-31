@@ -195,6 +195,11 @@ def shared_workflow(args, log_file):
     # read in external primer sequences with which new primers should not form dimers
     if args.compatible_primers is not None:
         compatible_primers = primers.parse_primer_fasta(args.compatible_primers)
+        if not compatible_primers:
+            logging.raise_error(
+                "no valid primers found in the provided primer file.\n",
+                log_file,
+            )
     else:
         compatible_primers = None
     # check alignment length and number of gaps and report if its significantly more/less than expected
@@ -304,7 +309,7 @@ def shared_workflow(args, log_file):
     )
 
     # filter primers against user-provided list of compatible primers, can use multi-processing
-    if compatible_primers is not None:
+    if compatible_primers:
         left_primer_candidates = primers.filter_non_dimer_candidates(
             left_primer_candidates, compatible_primers, args.threads
         )
@@ -394,7 +399,7 @@ def single_workflow(args, amplicons, log_file):
     return amplicon_scheme
 
 
-def tiled_workflow(args, amplicons, left_primer_candidates, right_primer_candidates, all_primers, ambiguous_consensus, log_file, results_dir):
+def tiled_workflow(args, amplicons, left_primer_candidates, right_primer_candidates, all_primers, ambiguous_consensus, log_file):
     """
     part of the workflow specific for the tiled mode
     """
@@ -452,9 +457,8 @@ def tiled_workflow(args, amplicons, left_primer_candidates, right_primer_candida
             job="Trying to solve primer dimers.",
             progress_text=f"{len(dimers_not_solved)}/{n_initial_dimers} dimers could not be resolved"
         )
-        reporting.write_dimers(results_dir, dimers_not_solved)
 
-    return amplicon_scheme
+    return amplicon_scheme, dimers_not_solved
 
 
 def qpcr_workflow(args, data_dir, alignment_cleaned, ambiguous_consensus, majority_consensus, left_primer_candidates, right_primer_candidates, compatible_primers, log_file):
@@ -495,7 +499,7 @@ def qpcr_workflow(args, data_dir, alignment_cleaned, ambiguous_consensus, majori
     )
 
     # filter primers against non-dimer sequences if provided
-    if compatible_primers is not None:
+    if compatible_primers:
         qpcr_probes = primers.filter_non_dimer_candidates(
             qpcr_probes, compatible_primers, args.threads)
         logging.varvamp_progress(
@@ -591,6 +595,7 @@ def main():
 
     # SINGLE/TILED mode
     if args.mode == "tiled" or args.mode == "single":
+        dimers_not_solved = None
         all_primers, amplicons = single_and_tiled_shared_workflow(
             args,
             left_primer_candidates,
@@ -606,7 +611,7 @@ def main():
                 log_file
             )
         elif args.mode == "tiled":
-            amplicon_scheme = tiled_workflow(
+            amplicon_scheme, dimers_not_solved = tiled_workflow(
                 args,
                 amplicons,
                 left_primer_candidates,
@@ -614,7 +619,6 @@ def main():
                 all_primers,
                 ambiguous_consensus,
                 log_file,
-                results_dir
             )
 
         # write files
@@ -631,7 +635,8 @@ def main():
             ambiguous_consensus,
             args.name,
             args.mode,
-            log_file
+            log_file,
+            dimers_not_solved
         )
         reporting.varvamp_plot(
             results_dir,
