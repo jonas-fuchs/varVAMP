@@ -4,7 +4,6 @@ data writing and visualization.
 # BUILT-INS
 import os
 import math
-import itertools
 
 # LIBS
 import pandas as pd
@@ -94,20 +93,6 @@ def write_all_primers(path, scheme_name, all_primers):
             write_primers_to_bed(outfile, scheme_name, primer, all_primers[direction][primer], round(all_primers[direction][primer][3], 2), direction)
 
 
-def get_permutations(seq):
-    """
-    get all permutations of an ambiguous sequence. needed to
-    correctly report the gc and the temperature.
-    """
-    groups = itertools.groupby(seq, lambda char: char not in config.AMBIG_NUCS)
-    splits = []
-    for b, group in groups:
-        if b:
-            splits.extend([[g] for g in group])
-        else:
-            for nuc in group:
-                splits.append(config.AMBIG_NUCS[nuc])
-    return[''.join(p) for p in itertools.product(*splits)]
 
 
 def calc_mean_stats(permutations):
@@ -190,7 +175,7 @@ def write_qpcr_to_files(path, final_schemes, ambiguous_consensus, scheme_name, l
                 else:
                     direction = "+"
 
-                permutations = get_permutations(seq)
+                permutations = primers.get_permutations(seq)
                 gc, temp = calc_mean_stats(permutations)
                 primer_name = f"{amp_name}_{oligo_type}"
 
@@ -224,7 +209,7 @@ def write_qpcr_to_files(path, final_schemes, ambiguous_consensus, scheme_name, l
                 print(f">{primer_name}\n{seq.upper()}", file=fasta)
 
 
-def write_scheme_to_files(path, amplicon_scheme, ambiguous_consensus, scheme_name, mode, log_file):
+def write_scheme_to_files(path, amplicon_scheme, ambiguous_consensus, scheme_name, mode, log_file, primer_dimers=None):
     """
     write all relevant bed files and a tsv file with all primer stats
     """
@@ -232,6 +217,9 @@ def write_scheme_to_files(path, amplicon_scheme, ambiguous_consensus, scheme_nam
     primer_bed_file = os.path.join(path, "primers.bed")
     amplicon_bed_file = os.path.join(path, "amplicons.bed")
     tabular_file = os.path.join(path, "primer_to_amplicon_assignment.tabular")
+
+    # Map old primer names to new amplicon-based names
+    name_mapping = {}
 
     # open files to write
     with open(tsv_file, "w") as tsv, open(amplicon_bed_file, "w") as bed, open(tabular_file, "w") as tabular:
@@ -248,11 +236,11 @@ def write_scheme_to_files(path, amplicon_scheme, ambiguous_consensus, scheme_nam
             if mode == "single":
                 primer_fasta_file = os.path.join(path, "primers.fasta")
             else:
-                primer_fasta_file = os.path.join(path, f"primers_pool_{pool+1}.fasta")
+                primer_fasta_file = os.path.join(path, f"primers_pool_{pool + 1}.fasta")
             with open(primer_fasta_file, "w") as primer_fasta:
                 for counter, amp in enumerate(amplicon_scheme[pool::len(pools)]):
                     # give a new amplicon name
-                    amplicon_index = counter*len(pools) + pool
+                    amplicon_index = counter * len(pools) + pool
                     amp_name = f"{scheme_name}_{amplicon_index}"
                     # get left and right primers and their names
                     amp_length = amp["RIGHT"][2] - amp["LEFT"][1]
@@ -266,7 +254,7 @@ def write_scheme_to_files(path, amplicon_scheme, ambiguous_consensus, scheme_nam
                         amplicon_has_off_target = "n.d."
                     # write amplicon bed
                     if mode == "tiled":
-                        bed_score = pool+1
+                        bed_score = pool + 1
                     elif mode == "single":
                         bed_score = round(amp["LEFT"][3] + amp["RIGHT"][3], 1)
                     amplicon_bed_records.append(
@@ -284,6 +272,10 @@ def write_scheme_to_files(path, amplicon_scheme, ambiguous_consensus, scheme_nam
                             (f"{amp_name}_LEFT", f"{amp_name}_RIGHT")
                         )
                     )
+                    # Build name mapping for dimers
+                    name_mapping[amp["LEFT"][-1]] = f"{amp_name}_LEFT"
+                    name_mapping[amp["RIGHT"][-1]] = f"{amp_name}_RIGHT"
+
                     # write primer tsv and primer bed
                     for direction, primer in [("+", amp["LEFT"]), ("-", amp["RIGHT"])]:
                         seq = ambiguous_consensus[primer[1]:primer[2]]
@@ -295,7 +287,7 @@ def write_scheme_to_files(path, amplicon_scheme, ambiguous_consensus, scheme_nam
                         # write primers to fasta pool file
                         print(f">{primer_name}\n{seq.upper()}", file=primer_fasta)
                         # calc primer parameters for all permutations
-                        permutations = get_permutations(seq)
+                        permutations = primers.get_permutations(seq)
                         gc, temp = calc_mean_stats(permutations)
                         # write tsv file
                         print(
@@ -303,7 +295,7 @@ def write_scheme_to_files(path, amplicon_scheme, ambiguous_consensus, scheme_nam
                             amp_length,
                             primer_name,
                             primer[-1],
-                            pool+1,
+                            pool + 1,
                             primer[1] + 1,
                             primer[2],
                             seq.upper(),
@@ -321,7 +313,7 @@ def write_scheme_to_files(path, amplicon_scheme, ambiguous_consensus, scheme_nam
                             (
                                 # will need amplicon_index for sorting
                                 amplicon_index,
-                                (primer_name, primer, pool+1, direction, seq.upper())
+                                (primer_name, primer, pool + 1, direction, seq.upper())
                             )
                         )
         # write amplicon bed with amplicons sorted by start position
@@ -348,26 +340,41 @@ def write_scheme_to_files(path, amplicon_scheme, ambiguous_consensus, scheme_nam
                 *record[1]
             )
 
+    # Write dimers with renamed primers
+    if primer_dimers:
+        write_dimers(path, primer_dimers, name_mapping)
 
-def write_dimers(path, primer_dimers):
+
+def write_dimers(path, primer_dimers, name_mapping):
     """
     write dimers for which no replacement was found to file
     """
-    tsv_file = os.path.join(path, "unsolvable_primer_dimers.tsv")
-    with open(tsv_file, "w") as tsv:
-        print(
-            "pool\tprimer_name_1\tprimer_name_2\tdimer melting temp",
-            file=tsv
-        )
+    file = os.path.join(path, "unsolvable_primer_dimers.txt")
+    with open(file, "w") as f:
         for pool, primer1, primer2 in primer_dimers:
+            dimer_result = primers.calc_dimer(primer1[2][0], primer2[2][0], structure=True)
+            print(
+                "pool\tprimer 1\tprimer 2\tdimer melting temp\tdeltaG",
+                file=f
+            )
             print(
                 pool+1,
-                primer1[1],
-                primer2[1],
-                round(primers.calc_dimer(primer1[2][0], primer2[2][0]).tm, 1),
+                name_mapping[primer1[1]],
+                name_mapping[primer2[1]],
+                round(dimer_result.tm, 1),
+                dimer_result.dg,
                 sep="\t",
-                file=tsv
+                file=f
             )
+            structure = [x[4:] for x in dimer_result.ascii_structure_lines]
+            print("\nDimer structure:", file=f)
+            for line in structure:
+                print(
+                    line,
+                    file=f
+                )
+            print(file=f)
+
 
 def entropy(chars, states):
     """

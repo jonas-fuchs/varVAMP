@@ -5,6 +5,8 @@ amplicon search
 # BUILT-INS
 import heapq
 import math
+import multiprocessing
+import functools
 
 # varVAMP
 from varvamp.scripts import config, primers
@@ -73,7 +75,7 @@ def find_amplicons(all_primers, opt_len, max_len):
             amplicon_length = right_primer[2] - left_primer[1]
             if not opt_len <= amplicon_length <= max_len:
                 continue
-            if primers.calc_dimer(left_primer[0], right_primer[0]).tm > config.PRIMER_MAX_DIMER_TMP:
+            if primers.is_dimer(left_primer[0], right_primer[0]):
                 continue
             # calculate length dependend amplicon costs as the cumulative primer
             # penalty multiplied by the e^(fold length of the optimal length).
@@ -286,6 +288,7 @@ def find_best_covering_scheme(amplicons, amplicon_graph):
         # if no previous nodes are found but the single amplicon results in the largest
         # coverage - return as the best scheme
         amplicon_path = [best_start_node]
+
     return best_coverage, create_scheme(amplicon_path, amps_by_id)
 
 
@@ -295,8 +298,15 @@ def test_scheme_for_dimers(amplicon_scheme):
     """
 
     primer_dimers = []
-    pools = {amp["pool"] for amp in amplicon_scheme}
-    for pool in pools:
+    non_dimers = {amp["pool"]:set() for amp in amplicon_scheme}
+    # write all primer sequences in the respective pools -->
+    # these primers should not be violated by primer switching
+    # and primers are only switched later if no primer dimers
+    # with the existing 'good' scheme are created
+    for amp in amplicon_scheme:
+        non_dimers[amp["pool"]].add(amp["LEFT"][0])
+        non_dimers[amp["pool"]].add(amp["RIGHT"][0])
+    for pool in non_dimers:
         # test the primer dimers only within the respective pools
         tested_primers = []
         for amp_index, amp in enumerate(amplicon_scheme):
@@ -309,13 +319,16 @@ def test_scheme_for_dimers(amplicon_scheme):
                 current_seq = current_primer[2][0]
                 for tested in tested_primers:
                     tested_seq = tested[2][0]
-                    if primers.calc_dimer(current_seq, tested_seq).tm <= config.PRIMER_MAX_DIMER_TMP:
+                    if not primers.is_dimer(current_seq, tested_seq):
                         continue
                     primer_dimers.append((current_primer, tested))
+                    non_dimers[pool].discard(current_seq)
+                    non_dimers[pool].discard(tested_seq)
                 # and remember all tested primers
                 tested_primers.append(current_primer)
 
-    return primer_dimers
+    # report both dimers and non-dimers
+    return primer_dimers, non_dimers
 
 
 def get_overlapping_primers(dimer, left_primer_candidates, right_primer_candidates):
@@ -329,13 +342,16 @@ def get_overlapping_primers(dimer, left_primer_candidates, right_primer_candidat
     # test each primer in dimer
     for amp_index, primer_name, primer in dimer:
         overlapping_primers_temp = []
-        thirds_len = int((primer[2] - primer[1]) / 3)
-        # get the middle third of the primer (here are the previously excluded primers)
-        overlap_set = set(range(primer[1] + thirds_len, primer[2] - thirds_len))
-        # check in which list to look for them
+        # as switching could violate overlap criteria,
+        # only consider primers that overlap in the left half (LEFT primers)
+        # or right half (RIGHT primers) respectively, however this can result in slightly
+        # longer amplicons than allowed.
+        half_length = int((primer[2] - primer[1]) / 2)
         if "RIGHT" in primer_name:
+            overlap_set = set(range(primer[1] + half_length, primer[2]))
             primers_to_test = right_primer_candidates
         else:
+            overlap_set = set(range(primer[1], primer[1] + half_length))
             primers_to_test = left_primer_candidates
         # and check this list for all primers that overlap
         for potential_new in primers_to_test:
@@ -349,40 +365,60 @@ def get_overlapping_primers(dimer, left_primer_candidates, right_primer_candidat
     return overlapping_primers
 
 
-def test_overlaps_for_dimers(overlapping_primers):
+def test_overlaps_for_dimers(overlapping_primers, non_dimers):
     """
-    test the overlapping primers for dimers. return new primers.
+    test all possible overlapping primers against each other for dimers
+    and return the first pair that doesn't form a dimer with each other
+    and with all non-dimer forming primers in the pool.
     """
     for first_overlap in overlapping_primers[0]:
+        if any(primers.is_dimer(seq, first_overlap[2][0]) for seq in non_dimers):
+            continue
         for second_overlap in overlapping_primers[1]:
-            # return the first match. primers are sorted by penalty.
-            # first pair that makes it has the lowest penalty
-            if primers.calc_dimer(first_overlap[2][0], second_overlap[2][0]).tm <= config.PRIMER_MAX_DIMER_TMP:
+            if any(primers.is_dimer(seq, second_overlap[2][0]) for seq in non_dimers):
+                continue
+            if not primers.is_dimer(first_overlap[2][0], second_overlap[2][0]):
                 return [first_overlap, second_overlap]
 
 
-def check_and_solve_heterodimers(amplicon_scheme, left_primer_candidates, right_primer_candidates, all_primers):
+def _solve_single_dimer(amplicon_scheme, left_primer_candidates, right_primer_candidates, non_dimers_all_pools, dimer):
+    """
+    Helper function for multiprocessing: solve a single dimer independently.
+    Returns (amp_index, primer_name, new_primer) tuples or empty list if no solution.
+    """
+    pool = amplicon_scheme[dimer[0][0]]["pool"]
+    non_dimers = non_dimers_all_pools[pool]
+
+    overlapping_primers = get_overlapping_primers(dimer, left_primer_candidates, right_primer_candidates)
+    new_primers = test_overlaps_for_dimers(overlapping_primers, non_dimers)
+
+    return new_primers if new_primers else []
+
+
+def check_and_solve_heterodimers(amplicon_scheme, left_primer_candidates, right_primer_candidates, all_primers, num_processes):
     """
     check scheme for heterodimers, try to find
     new primers that overlap and replace the existing ones.
-    this can lead to new primer dimers. therefore the scheme
-    is checked a second time. if there are still primer dimers
-    present the non-solvable dimers are returned
+    Uses multiprocessing to solve dimers in parallel.
     """
+    primer_dimers, non_dimers_all_pools = test_scheme_for_dimers(amplicon_scheme)
+    n_initial_dimers = len(primer_dimers)
 
-    primer_dimers = test_scheme_for_dimers(amplicon_scheme)
+    if not primer_dimers:
+        return [], 0
 
-    if primer_dimers:
-        print(f"varVAMP found {len(primer_dimers)} dimer pairs in scheme ... trying to find replacements")
-    else:
-        return []
+    # Prepare arguments for each dimer
+    callable_f = functools.partial(
+        _solve_single_dimer,
+    amplicon_scheme, left_primer_candidates, right_primer_candidates, non_dimers_all_pools
+    )
 
-    for dimer in primer_dimers:
-        # get overlapping primers that have not been considered
-        overlapping_primers = get_overlapping_primers(dimer, left_primer_candidates, right_primer_candidates)
-        # test all possible primers against each other for dimers
-        new_primers = test_overlaps_for_dimers(overlapping_primers)
-        # now change these primers in the scheme
+    # Solve dimers in parallel
+    with multiprocessing.Pool(processes=num_processes) as pool:
+        results = pool.map(callable_f, primer_dimers)
+
+    # Apply all solutions to the scheme
+    for new_primers in results:
         if new_primers:
             for amp_index, primer_name, primer in new_primers:
                 # overwrite in final scheme
@@ -398,12 +434,13 @@ def check_and_solve_heterodimers(amplicon_scheme, left_primer_candidates, right_
                 # and in all primers
                 all_primers[strand][primer_name] = primer
     # get remaining dimers in the revised scheme and add pool identifier for reporting
+    remaining_primer_dimers, _ = test_scheme_for_dimers(amplicon_scheme)
     primer_dimers = [
         (amplicon_scheme[primer1[0]]["pool"], primer1, primer2)
-        for primer1, primer2 in test_scheme_for_dimers(amplicon_scheme)
+        for primer1, primer2 in remaining_primer_dimers
     ]
 
-    return primer_dimers
+    return primer_dimers, n_initial_dimers
 
 
 def find_single_amplicons(amplicons, n):
