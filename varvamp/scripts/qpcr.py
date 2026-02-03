@@ -344,7 +344,7 @@ def test_amplicon_deltaG_parallel(qpcr_schemes_candidates, majority_consensus, n
     # Create a list of the first n amplicon tuples for processing
     # The list is sorted first on whether offset targets were predicted for the amplicon,
     # then by penalty. This ensures that amplicons with offset targets are always considered last
-    amplicons = list(sorted(qpcr_schemes_candidates, key=lambda x: (x.get("offset_targets", False), x["penalty"])))
+    amplicons = list(sorted(qpcr_schemes_candidates, key=lambda x: (x.get("offset_targets", False), x["penalty"])))[:n_to_test]
     # process amplicons concurrently
     batch_size = max(1, int(n_to_test / n_processes))
     callable_f = functools.partial(
