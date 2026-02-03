@@ -99,7 +99,7 @@ def get_qpcr_probes(kmers, ambiguous_consensus, alignment_cleaned, num_processes
     kmers = list(kmers)
 
     # Split kmers into batches
-    batch_size = int(len(kmers) / num_processes)
+    batch_size = max(1, int(len(kmers) / num_processes))
     batches = [kmers[i:i + batch_size] for i in range(0, len(kmers), batch_size)]
 
     # Prepare arguments for each dimer
@@ -282,7 +282,7 @@ def find_qcr_schemes(qpcr_probes, left_primer_candidates, right_primer_candidate
     amplicon_nr = -1
 
     # Prepare arguments for parallel processing - pass full primer lists
-    batch_size = int(len(qpcr_probes) / num_processes)
+    batch_size = max(1, int(len(qpcr_probes) / num_processes))
     callable_f = functools.partial(
         find_single_qpcr_scheme,
         left_primer_candidates, right_primer_candidates, qpcr_probes, majority_consensus, ambiguous_consensus
@@ -315,7 +315,7 @@ def find_qcr_schemes(qpcr_probes, left_primer_candidates, right_primer_candidate
     return qpcr_scheme_candidates
 
 
-def process_single_amplicon_deltaG(amplicon, majority_consensus):
+def process_single_amplicon_deltaG(majority_consensus, amplicon):
     """
     Process a single amplicon to test its deltaG and apply filtering.
     This function will be called concurrently by multiple threads.
@@ -341,32 +341,33 @@ def test_amplicon_deltaG_parallel(qpcr_schemes_candidates, majority_consensus, n
     """
     final_amplicons = []
 
-    # Create a pool of processes to handle the concurrent processing
+    # Create a list of the first n amplicon tuples for processing
+    # The list is sorted first on whether offset targets were predicted for the amplicon,
+    # then by penalty. This ensures that amplicons with offset targets are always considered last
+    amplicons = list(sorted(qpcr_schemes_candidates, key=lambda x: (x.get("offset_targets", False), x["penalty"])))
+    # process amplicons concurrently
+    batch_size = max(1, int(n_to_test / n_processes))
+    callable_f = functools.partial(
+        process_single_amplicon_deltaG,
+        majority_consensus
+    )
     with multiprocessing.Pool(processes=n_processes) as pool:
-        # Create a list of the first n amplicon tuples for processing
-        # The list is sorted first on whether offset targets were predicted for the amplicon,
-        # then by penalty. This ensures that amplicons with offset targets are always considered last
-        amplicons = itertools.islice(
-            sorted(qpcr_schemes_candidates, key=lambda x: (x.get("offset_targets", False), x["penalty"])),
-            n_to_test
-        )
-        # process amplicons concurrently
-        results = pool.starmap(process_single_amplicon_deltaG, [(amp, majority_consensus) for amp in amplicons])
-        # Process the results
-        retained_ranges = []
-        for amp in results:
-            # check if the amplicon overlaps with an amplicon that was previously
-            # found and had a high enough deltaG
-            if amp["deltaG"] <= deltaG_cutoff:
-                continue
-            amp_range = range(amp["LEFT"][1], amp["RIGHT"][2])
-            overlaps_retained = False
-            for r in retained_ranges:
-                if amp_range.start < r.stop and r.start < amp_range.stop:
-                    overlaps_retained = True
-                    break
-            if not overlaps_retained:
-                final_amplicons.append(amp)
-                retained_ranges.append(amp_range)
+        results = pool.map(callable_f, amplicons, chunksize=batch_size)
+    # Process the results
+    retained_ranges = []
+    for amp in results:
+        # check if the amplicon overlaps with an amplicon that was previously
+        # found and had a high enough deltaG
+        if amp["deltaG"] <= deltaG_cutoff:
+            continue
+        amp_range = range(amp["LEFT"][1], amp["RIGHT"][2])
+        overlaps_retained = False
+        for r in retained_ranges:
+            if amp_range.start < r.stop and r.start < amp_range.stop:
+                overlaps_retained = True
+                break
+        if not overlaps_retained:
+            final_amplicons.append(amp)
+            retained_ranges.append(amp_range)
 
     return final_amplicons

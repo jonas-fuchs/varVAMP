@@ -9,7 +9,7 @@ import multiprocessing
 import functools
 
 # LIBS
-from Bio.Seq import Seq
+from Bio.Seq import MutableSeq
 from Bio import SeqIO
 import primer3 as p3
 
@@ -100,9 +100,10 @@ def is_dimer(seq1, seq2):
     check if two sequences dimerize above threshold or are overlapping at their ends
     """
     dimer_result = calc_dimer(seq1, seq2, structure=True)
-
+    # check both the temperature and the deltaG
     if dimer_result.tm > config.PRIMER_MAX_DIMER_TMP or dimer_result.dg < config.PRIMER_MAX_DIMER_DELTAG:
         return True
+    # check for perfect end overlaps (this can result in primer extensions even though the tm/dg are okay)
     if has_end_overlap(dimer_result):
         return True
 
@@ -175,7 +176,7 @@ def rev_complement(seq):
     """
     reverse complement a sequence
     """
-    return str(Seq(seq).reverse_complement())
+    return str(MutableSeq(seq).reverse_complement(inplace=True))
 
 
 def calc_permutation_penalty(amb_seq):
@@ -353,18 +354,18 @@ def _process_kmer_batch(ambiguous_consensus, alignment, kmers):
     for kmer in kmers:
         if not filter_kmer_direction_independent(kmer[0]):
             continue
-
+        # calc penalties
         base_penalty = calc_base_penalty(kmer[0], config.PRIMER_TMP, config.PRIMER_GC_RANGE, config.PRIMER_SIZES)
         per_base_mismatches = calc_per_base_mismatches(kmer, alignment, ambiguous_consensus)
         permutation_penalty = calc_permutation_penalty(ambiguous_consensus[kmer[1]:kmer[2]])
-
+        # some filters depend on the direction of each primer
         for direction in ["+", "-"]:
             if not filter_kmer_direction_dependend(direction, kmer, ambiguous_consensus):
                 continue
-
+            # calc penalties
             three_prime_penalty = calc_3_prime_penalty(direction, per_base_mismatches)
             primer_penalty = base_penalty + permutation_penalty + three_prime_penalty
-
+            # add to lists depending on their direction
             if direction == "+":
                 left_primers.append([kmer[0], kmer[1], kmer[2], primer_penalty, per_base_mismatches])
             else:
@@ -383,7 +384,7 @@ def find_primers(kmers, ambiguous_consensus, alignment, num_processes):
 
     # Convert kmers set to list for slicing
     kmers = list(kmers)
-    batch_size = int(len(kmers)/num_processes)
+    batch_size = max(1, int(len(kmers)/num_processes))
 
     # Split kmers into batches
     batches = [kmers[i:i + batch_size] for i in range(0, len(kmers), batch_size)]
@@ -416,7 +417,7 @@ def create_primer_dictionary(primer_candidates, direction):
     for primer in primer_candidates:
         if direction == "+":
             direction_name = "LEFT"
-        elif direction == "-":
+        else:
             direction_name = "RIGHT"
         primer_name = f"{direction_name}_{primer_idx}"
         primer_dict[primer_name] = primer
@@ -540,6 +541,7 @@ def filter_non_dimer_candidates(primer_candidates, external_sequences, n_process
 
     with multiprocessing.Pool(processes=n_processes) as pool:
         # Prepare arguments based on input type
+        # qpcr probes are stored in dictionaries --> result in tuples when unpacked
         if is_dict:
             results = pool.map(callable_f, primer_candidates.items())
         else:

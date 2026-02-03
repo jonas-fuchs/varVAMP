@@ -299,7 +299,10 @@ def test_scheme_for_dimers(amplicon_scheme):
 
     primer_dimers = []
     non_dimers = {amp["pool"]:set() for amp in amplicon_scheme}
-    # write all primer sequences in the respective pools
+    # write all primer sequences in the respective pools -->
+    # these primers should not be violated by primer switching
+    # and primers are only switched later if no primer dimers
+    # with the existing 'good' scheme are created
     for amp in amplicon_scheme:
         non_dimers[amp["pool"]].add(amp["LEFT"][0])
         non_dimers[amp["pool"]].add(amp["RIGHT"][0])
@@ -324,6 +327,7 @@ def test_scheme_for_dimers(amplicon_scheme):
                 # and remember all tested primers
                 tested_primers.append(current_primer)
 
+    # report both dimers and non-dimers
     return primer_dimers, non_dimers
 
 
