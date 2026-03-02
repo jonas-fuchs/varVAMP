@@ -265,7 +265,7 @@ def check_gaped_sequences(preprocessed_alignment, log_file):
 
     if warning:
         raise_error(
-            f"The following sequences contain less gaps than the alignment mean ({round(mean_gaps)} gaps) and might overproportionally gap the alignment:\n{"".join(warning)}",
+            f"The following sequences contain less gaps than the alignment mean ({round(mean_gaps)} gaps) and might overproportionally gap the alignment:\n{''.join(warning)}",
             log_file,
             exit=False
         )
