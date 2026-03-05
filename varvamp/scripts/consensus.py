@@ -52,17 +52,19 @@ def determine_nucleotide_counts(alignment, idx):
     return dict(sorted(counter.items(), key=lambda x: x[1], reverse=True))
 
 
-def get_consensus_nucleotides(nucleotide_counts, consensus_cutoff):
+def get_consensus_nucleotides(nucleotide_counts, threshold):
     """
     get a list of nucleotides for the consensus seq
     """
     n = 0
+    # handle consensus nucleotides - calculate threshold based on total available information (excludes gaps)
+    total_freq = sum(nucleotide_counts.values()) * threshold
 
     consensus_nucleotides = []
     for nuc in nucleotide_counts:
         n += nucleotide_counts[nuc]
         consensus_nucleotides.append(nuc)
-        if n >= consensus_cutoff:
+        if n >= total_freq:
             break
 
     return consensus_nucleotides
@@ -88,8 +90,6 @@ def create_consensus(alignment, threshold):
     ambiguous_consensus = str()
     majority_consensus = str()
 
-    # define consensus cut-off
-    consensus_cutoff = len(alignment)*threshold
     # define length of the consensus from the first seq in alignment
     length_consensus = len(alignment[0][1])
 
@@ -97,8 +97,7 @@ def create_consensus(alignment, threshold):
     for idx in range(length_consensus):
         nucleotide_counts = determine_nucleotide_counts(alignment, idx)
         consensus_nucleotide = get_consensus_nucleotides(
-            nucleotide_counts,
-            consensus_cutoff
+            nucleotide_counts, threshold
         )
         if len(consensus_nucleotide) > 1:
             amb_consensus_nucleotide = get_ambiguous_char(consensus_nucleotide)

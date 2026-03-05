@@ -78,11 +78,12 @@ def clean_gaps(alignment, gaps_to_mask):
     return cleaned_alignment
 
 
-def process_alignment(preprocessed_alignment, threshold):
+def process_alignment(preprocessed_alignment, threshold, terminal_threshold=config.TERMINAL_MASKING_THRESHOLD):
     """
     - build an array of shape (n_seq, seq_len)
     - for each column, count how many sequences are '-'
     - mark columns to mask if count > cutoff
+    - handle terminal gaps differently: count > terminal_cutoff
     - turn those columns into contiguous regions
     """
 
@@ -110,6 +111,31 @@ def process_alignment(preprocessed_alignment, threshold):
 
     if not gaps_to_mask:
         return preprocessed_alignment, []
+
+    # Refine terminal regions based on terminal gap threshold
+    if terminal_threshold < threshold:
+        gap_proportion = (arr == "-").sum(axis=0) / n_seq
+        # Refine first gap region (5' end)
+        # first check if the first region is indeed a terminal gap region
+        # that would be masked based on the main threshold, otherwise we don't want to refine it
+        if gaps_to_mask[0][0] == 0:
+            # Find where gap proportion drops below (1 - terminal_threshold)
+            refined_end = 0
+            # the loop stops as soon as we are not in a terminal gaps
+            while refined_end < len_seq and gap_proportion[refined_end] >= (1 - terminal_threshold):
+                refined_end += 1
+            gaps_to_mask[0][1] = refined_end - 1
+
+        # Refine last gap region (3' end)
+        # first check if the last region is indeed a terminal gap region
+        # that would be masked based on the main threshold, otherwise we don't want to refine it
+        if gaps_to_mask[-1][1] == len_seq - 1:
+            # Find where gap proportion drops below (1 - terminal_threshold)
+            refined_start = len_seq - 1
+            # the loop stops as soon as we are not in a terminal gaps
+            while refined_start >= 0 and gap_proportion[refined_start] >= (1 - terminal_threshold):
+                refined_start -= 1
+            gaps_to_mask[-1][0] = refined_start + 1
 
     alignment_cleaned = clean_gaps(preprocessed_alignment, gaps_to_mask)
 
