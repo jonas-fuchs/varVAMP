@@ -246,6 +246,7 @@ def confirm_config(args, log_file):
     all_vars = [
         # arg independent all modes
         (
+            "TERMINAL_MASKING_THRESHOLD",
             "PRIMER_TMP",
             "PRIMER_GC_RANGE",
             "PRIMER_SIZES",
@@ -363,6 +364,7 @@ def confirm_config(args, log_file):
     # check single values that cannot be negative
     non_negative_var = [
         ("min number of 3 prime nucleotides without ambiguous nucleotides", config.PRIMER_MIN_3_WITHOUT_AMB),
+        ('frequency of terminal gaps above which they are not masked', config.TERMINAL_MASKING_THRESHOLD),
         ("monovalent cation concentration", config.PCR_MV_CONC),
         ("divalent cation concentration", config.PCR_DV_CONC),
         ("dNTP concentration", config.PCR_DNTP_CONC),
@@ -440,6 +442,12 @@ def confirm_config(args, log_file):
             log_file
         )
     # specific errors
+    if config.TERMINAL_MASKING_THRESHOLD > 1:
+        raise_error(
+            "terminal masking frequency cannot exceed 1.",
+            log_file,
+            exit=True
+        )
     if config.PRIMER_MAX_POLYX < 1:
         raise_error(
             "max polyx cannot be lower than 1.",
