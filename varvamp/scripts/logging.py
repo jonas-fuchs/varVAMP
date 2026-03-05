@@ -207,42 +207,6 @@ def raise_arg_errors(args, log_file):
             )
 
 
-def check_alignment_length(preprocessed_alignment, log_file):
-    """
-    checks the sequence lengths of the alignment and reports a warning
-    if the length is larger or smaller than the mean +- 3std of all seqs
-    and at least 1 % diff to mean
-    """
-
-    all_seq_length, all_names = [], []
-    # count the length
-    for seq in preprocessed_alignment:
-        all_names.append(seq[0])
-        all_seq_length.append(len(seq[1].strip("-")))
-    # clac mean and std
-    mean_len, mean_std = statistics.mean(all_seq_length), statistics.stdev(all_seq_length)
-    # check for each seq if it is larger or smaller than the mean +-3std
-    # and is at least 1 % smaller or larger than the alignment mean
-    # (otherwise varvamp will report very small differences).
-    smaller_warning, larger_warning = [], []
-    for name, length in zip(all_names, all_seq_length):
-        # consider variation of sequence lengths and check if it is at least 2 % deviation
-        if length <= mean_len - 3 * mean_std and length <= mean_len - mean_len * 0.02:
-            smaller_warning.append(f"{name} ({length} nt)\n")
-        elif length >= mean_len + 3 * mean_std and length >= mean_len + mean_len * 0.02:
-            larger_warning.append(f"{name} ({length} nt)\n")
-    # raise warning for non-empty lists
-    for warning, length_type in zip([larger_warning, smaller_warning], ["larger", "smaller"]):
-        if not warning:
-            continue
-        warning = "".join(warning)
-        raise_error(
-            f"The following sequences are considerably {length_type} than the alignment mean ({round(mean_len)} nt) and might cause alignment trimming:\n{warning}",
-            log_file,
-            exit=False
-        )
-
-
 def check_gaped_sequences(preprocessed_alignment, log_file):
     """
     checks the number of gaps in each sequence of the alignment and reports a warning
