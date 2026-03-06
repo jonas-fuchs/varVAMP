@@ -1,4 +1,3 @@
-    print(gaps_to_mask)
 """
 alignment preprocessing
 """
