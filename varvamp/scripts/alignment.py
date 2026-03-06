@@ -1,3 +1,4 @@
+    print(gaps_to_mask)
 """
 alignment preprocessing
 """
@@ -92,8 +93,20 @@ def process_alignment(preprocessed_alignment, threshold, terminal_threshold=conf
     arr = np.array([list(s) for s in seqs], dtype="U1")
     n_seq, len_seq = arr.shape
 
-    # per-column gap counts
-    cols_to_mask = (arr == "-").sum(axis=0) > n_seq * (1 - threshold)
+    # n-terminal gaps masked with ~
+    for i, row in enumerate(arr):
+        for j in range(0, len_seq):
+            if arr[i][j] == "-":
+                arr[i][j] = '~'
+            else:
+                break
+        for j in range(len_seq - 1, -1, -1):
+            if arr[i][j] == "-":
+                arr[i][j] = '~'
+            else:
+                break
+
+    cols_to_mask = (arr == "-").sum(axis=0) > (arr == "~").sum(axis=0) * (1 - threshold)
 
     # convert bool mask into list of (start, end) regions (end inclusive)
     gaps_to_mask = []
@@ -109,33 +122,14 @@ def process_alignment(preprocessed_alignment, threshold, terminal_threshold=conf
     if in_gap:
         gaps_to_mask.append([start, len_seq - 1])
 
+    # define the terminal gaps that do not have enough sequence information
+    ends_to_mask = (arr == "~").sum(axis=0) > n_seq * (1 - terminal_threshold)
+    non_mask = np.where(np.diff(ends_to_mask))[0]
+    gaps_to_mask = [[0, non_mask[0]]] + gaps_to_mask + [[non_mask[1], len_seq - 1]]
+
+    # return alignment if no regions need to be masked
     if not gaps_to_mask:
         return preprocessed_alignment, []
-
-    # Refine terminal regions based on terminal gap threshold
-    if terminal_threshold < threshold:
-        gap_proportion = (arr == "-").sum(axis=0) / n_seq
-        # Refine first gap region (5' end)
-        # first check if the first region is indeed a terminal gap region
-        # that would be masked based on the main threshold, otherwise we don't want to refine it
-        if gaps_to_mask[0][0] == 0:
-            # Find where gap proportion drops below (1 - terminal_threshold)
-            refined_end = 0
-            # the loop stops as soon as we are not in a terminal gaps
-            while refined_end < len_seq and gap_proportion[refined_end] >= (1 - terminal_threshold):
-                refined_end += 1
-            gaps_to_mask[0][1] = refined_end - 1
-
-        # Refine last gap region (3' end)
-        # first check if the last region is indeed a terminal gap region
-        # that would be masked based on the main threshold, otherwise we don't want to refine it
-        if gaps_to_mask[-1][1] == len_seq - 1:
-            # Find where gap proportion drops below (1 - terminal_threshold)
-            refined_start = len_seq - 1
-            # the loop stops as soon as we are not in a terminal gaps
-            while refined_start >= 0 and gap_proportion[refined_start] >= (1 - terminal_threshold):
-                refined_start -= 1
-            gaps_to_mask[-1][0] = refined_start + 1
 
     alignment_cleaned = clean_gaps(preprocessed_alignment, gaps_to_mask)
 
