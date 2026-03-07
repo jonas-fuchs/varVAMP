@@ -104,7 +104,8 @@ def process_alignment(preprocessed_alignment, threshold, terminal_threshold=conf
                 arr[i][j] = '~'
             else:
                 break
-
+    # define the gaps that should be masked, this is defined as the number of sequences with gaps
+    # that are above the 1-threshold * number of total sequences that do not have terminal gaps.
     cols_to_mask = (arr == "-").sum(axis=0) > (n_seq - (arr == "~").sum(axis=0)) * (1 - threshold)
 
     # convert bool mask into list of (start, end) regions (end inclusive)
