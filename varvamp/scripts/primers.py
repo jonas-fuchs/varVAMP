@@ -245,10 +245,12 @@ def calc_per_base_mismatches(kmer, alignment, ambiguous_consensus):
     considers if kmer or aln sequences have an amb nuc. returns
     a list of percent mismatches for each kmer position.
     """
-    # ini list
-    mismatches = len(kmer[0])*[0]
+    mismatches = len(kmer[0]) * [0]
+    valid_counts = len(kmer[0]) * [0]
+
     # get kmer with ambiguous nucs
     amb_kmer = ambiguous_consensus[kmer[1]:kmer[2]]
+
     # test it against all sequences in the alignment
     for sequence in alignment:
         # slice each sequence of the alignment for the kmer
@@ -257,6 +259,11 @@ def calc_per_base_mismatches(kmer, alignment, ambiguous_consensus):
         for idx, slice_nuc in enumerate(seq_slice):
             # find the respective nuc to that of the slice
             current_kmer_pos = amb_kmer[idx]
+            # exclude gap-only information from mismatch statistics
+            if slice_nuc == "-":
+                continue
+            valid_counts[idx] += 1
+            # only perform further checks if the positions are not identical
             if slice_nuc == current_kmer_pos:
                 continue
             # check if the slice nucleotide is an amb pos
@@ -283,7 +290,8 @@ def calc_per_base_mismatches(kmer, alignment, ambiguous_consensus):
                 mismatches[idx] += 1
 
     # gives a percent mismatch over all positions of the kmer from 5' to 3'
-    mismatches = [round(x/len(alignment), 2) for x in mismatches]
+    # normalize by non-gap observations per position
+    mismatches = [round(n_mis / n_valid, 2) for n_mis, n_valid in zip(mismatches, valid_counts)]
 
     return mismatches
 

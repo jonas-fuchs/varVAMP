@@ -382,6 +382,10 @@ def entropy(chars, states):
     calculate relative shannon's entropy. relative values are
     achieved by using the number of possible states as the base
     """
+
+    # exclude gaps from entropy calculation
+    chars = [c for c in chars if c != '-']
+
     ent = 0
     n_chars = len(chars)
     # only one char is in the list
