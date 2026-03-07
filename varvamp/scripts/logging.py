@@ -364,7 +364,7 @@ def confirm_config(args, log_file):
     # check single values that cannot be negative
     non_negative_var = [
         ("min number of 3 prime nucleotides without ambiguous nucleotides", config.PRIMER_MIN_3_WITHOUT_AMB),
-        ('frequency of terminal gaps above which they are not masked', config.TERMINAL_MASKING_THRESHOLD),
+        ('frequency of terminal gaps at or above which they are masked', config.TERMINAL_MASKING_THRESHOLD),
         ("monovalent cation concentration", config.PCR_MV_CONC),
         ("divalent cation concentration", config.PCR_DV_CONC),
         ("dNTP concentration", config.PCR_DNTP_CONC),
