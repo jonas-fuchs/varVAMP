@@ -105,7 +105,7 @@ def process_alignment(preprocessed_alignment, threshold, terminal_threshold=conf
             else:
                 break
 
-    cols_to_mask = (arr == "-").sum(axis=0) > (arr == "~").sum(axis=0) * (1 - threshold)
+    cols_to_mask = (arr == "-").sum(axis=0) > (n_seq - (arr == "~").sum(axis=0)) * (1 - threshold)
 
     # convert bool mask into list of (start, end) regions (end inclusive)
     gaps_to_mask = []
@@ -121,6 +121,7 @@ def process_alignment(preprocessed_alignment, threshold, terminal_threshold=conf
     if in_gap:
         gaps_to_mask.append([start, len_seq - 1])
 
+    print(len(gaps_to_mask))
     # define the terminal gaps that do not have enough sequence information
     ends_to_mask = (arr == "~").sum(axis=0) > n_seq * (1 - terminal_threshold)
     non_mask = np.where(np.diff(ends_to_mask))[0]
