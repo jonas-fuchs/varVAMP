@@ -441,16 +441,16 @@ def confirm_config(args, log_file):
             "only the last 5 nucleotides of the 3' end are considered for GC 3'end calculation.",
             log_file
         )
+    if args.threshold < config.TERMINAL_MASKING_THRESHOLD:
+        raise_error(
+            f"threshold of {args.threshold} is lower than terminal_masking_threshold of {config.TERMINAL_MASKING_THRESHOLD}. Terminal_masking_threshold will be set to threshold.",
+            log_file,
+        )
+
     # specific errors
     if config.TERMINAL_MASKING_THRESHOLD > 1:
         raise_error(
             "terminal masking frequency cannot exceed 1.",
-            log_file,
-            exit=True
-        )
-    if args.threshold < config.TERMINAL_MASKING_THRESHOLD:
-        raise_error(
-            "threshold for primer design should be higher than the terminal masking threshold.",
             log_file,
             exit=True
         )
@@ -559,7 +559,10 @@ def confirm_config(args, log_file):
             file=f
         )
         for var in all_vars[0]:
-            print(f"{var} = {var_dic[var]}", file=f)
+            if var == 'TERMINAL_MASKING_THRESHOLD' and args.threshold < config.TERMINAL_MASKING_THRESHOLD:
+                print(f"{var} = {args.threshold}", file=f)
+            else:
+                print(f"{var} = {var_dic[var]}", file=f)
         if args.mode in ("tiled", "single"):
             if args.database is not None:
                 for var in all_vars[2]:

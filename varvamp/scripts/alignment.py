@@ -78,7 +78,7 @@ def clean_gaps(alignment, gaps_to_mask):
     return cleaned_alignment
 
 
-def process_alignment(preprocessed_alignment, threshold, terminal_threshold=config.TERMINAL_MASKING_THRESHOLD):
+def process_alignment(preprocessed_alignment, threshold):
     """
     - build an array of shape (n_seq, seq_len)
     - for each column, count how many sequences are '-'
@@ -86,6 +86,12 @@ def process_alignment(preprocessed_alignment, threshold, terminal_threshold=conf
     - handle terminal gaps differently: count > terminal_cutoff
     - turn those columns into contiguous regions
     """
+
+    # define terminal threshold
+    if config.TERMINAL_MASKING_THRESHOLD < threshold:
+        terminal_threshold = config.TERMINAL_MASKING_THRESHOLD
+    else:
+        terminal_threshold = threshold
 
     # build char array
     seqs = [seq for seq_id, seq in preprocessed_alignment]
