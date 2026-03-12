@@ -6,6 +6,7 @@ This contains all varVAMP parameters.
 __all__ = [
     'BLAST_MAX_DIFF', 'BLAST_SETTINGS', 'BLAST_SIZE_MULTI',
     'END_OVERLAP',
+    'TERMINAL_MASKING_THRESHOLD',
     'PCR_DNA_CONC', 'PCR_DNTP_CONC', 'PCR_DV_CONC', 'PCR_MV_CONC',
     'PRIMER_3_PENALTY', 'PRIMER_GC_END', 'PRIMER_GC_PENALTY',
     'PRIMER_GC_RANGE', 'PRIMER_HAIRPIN', 'PRIMER_MAX_BASE_PENALTY',
@@ -20,6 +21,14 @@ __all__ = [
 ]
 
 # CAN BE CHANGED, DO NOT DELETE
+
+# masking parameters
+# for terminal gaps (gaps at the beginning and end of the alignment), the masking is applied differently
+# the idea is to compensate the fact that there might be less information available at the ends of the alignment (not all genomes are
+# complete). So a masking threshold of 0.5 means that a terminal gap will only be masked if more than 50% of the sequences
+# have a terminal gap. This allows to keep more information at the ends of the alignment.
+
+TERMINAL_MASKING_THRESHOLD = 0.5
 
 # basic primer parameters
 PRIMER_TMP = (56, 63, 60)  # melting temperatur (min, max, opt)

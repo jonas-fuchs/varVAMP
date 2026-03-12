@@ -83,16 +83,44 @@ def process_alignment(preprocessed_alignment, threshold):
     - build an array of shape (n_seq, seq_len)
     - for each column, count how many sequences are '-'
     - mark columns to mask if count > cutoff
+    - handle terminal gaps differently: count > terminal_cutoff
     - turn those columns into contiguous regions
     """
+
+    # define terminal threshold
+    if config.TERMINAL_MASKING_THRESHOLD < threshold:
+        terminal_threshold = config.TERMINAL_MASKING_THRESHOLD
+    else:
+        terminal_threshold = threshold
 
     # build char array
     seqs = [seq for seq_id, seq in preprocessed_alignment]
     arr = np.array([list(s) for s in seqs], dtype="U1")
     n_seq, len_seq = arr.shape
 
-    # per-column gap counts
-    cols_to_mask = (arr == "-").sum(axis=0) > n_seq * (1 - threshold)
+    # determine n terminal gaps
+    for i, row in enumerate(arr):
+        # mask forward terminal gaps with ~
+        for j in range(0, len_seq):
+            if arr[i][j] == "-":
+                arr[i][j] = '~'
+            else:
+                break
+        # mask reverse terminal gaps with ~
+        for j in range(len_seq - 1, -1, -1):
+            if arr[i][j] == "-":
+                arr[i][j] = '~'
+            else:
+                break
+    # define the gaps that should be masked, this is defined as the number of sequences with gaps
+    # that are above the 1-threshold * number of total sequences that do not have terminal gaps.
+    # only consider columns where we have enough non-terminal sequences to make a decision
+    # exclude columns that will be handled by terminal masking later on
+    n_terminal_per_col = (arr == "~").sum(axis=0)
+    n_non_terminal_per_col = n_seq - n_terminal_per_col
+    is_terminal = n_terminal_per_col > n_seq * (1 - terminal_threshold)
+    gaps_above_threshold = (arr == "-").sum(axis=0) > n_non_terminal_per_col * (1 - threshold)
+    cols_to_mask = gaps_above_threshold & (n_non_terminal_per_col > 0) & ~is_terminal
 
     # convert bool mask into list of (start, end) regions (end inclusive)
     gaps_to_mask = []
@@ -105,15 +133,27 @@ def process_alignment(preprocessed_alignment, threshold):
         elif not is_gap and in_gap:
             in_gap = False
             gaps_to_mask.append([start, i - 1])
-    if in_gap:
-        gaps_to_mask.append([start, len_seq - 1])
 
+    # define which side of the terminal gaps have to be masked
+    if any(is_terminal):
+        non_mask = np.where(np.diff(is_terminal))[0]
+        # case one - we have terminal gaps on both sides in high enough frequency - mask both sides
+        if len(non_mask) == 2:
+            gaps_to_mask = [[0, non_mask[0]]] + gaps_to_mask + [[non_mask[1] + 1, len_seq - 1]]
+        elif len(non_mask) == 1:
+            # determine which end to mask based on the state at position 0
+            if is_terminal[0]:
+                # starts with terminal gaps -> mask start
+                gaps_to_mask = [[0, non_mask[0]]] + gaps_to_mask
+            else:
+                # starts without terminal gaps -> mask end
+                gaps_to_mask = gaps_to_mask + [[non_mask[0] + 1, len_seq - 1]]
+
+    # return alignment if no regions need to be masked
     if not gaps_to_mask:
         return preprocessed_alignment, []
 
-    alignment_cleaned = clean_gaps(preprocessed_alignment, gaps_to_mask)
-
-    return alignment_cleaned, gaps_to_mask
+    return clean_gaps(preprocessed_alignment, gaps_to_mask), gaps_to_mask
 
 
 def calculate_total_masked_gaps(gaps_to_mask):
