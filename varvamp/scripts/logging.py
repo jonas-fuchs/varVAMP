@@ -448,6 +448,12 @@ def confirm_config(args, log_file):
             log_file,
             exit=True
         )
+    if args.threshold < config.TERMINAL_MASKING_THRESHOLD:
+        raise_error(
+            "threshold for primer design should be higher than the terminal masking threshold.",
+            log_file,
+            exit=True
+        )
     if config.PRIMER_MAX_POLYX < 1:
         raise_error(
             "max polyx cannot be lower than 1.",

@@ -113,7 +113,8 @@ def process_alignment(preprocessed_alignment, threshold, terminal_threshold=conf
     n_terminal_per_col = (arr == "~").sum(axis=0)
     n_non_terminal_per_col = n_seq - n_terminal_per_col
     is_terminal = n_terminal_per_col > n_seq * (1 - terminal_threshold)
-    cols_to_mask = ((arr == "-").sum(axis=0) > n_non_terminal_per_col * (1 - threshold)) & (n_non_terminal_per_col > 0) & ~is_terminal
+    gaps_above_threshold = (arr == "-").sum(axis=0) > n_non_terminal_per_col * (1 - threshold)
+    cols_to_mask = gaps_above_threshold & (n_non_terminal_per_col > 0) & ~is_terminal
 
     # convert bool mask into list of (start, end) regions (end inclusive)
     gaps_to_mask = []
@@ -126,8 +127,6 @@ def process_alignment(preprocessed_alignment, threshold, terminal_threshold=conf
         elif not is_gap and in_gap:
             in_gap = False
             gaps_to_mask.append([start, i - 1])
-    if in_gap:
-        gaps_to_mask.append([start, len_seq - 1])
 
     # define which side of the terminal gaps have to be masked
     if any(is_terminal):
